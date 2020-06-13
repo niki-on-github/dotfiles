@@ -1,0 +1,17 @@
+# add `spawn "pgrep stalonetray || stalonetray -c $HOME/.config/xmobar/stalonetrayrc"` to xmonad startup hook
+
+decorations none
+transparent false
+dockapp_mode none
+geometry 1x1-3+2
+max_geometry 9x1-3+2
+background "#000000"
+kludges force_icons_size
+grow_gravity NE
+icon_gravity NE
+icon_size 20
+sticky true
+window_type dock
+window_layer top
+no_shrink false
+skip_taskbar true

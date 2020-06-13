@@ -1,0 +1,35 @@
+-- xmobar config
+-- see https://xmobar.org/
+
+Config { font = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
+       , additionalFonts = ["xft:FontAwesome:pixelsize=16"]
+       , border = BottomB
+       , borderColor = "#1d99f3"
+       , borderWidth = 3
+       , bgColor = "black"
+       , fgColor = "#FFFFFF"
+       , alpha = 255
+       , position = Top
+       , textOffset = -1
+       , iconOffset = -1
+       , lowerOnStart = True  -- send to bottom of window stack on start
+       , pickBroadest = False  -- choose widest display (multi-monitor)
+       , persistent = True  -- disable hiding
+       , hideOnStart = False
+       , iconRoot = "."
+       , allDesktops = True
+       , overrideRedirect = True
+       , commands = [ Run DynNetwork ["-t", "<tx> <rx>", "-S", "True", "-m", "7"] 10
+                    --, Run Alsa "default" "Master" ["--", "--alsactl=/usr/bin/alsactl"]  -- use '%alsa:default:Master%' in template 
+                    , Run Cpu ["-t", "CPU<total>%", "-m", "3"] 10
+                    , Run Memory ["-t","MEM<usedratio>%", "-m", "3"] 10
+                    --, Run DiskIO [("/", "<read> <write>")] ["-m", "5"] 10  -- use '%diskio%' in template
+                    , Run Date "%b %d, %Y  -  %H:%M:%S" "date" 10
+                    , Run Com "/bin/sh" ["-c", "printf \"VOL%3d%%\" $(pamixer --get-volume-human | tr -d '%' | sed 's/muted/0/g')"] "vol" 3
+                    , Run Com "/bin/sh" ["-c", "$HOME/.config/xmobar/systray-padding.sh"] "systray" 10  -- trailing spaces for the systray
+                    , Run UnsafeStdinReader
+                    ]
+       , sepChar = "%"
+       , alignSep = "}{"
+       , template = "%UnsafeStdinReader% }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory%  -  %dynnetwork%  -  %date%  %systray%"
+       }

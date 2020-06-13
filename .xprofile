@@ -1,0 +1,75 @@
+#!/bin/sh
+# NOTE: wayland do not load specific files on graphical session login - workaround is to load .xprofile at login (e.g. add to sway config: `exec sh ~/.xprofile`)
+# Description: This file runs when a DM logs you into a x11 graphical session.
+
+# history clean up
+[[ -d $HOME/.local/share/RecentDocuments ]] && find $HOME/.local/share/RecentDocuments -type f -exec rm -f {} \;
+
+# music deamon
+pgrep mpd || mpd &
+
+# start nextcloud client if installed
+command -v nextcloud && nextcloud --background &
+
+
+if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
+    if [[ "$XDG_SESSION_DESKTOP" != "KDE" ]]; then
+
+        # Notification service
+        dunst -icon_path "$HOME/.config/dunst/icons/" &
+        
+        # Network service
+        nm-applet &
+
+        # clipboard service
+        clipmenud &
+
+        # x11 compositor (transparent windows)
+        picom --backend glx --unredir-if-possible --vsync -c -b
+       
+        # start usb mount helper if installed
+        command -v udiskie && udiskie -A -n -s --file-manager="$terminal --working-directory " &
+        
+        # lock screen
+        xidlehook --not-when-fullscreen --not-when-audio --timer 300 \
+            'notify-send -t 10000 -- "LOCKING screen in 30 seconds"' '' --timer 30 'i3lock -e -f --nofork -B=100' '' &
+
+        # disable dpms
+        xset dpms 0 0 0
+        xset -dpms
+        xset s off
+
+        # set key repeat rate
+        xset r rate 350 30
+        
+        # set default mouse cursor to left_ptr (~/.icons/default/cursors)
+        xsetroot -cursor_name left_ptr
+
+        # create a executable .xrandr file in your directory to set a custom resolution
+        # e.g. xrandr -s 3440x1440 -r 120
+        # [[ -f ~/.xrandr ]] && sh ~/.xrandr
+
+        # Fix for my Xmonad Swallow extension
+        export LD_PRELOAD=$HOME/.local/lib/X11/net-wm-pid/ld-preload-xcreatewindow.so
+        
+        # set wallpaper
+        $HOME/.local/bin/x11-wallpaper random
+    fi
+elif [[ "$XDG_SESSION_TYPE" = "wayland" ]]; then
+    if [[ "$XDG_SESSION_DESKTOP" != "KDE" ]]; then
+
+        # notificatio service
+        mako &
+
+        # network service
+        GDK_BACKEND=x11 nm-applet --indicator &
+        
+        # clipboard service
+        wl-paste -t text --watch clipman store &
+
+        # start usb mount helper if installed
+        command -v udiskie && udiskie -A -n -s --appindicator --file-manager="$terminal --working-directory " &
+    fi
+fi
+
+[ ".xprofile" ]  # set exit code to 0
