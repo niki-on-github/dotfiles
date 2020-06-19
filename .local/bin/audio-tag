@@ -1,0 +1,81 @@
+#!/bin/sh
+
+usage() { 
+    echo "Usage:
+    $(basename $0) [OPTIONS] file
+
+Options:
+	-a: artist/author
+	-t: song/chapter title
+	-A: album/book title
+	-n: track/chapter number
+	-N: total number of tracks/chapters
+	-d: year of publication
+	-g: genre
+	-c: comment
+
+You will be prompted for artist, title, album and release year if not given."
+exit $1
+}
+
+[ "$1" == "-h" ] && usage 0
+while getopts "a:t:A:n:N:d:g:c:" o 2>/dev/null; do case "${o}" in
+	a) artist="${OPTARG}" ;;
+	t) title="${OPTARG}" ;;
+	A) album="${OPTARG}" ;;
+	n) track="${OPTARG}" ;;
+	N) total="${OPTARG}" ;;
+	d) date="${OPTARG}" ;;
+	g) genre="${OPTARG}" ;;
+	c) comment="${OPTARG}" ;;
+	*) echo -e "Error: Invalid option\n" && usage 1 ;;
+esac done
+
+shift $((OPTIND - 1))
+
+file="$1"
+[ ! -f "$file" ] && echo -e "Error: Provide file to tag\n" && usage 1
+
+[ -z "$artist" ] && echo -n "artist: " && read -r artist
+[ -z "$title" ] && echo -n "title: " && read -r title
+[ -z "$album" ] && echo -n "album: " && read -r album
+[ -z "$date" ] && echo -n "release year: " && read -r date
+
+# default values
+[ -z "$artist" ] && artist="VA"
+[ -z "$title" ] && title="$file"
+[ -z "$album" ] && album=""
+[ -z "$track" ] && track="0"
+[ -z "$total" ] && total="0"
+[ -z "$date" ] && date="$(date +'%Y')"
+[ -z "$genre" ] && genre=""
+[ -z "$comment" ] && comment=""
+
+case "$file" in
+	*.ogg) echo "Title=$title
+Artist=$artist
+Album=$album
+Track=$track
+Total=$total
+Date=$date
+Genre=$genre
+Comment=$comment" | vorbiscomment -w "$file" ;;
+	*.opus) echo "Title=$title
+Artist=$artist
+Album=$album
+Track=$track
+Total=$total
+Date=$date
+Genre=$genre
+Comment=$comment" | opustags -i -S "$file" ;;
+	*.mp3) eyeD3 -Q --remove-all -a "$artist" -A "$album" -t "$title" -n "$track" -N "$total" -Y "$date" "$file" ;;
+	*) echo "File type not implemented yet." && exit 1 ;;
+esac
+[ "$?" != "0" ] && exit 1
+
+newName="${artist} - ${title} ($date).${file##*.}"
+echo -n "Rename \"$file\" to \"$newName\" [Y/n]? " && read -r choice
+if [ "$choice" != "n" ] && [ "$choice" != "N" ] && [ "$choice" != "no" ] && [ "$choice" != "No" ]; then 
+    mv "$file" "$newName"
+    echo "save as \"$newName\""
+fi

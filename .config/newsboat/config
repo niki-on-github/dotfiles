@@ -1,0 +1,41 @@
+show-read-feeds yes
+auto-reload no
+
+bind-key j down
+bind-key k up
+bind-key j next articlelist
+bind-key k prev articlelist
+bind-key J next-feed articlelist
+bind-key K prev-feed articlelist
+bind-key G end
+bind-key g home
+bind-key d pagedown
+bind-key u pageup
+bind-key l open
+bind-key h quit
+bind-key a toggle-article-read
+bind-key n next-unread
+bind-key N prev-unread
+bind-key D pb-download
+bind-key U show-urls
+bind-key x pb-delete
+
+# Arrow Key Navigation
+bind-key LEFT quit
+bind-key RIGHT open
+bind-key UP up
+bind-key DOWN down
+
+color listnormal white default
+color listfocus color33 white standout
+color listnormal_unread color33 default
+color listfocus_unread white color33 bold
+color info cyan default
+color article white default
+
+browser ~/.config/newsboat/linkhandler.sh
+
+#NOTE: Shortcut is ',' + macro
+macro v set browser ~/.config/newsboat/linkhandler.sh ; open-in-browser
+macro w set browser "w3m" ; open-in-browser
+macro c set browser "xsel -b <<<" ; open-in-browser

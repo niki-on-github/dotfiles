@@ -1,0 +1,15 @@
+#!/bin/sh
+# Description: Useful script if you working in a team with many git reposiories (stored in the same directory). To get a quick overview of what has changed.
+
+for d in */ ; do
+    [ ! -d $d/.git ] && continue
+    cd $d
+    echo "Repository: $d"
+    git branch --show-current | xargs -I{} echo "Branch: {}"
+    [ ! -z "$(git status --porcelain)" ] && echo -e "\033[0;31mNOTE: uncommitted changes!\033[0m"
+    git fetch origin >/dev/null 2>&1 && \
+    echo -e "Updates: \033[0;32m" && \
+    git diff --name-only HEAD origin/$(git branch --show-current) | xargs -I{} echo -e "- {}" && \
+    echo -e "\033[0m"
+    cd ..
+done

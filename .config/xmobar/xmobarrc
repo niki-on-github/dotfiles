@@ -31,5 +31,5 @@ Config { font = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
                     ]
        , sepChar = "%"
        , alignSep = "}{"
-       , template = "%UnsafeStdinReader% }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory%  -  %dynnetwork%  -  %date%  %systray%"
+       , template = "%UnsafeStdinReader% }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory%  -  %dynnetwork%  -  %date% %systray%"
        }

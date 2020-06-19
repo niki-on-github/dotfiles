@@ -1,0 +1,19 @@
+[Default Applications]
+application/pdf=org.pwmt.zathura.desktop;
+application/xml=org.kde.kwrite.desktop;
+audio/flac=mpv.desktop;
+audio/mp4=mpv.desktop;
+audio/mpeg=mpv.desktop;
+image/tiff=sxiv.desktop;
+image/jpeg=sxiv.desktop;
+image/png=sxiv.desktop;
+video/mp4=mpv.desktop;
+video/x-matroska=mpv.desktop;
+text/plain=org.kde.kwrite.desktop;
+text/html=firefox.desktop
+x-scheme-handler/https=firefox.desktop
+x-scheme-handler/http=firefox.desktop
+
+[Added Associations]
+application/x-bibtex=org.kde.kwrite.desktop;
+application/nbib=org.kde.kwrite.desktop;

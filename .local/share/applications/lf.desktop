@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=lf
+Exec=alacritty -e tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf new-session lf
+TryExec=lf
+Comment=lf is a terminal file manager written in Go
+StartupWMClass=lf

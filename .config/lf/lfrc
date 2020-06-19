@@ -1,0 +1,689 @@
+# lf settings
+# @see https://godoc.org/github.com/gokcehan/lf
+
+# Set interpreter for shell commands
+set shell zsh
+
+# Set file preview (default off - use key binding to toggle view)
+set previewer ~/.config/lf/scope.sh
+set nopreview
+set ratios 1:3
+
+# Set Shell options ('-e': exit on error, '-u': give error for unset variables)
+# NOTE: zsh does not split words by default so we add ":--shwordsplit"
+set shellopts '-eu:--shwordsplit'
+
+# Set internal field separator (IFS) to "\n" (to automatically split file names in $fs and $fx properly)
+set ifs "\n"
+
+# Space at the top and the bottom of the screen
+set scrolloff 10
+
+# Use 256 colors
+set color256
+
+# Enable icons (Requires nerd fonts)
+# By default there are only two icons defined (files and and directories)
+# Icons for different files can be configured using $LF_ICONS variable e.g. in .zshenv
+# @see https://github.com/gokcehan/lf/wiki/Icons
+set icons
+
+# Draw boxes
+set drawbox
+
+# Default: Do not show hidden files (toggle with Ctrl+h)
+set nohidden
+
+# Set tabstop
+set tabstop 4
+
+
+#################################################################
+# Functions
+#################################################################
+
+# auto rename pane title (if not set) an run inside tmux
+${{
+    [[ -v TMUX ]] || TMUX=""
+    [ -n "$TMUX" ] && tmux display -p '#{pane_title}' | grep -v "lf-right-pane" >/dev/null && \
+        printf "\033]2;%s\033\\" "lf-left-pane"
+    [ -z "" ]  # return 0
+}}
+
+# move selected/current file(s) to ~/.trash (requires trash-cli pkg)
+#NOTE: commands: trash-put, trash-empty, trash-list, trash-restore, trash-rm
+cmd trash %{{
+    trash-put $fx
+    notify-send "Files were moved to trash" "$fx" 
+    printf "Files were moved to trash"
+}}
+
+# use `:q` to quit lf
+cmd q ${{
+    [[ -v TMUX ]] || TMUX=""
+    [ -n "$TMUX" ] && tmux kill-window
+    lf -remote "send $id quit" 
+}}
+cmd Q :q  # not case sensitive
+
+# open/(toggle) terminal
+cmd terminal ${{
+    [[ -v TMUX ]] || TMUX=""
+    if [ -n "$TMUX" ]; then
+        # use tmux to manage panes
+        if tmux lsp -F "#{pane_title}" | grep "^lf-terminal$" >/dev/null ; then
+            tmux killp -t $(tmux lsp -F "#{pane_id} #{pane_title}" | grep " lf-terminal$" | awk '{print $1}')
+        else
+            tmux split-window -v -p 30 -f 'printf "\033]2;%s\033\\" "lf-terminal" && exec zsh'
+        fi
+    else
+        # use window manager to manage new windows
+        echo "$DESKTOP_SESSION" | grep "i3" >/dev/null && i3-msg split v >/dev/null 2>&1
+        setsid $TERMINAL >/dev/null 2>&1 &
+    fi
+}}
+
+# copy selected file or folder name to clipboard
+cmd cp-name ${{
+    name=$(basename "$f")
+    echo -n "$name" | xclip -selection clipboard
+    notify-send "Copy2Clipboard" "$name"
+}}
+
+# print lf id
+cmd get-id %{{
+    echo "lf-id: $id"
+}}
+
+# rename/change the pane title
+cmd rename-title ${{
+    printf "\033]2;%s\033\\" "$@" 
+}}
+
+# open selected files with gui programs
+cmd open-gui ${{
+    case $(file --mime-type $f -b) in
+        application/pdf)
+            if [[ -v READER_GUI ]]; then
+                setsid $READER_GUI "$f" >/dev/null 2>&1 & 
+            else
+                lf -remote "send $id open"
+                return
+            fi ;;
+        text/*)
+            if [[ -v EDITOR_GUI ]] ; then
+                for f in $fx; do setsid $EDITOR_GUI $f >/dev/null 2>&1 & done;
+            else
+                lf -remote "send $id open"
+                return
+            fi ;;
+        *)
+            lf -remote "send $id open" ;;   
+    esac
+}}
+
+# open files with
+cmd open ${{
+    # Reads file names from stdin and selects them in lf
+    lfSelect() {
+        while read -r file; do
+            [ -z "$file" ] && continue
+            [ -e "$file" ] || contine
+            lf -remote "send select \"$file\""
+            lf -remote "send toggle"
+        done
+    }
+
+    open-image() {
+        pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Ei "(*.png$|*.jpg$|*.jpeg$|*.tif$)" | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
+        setsid sxiv -aobq -n $pos "$PWD" 2>/dev/null | lfSelect & 
+    }
+    
+    open-audio() {
+        mpv --vo=null --speed=1.0 $f 
+    }
+
+    open-video() {
+        setsid mpv $f >/dev/null 2>&1 & 
+    }
+
+    open-document() {
+        setsid $READER $fx >/dev/null 2>&1 & 
+    }
+
+    open-editor() {
+        eval "$EDITOR \"$f\""
+    }
+
+    case "$f" in
+        *mp3|*.flac|*.m4a) open-audio ;;
+        *.mp4|*.mkv) open-video ;;
+        *.png|*.jpg|*.jpeg|*.tif) open-image ;;
+        *.pdf) open-document ;;
+        *.txt|*.md|*.MD) open-editor ;;
+        *)  # fallback is mime-type  
+            case $(file --mime-type $f -b) in
+                text/*) eval "$EDITOR \"$fx\"" ;;
+                image/*) open-image ;;
+                audio/*) open-audio ;;
+                video/*|application/octet-stream) open-video ;;
+                application/pdf) open-document ;;
+                *) open-editor ;;
+            esac ;;
+    esac
+}}
+
+# open/(toggle) a second lf file manager pane
+cmd split ${{
+    [[ -v TMUX ]] || TMUX=""
+    if [ -n "$TMUX" ]; then
+        # use tmux to manage panes
+        if tmux lsp -F "#{pane_title}" | grep "^lf-right-pane$" >/dev/null ; then
+            tmux killp -t $(tmux lsp -F "#{pane_id} #{pane_title}" | grep " lf-right-pane$" | awk '{print $1}')
+        else
+            tmux split-window -h 'printf "\033]2;%s\033\\" "lf-right-pane" && exec lf'
+        fi
+    else
+        # use window manager to manage windows
+        setsid $TERMINAL -e lf $PWD >/dev/null 2>&1 &
+    fi
+}}
+
+# open a new lf file manager (in new tab)
+cmd new-tab ${{
+    [[ -v TMUX ]] || TMUX=""
+    if [ -n "$TMUX" ]; then 
+        tmux new-window lf
+    else
+        # use window manager to manage tabs
+        setsid $TERMINAL -e lf $PWD >/dev/null 2>&1 &
+    fi
+}}
+
+# extract the current archive file with the right command
+# if archive have more than 3 sub files, directories: we create a seperate extract directory based on the archive name
+cmd extract ${{
+    set -f
+
+    extractTAR() {
+        param="$1"
+        subFilesCount=$(tar --list -f $f | grep -Ev "(/.*/|/.)" | wc -l)
+        if [ "$subFilesCount" -le 3 ]; then
+            eval "tar $param $f"
+        else
+            dirName="$(basename $f | sed 's/.tar.*$//g')"
+            mkdir -p "$dirName"
+            eval "tar $param $f --directory \"$dirName\""
+        fi
+    }
+
+    extractZIP() {
+        subFilesCount=$(unzip -l $f | grep -E "[1-9][0-9][0-9][0-9].[0-1][0-9].[0-3][0-9]" | grep -Ev "(/.*/|/.)" | wc -l)
+        if [ "$subFilesCount" -le 3 ]; then
+            unzip $f
+        else
+            unzip -d "$(basename $f | sed 's/.zip$//g')" $f
+        fi
+    }
+
+    extractRAR() {
+        subFilesCount=$(unrar l $f | grep -E "[1-9][0-9][0-9][0-9].[0-1][0-9].[0-3][0-9]" | grep -Ev "(/.*/|/.)" | wc -l)
+        if [ "$subFilesCount" -le 3 ]; then
+            unrar x -r $f
+        else
+            unrar x -r -ad $f
+        fi
+    }
+
+    extract7z() {
+        subFilesCount=$(7z l -slt $f | grep "Path = " | grep -Ev "(/.*/|/.)" | grep -v ".7z$" | wc -l)
+        if [ "$subFilesCount" -le 3 ]; then
+            7z x $f
+        else
+            7z x -o$(basename $f | sed 's/.7z$//g' | sed 's/ //g') $f
+        fi
+    }
+
+    echo "load archive structure ..."
+    case $f in
+        *.tar) extractTAR "xvf" ;;
+        *.tar.bz|*.tar.bz2|*.tbz|*.tbz2) extractTAR "xjvf" ;;
+        *.tar.gz|*.tgz) extractTAR "xzvf" ;;
+        *.tar.xz|*.txz) extractTAR "xJvf" ;;
+        *.zip) extractZIP ;;
+        *.rar) extractRAR ;;
+        *.7z) extract7z ;;
+        *) lf -remote "send $id echo \"ERROR: archive type not implemented\"" ;;
+    esac
+}}
+
+# select all files and folders in current directory
+cmd select-all ${{
+    lf -remote "send $id glob-select *"
+}}
+
+# display current dirrectory size
+cmd get-size %{{
+    echo "compute file size ..."
+    size=$(du -hcs $PWD 2>/dev/null | tail -n1 | awk '{print $1}')
+    echo "size: $size"
+}}
+
+# compress current file or selected files with tar (file name can contain spaces without using quotation marks)
+cmd mktar ${{
+    set -f  # disable filename expansion
+    command="tar czf"
+    n=$((0))
+    for f in $fx; do n=`expr $n + 1`; done;
+    if [ "$n" -eq "1" ]; then
+        if [ -z "$(echo -n $@)"  ]; then
+            saveAs=$(basename $fx)
+        else
+            saveAs="$(echo -n $@ | tr -d '\n')"
+        fi
+        eval "$command \"${saveAs}.tar.gz\" \"$(basename $fx)\""
+    else
+        [ -z "$(echo -n $@)" ] && lf -remote "send $id echo \"usage: mktar [name]\"" && return
+        saveAs="$(echo -n $@ | tr -d '\n')"
+        mkdir "$saveAs"
+        cp -r $fx "$saveAs"
+        eval "$command \"${saveAs}.tar.gz\" \"$saveAs\""
+        rm -rf "$saveAs"
+    fi
+    lf -remote "send $id :unselect"
+}}
+
+# compress current file or selected files with zip (file name can contain spaces without using quotation marks)
+cmd mkzip ${{
+    set -f  # disable filename expansion
+    command="zip -r"
+    n=$((0))
+    for f in $fx; do n=`expr $n + 1`; done;
+    if [ "$n" -eq "1" ]; then
+        if [ -z "$(echo -n $@)"  ]; then
+            saveAs=$(basename $fx)
+        else
+            saveAs="$(echo -n $@ | tr -d '\n')"
+        fi
+        eval "$command \"${saveAs}.zip\" \"$(basename $fx)\""
+    else
+        [ -z "$(echo -n $@)" ] && lf -remote "send $id echo \"usage: mkzip [name]\"" && return
+        saveAs="$(echo -n $@ | tr -d '\n')"
+        mkdir "$saveAs"
+        cp -r $fx "$saveAs"
+        eval "$command \"${saveAs}.zip\" \"$saveAs\""
+        rm -rf "$saveAs"
+    fi
+    lf -remote "send $id :unselect"
+}}
+
+# compress current file or selected files with rar (file name can contain spaces without using quotation marks)
+cmd mkrar ${{
+    set -f  # disable filename expansion
+    command="rar a -r -rr10"
+    n=$((0))
+    for f in $fx; do n=`expr $n + 1`; done;
+    if [ "$n" -eq "1" ]; then
+        if [ -z "$(echo -n $@)" ]; then
+            saveAs=$(basename $fx)
+        else
+            saveAs="$(echo -n $@ | tr -d '\n')"
+        fi
+        eval "$command \"${saveAs}.rar\" \"$(basename $fx)\""
+    else
+        [ -z "$(echo -n $@)"  ] && lf -remote "send $id echo \"usage: mkrar [name]\"" && return
+        saveAs="$(echo -n $@ | tr -d '\n')"
+        mkdir "$saveAs"
+        cp -r $fx "$saveAs"
+        eval "$command \"${saveAs}.rar\" \"$saveAs\""
+        rm -rf "$saveAs"
+    fi
+    lf -remote "send $id :unselect"
+}}
+
+# create directory (override unix mkdir so folder names can contain spaces without using quotation marks)
+cmd mkdir ${{
+    [ -z "$(echo -n $@)"  ] && return 
+    eval "mkdir -p \"$@\""
+}}
+
+# create a new file and open in $EDITOR (file name can contain spaces without using quotation marks)
+cmd mkfile ${{
+    [ -z "$(echo -n $@)"  ] && return 
+    eval "$EDITOR \"$@\""
+}}
+
+# show a popup window with all selected files for drag-and-drop into another graphical application
+cmd drag %dragon-drag-and-drop -a $fx
+
+# show a popup window to drop an url which is then downlowded to the current directory
+cmd drop %{{
+    [ -f ~/.config/lf/scripts/drop.sh ] && ~/.config/lf/scripts/drop.sh -u
+}}
+
+# add a ssh bookmark
+cmd ssh-add %{{
+    usage() {
+        echo "usage: ssh-add \"[user@domain:/path]\""
+    }
+
+    [ -z "$(echo -n $@)"  ] && usage && return
+    [ -z "$(grep ":" <<< "$@")" ] && usage && return
+    [ -z "$(grep "@" <<< "$@")" ] && usage && return
+    [ -z "$(grep "/" <<< "$@")" ] && usage && return
+
+    echo "$@" >> ~/.cache/lf-ssh.bookmarks
+}}
+
+# list files from selected bookmark servers and rsyncs selected files to the current directory
+cmd ssh-download ${{
+    [ -f ~/.cache/lf-ssh.bookmarks ] || return
+    choice="$(fzf --multi < ~/.cache/lf-ssh.bookmarks)" || return
+    [ -z "$choice" ] && return
+    choice=$(echo "$choice" | tr '\n' ' '| sed -e 's/[[:space:]]*$//')
+    lf -remote "send $id ssh-get $choice"
+}}
+
+# lists files from remote servers addresses and rsyncs the selected files to the current directory 
+cmd ssh-get &{{
+    [ -f ~/.config/lf/scripts/ssh-get.sh ] && ~/.config/lf/scripts/ssh-get.sh "$id" "$@"
+}}
+
+# upload selectet file to a ssh device from ssh bookmarks
+cmd ssh-upload ${{
+    [ -f ~/.cache/lf-ssh.bookmarks ] || return
+    choice="$(fzf < ~/.cache/lf-ssh.bookmarks)" || return
+    [ -z "$choice" ] && return
+    choice=$(echo "$choice" | tr '\n' ' '| sed -e 's/[[:space:]]*$//')
+    rsync --protect-args -auv --progress -e ssh $fx $choice
+    notify-send "ssh-push" "files uploaded to $choice"
+    lf -remote "send $id :unselect"
+}}
+
+# mount rclone network drives
+cmd rmount &{{
+    [ -z "$SUDO_ASKPASS" ] && return
+    command -v rclone >/dev/null || return
+    pw=$(eval "$SUDO_ASKPASS 'rclone configuration password:'")
+    [ -z "$pw" ] && return
+    lf -remote "send $id :rmount-run $pw"
+}}
+
+# mount rclone network drives (this function is called from 'rmount')
+cmd rmount-run ${{
+    pw="$@"
+    [ -z "$pw" ] && return
+    remotes="$(echo "$pw" | rclone listremotes)" 2>/dev/null
+    [ -z "$remotes" ] && return
+    choice=$(fzf <<< "$remotes") || return
+    [ -z "$choice" ] && return
+    dest=$(mktemp -d)
+    echo "$pw" | rclone mount $choice $dest >/dev/null 2>&1 &
+    pid=$!
+    echo "${pid},${choice},${dest}" >> ~/.cache/lf-rmount.csv
+    sleep 0.5
+    lf -remote "send $id cd $dest"
+    clear
+}}
+
+# unmount a rclone network derive
+cmd rumount ${{
+    if [ ! -f ~/.cache/lf-rmount.csv ]; then; lf -remote "send $id echo \"no device mounted\""; return; fi
+    
+    remoteList=()
+    while IFS=, read -r pid remote dest; do
+        [ -z "$dest" ] && continue
+        [ -d $dest ] || continue
+        remoteList+=( "$remote" )
+    done < ~/.cache/lf-rmount.csv
+    unset IFS
+    
+    if [ "${#remoteList[@]}" -le "0" ]; then
+        lf -remote "send $id echo \"no device mounted\""
+        rm -f ~/.cache/lf-rmount.csv 
+        return
+    fi
+
+    choice=$(printf '%s\n' "${remoteList[@]}" | fzf) || return
+    [ -z "$choice" ] && return
+
+    while IFS=, read -r pid remote dest; do
+        [ -z "$pid" ] && continue
+        [ -z "$remote" ] && continue
+        [ -z "$dest" ] && continue
+        [ -d $dest ] || continue
+
+        if grep "^$choice$" <<< "$remote" >/dev/null ; then
+            if grep "^$dest" <<< "$PWD" >/dev/null ; then
+                lf -remote "send $id echo \"Error: device $choice in use\""
+            else
+                [ -n "$(ls -A $dest)" ] && eval "kill $pid" && sleep 0.5
+                lf -remote "send $id echo \"device $choice unmounted\"" 
+                rm -d $dest >/dev/null 2>&1
+                continue
+            fi
+        fi
+
+        echo "${pid},${choice},${dest}" >> ~/.cache/lf-rmount.tmp
+    done < ~/.cache/lf-rmount.csv
+    unset IFS
+
+    rm -f ~/.cache/lf-rmount.csv
+    [ -f ~/.cache/lf-rmount.tmp ] && mv -f ~/.cache/lf-rmount.tmp ~/.cache/lf-rmount.csv
+}}
+
+# umount all rclone network drives
+cmd rumount-all ${{
+    if [ -f ~/.cache/lf-rmount.csv ]; then
+        while IFS=, read -r pid remote dest; do
+            [ -z "$dest" ] && continue
+            [ -d $dest ] || continue
+
+            if grep "^$dest" <<< "$PWD" >/dev/null ; then
+                lf -remote "send $id echo \"Error: device $remote in use\""
+                return
+            fi
+            
+            # is $dest not empty?
+            [ -n "$(ls -A $dest)" ] && eval "kill $pid" && sleep 0.5
+
+            # delete tmp dir if umount success
+            rm -d $dest >/dev/null 2>&1
+        done < ~/.cache/lf-rmount.csv
+        unset IFS
+    fi
+  
+    lf -remote "send $id echo \"all devices unmounted\"" 
+    rm -f ~/.cache/lf-rmount.csv
+}}
+
+# use fzf to select files by specific sequence
+cmd quick-select ${{
+    lf -remote "send $id unselect"
+   
+    # solution 1
+    find $PWD -maxdepth 2 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all | xargs -d $'\n' -I{} sh -c 'lf -remote "send $id select \"{}\""; lf -remote "send $id toggle"'
+    
+    # solution 2 (can only select files in working directory): matches pattern character c (c != '*', '?', '\\', '[')
+    # find $PWD -maxdepth 1 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all | xargs -d $'\n' -I{} sh -c 'fpattern=$(basename "{}" | sed -e "s/[\[\*]/?/g"); lf -remote "send $id glob-select \"$fpattern\""'
+}}
+
+# select all files in working directory with given pattern (e.g. *Favorite*)
+cmd pattern-select ${{
+    [ -z "$(echo -n $@)"  ] && lf -remote "send $id echo \"usage: pattern-select [pattern]\"" && return
+    lf -remote "send $id glob-select \"$@\""
+}}
+
+# use rsync to copy files and display process in lf while coping files
+#NOTE: Information is shown at the bottom of the screen every second but it is overwritten for each action that also use this part of the screen.
+cmd rpaste &{{
+    load=$(lf -remote 'load')
+    mode=$(echo "$load" | sed -n '1p')
+    list=$(echo "$load" | sed '1d')
+    if [ $mode = 'copy' ]; then
+        rsync -a --ignore-existing --info=progress2 $list . \
+        | stdbuf -i0 -o0 -e0 tr '\r' '\n' \
+        | while read line; do
+            lf -remote "send $id echo $line"
+        done
+    elif [ $mode = 'move' ]; then
+        mv -n $list .
+    fi
+    lf -remote 'send load'
+    lf -remote 'send clear'
+}}
+
+# paste a file or directory from a clipbard absolute file link
+cmd clpaste ${{
+    clip=$(xclip -o -selection clipboard)
+    grep "/" <<< "$clip" >/dev/null || return
+    
+    [ -f "$clip" ] && cp "$clip" "$PWD" && return
+    [ -d "$clip" ] && cp -r "$clip" "$PWD" && return
+}}
+
+# set default file/folder permissions on selected files
+cmd set-default-permissions ${{
+    set -f # disable filename expansion
+    for f in $fx; do 
+        if [ -d "$f" ]; then
+            chmod 755 "$f"
+        else
+            chmod 644 "$f"
+        fi
+    done
+
+    lf -remote "send $id reload"
+}}
+
+# rename a file to its parent folder name
+cmd base-rename ${{
+    # parse file infos
+    fulldname="$(dirname "$f")"
+    dname="$(basename "$fulldname")"
+    file="$(basename "$f")"
+    extension="${file##*.}"
+    fname="${file%.*}"
+    
+    eval "mv \"$file\" \"${dname}.${extension}\""
+}}
+
+# open clipboard path (can contain spaces)
+cmd browse-clipboard-path ${{
+    clipboardPath="$(xclip -o -selection clipboard)"
+    echo "$clipboardPath" | grep "/" >/dev/null || return
+    [ -f $clipboardPath ] && clipboardPath="${clipboardPath%/*}"
+    [ -d $clipboardPath ] || return
+    lf -remote "send $id cd \"$clipboardPath\""
+}}
+
+
+#################################################################
+# Key Bindings
+#################################################################
+
+# Default (https://godoc.org/github.com/gokcehan/lf):
+# page-up                  (default '<c-b>' and '<pgup>')
+# page-down                (default '<c-f>' and '<pgdn>')
+# open                     (default 'l' and '<right>')
+# top                      (default 'gg' and '<home>')
+# bottom                   (default 'G' and '<end>')
+# toggle                   (default '<space>')
+# invert                   (default 'v')
+# unselect                 (default 'u')
+# copy                     (default 'y')
+# cut                      (default 'd')
+# clear                    (default 'c')
+# redraw                   (default '<c-l>')
+# reload                   (default '<c-r>')
+# read                     (default ':')
+# rename                   (default 'r')
+# shell                    (default '$')
+# shell-pipe               (default '%')
+# shell-wait               (default '!')
+# shell-async              (default '&')
+# find                     (default 'f')
+# find-back                (default 'F')
+# find-next                (default ';')
+# find-prev                (default ',')
+# search                   (default '/')
+# search-back              (default '?')
+# search-next              (default 'n')
+# search-prev              (default 'N')
+# $$EDITOR $f              (default 'e')
+# $$SHELL                  (default 'w') 
+# command history up       (default '<c-p>')
+# command history down     (default '<c-n>')
+# show info                (default 'zn')
+# show info size           (default 'zs')
+# show info time           (default 'zt')
+# show info size time      (default 'za')
+# sortby natural           (default 'sn')
+# sortby size              (default 'ss')
+# sortby time              (default 'st')
+# ...
+
+
+# Remove default
+map q       # quit
+map m       # mark-save
+map '"'     # mark-remove
+map "'"     # mark-load
+map i       # $$PAGER $f
+map p       # paste (we use rpaste)
+
+# Add custom functions (space at the end sometimes break bindings!)
+map Q :q
+map D delete
+map <delete> delete
+map Sd :ssh-download
+map Su :ssh-upload
+map T trash
+map <enter> open
+map <bs2> updir
+map E extract
+map tg $lazygit
+map tt $tig
+map tr :base-rename
+map gs :get-size
+map bs mark-save
+map bl mark-load
+map br mark-remove
+map bc $echo -n "$PWD" | xclip -selection clipboard
+map bo :browse-clipboard-path
+map md push :mkdir<space>
+map mf push :mkfile<space>
+map mx $(chmod +x $fx && lf -remote "send $id reload")
+map mz push :mkzip<space>
+map mt push :mktar<space>
+map mr push :mkrar<space>
+map i invert
+map I set preview!
+map O open-gui
+map p rpaste
+map P paste
+map <c-t> new-tab
+map <c-a> :select-all
+map A :select-all
+map <c-z> $ kill -STOP $PPID
+map <bs> set hidden!
+map B $lf -remote "send $id cd $(find . -maxdepth 3 -type d | fzf)"
+map x $$f
+map X !$f
+map <f-2> rename
+map <f-3> split
+map <f-4> terminal
+map <f-5> reload
+map <f-6> $lf -remote "send $id cd $(find . -maxdepth 3 -type d | fzf)"
+map <f-7> quick-select
+map <f-8> set hidden!
+map <f-10> push %mkdir<space>
+map <f-11> set preview!
+map ~ cd
+map <esc> unselect
+map + :clpaste
+map \# :drag
+map . set hidden!
+map mn :set-default-permissions
+map C &lf -remote "send $id echo \"compile $f\"" && ~/.local/bin/compile $f && lf -remote "send $id reload" || lf -remote "send $id echo \"compile failed\""
+map <f-12> &lf -server && lf -remote "send $id echo \"server was successfully restarted\""

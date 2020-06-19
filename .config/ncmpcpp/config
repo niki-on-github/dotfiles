@@ -1,0 +1,24 @@
+ncmpcpp_directory = ~/.config/ncmpcpp/
+
+titles_visibility = "no"
+
+colors_enabled = "yes"  
+window_border_color = "white"
+visualizer_color = "blue"
+main_window_color = "white"  
+header_window_color = "cyan"  
+volume_color = "white"  
+progressbar_color = "cyan"  
+statusbar_color = "white"  
+active_window_border = "white"
+
+current_item_prefix = "$(white)$r"
+current_item_suffix = "$/r$(end)"
+current_item_inactive_column_prefix = "$(white)$r"
+current_item_inactive_column_suffix = "$/r$(end)"
+
+alternative_ui_separator_color = "blue"
+
+song_columns_list_format = "(20)[white]{a} (40)[white]{t} (7f)[white]{l}"
+
+execute_on_song_change = ~/.config/ncmpcpp/notify.sh

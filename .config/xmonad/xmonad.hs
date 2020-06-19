@@ -172,7 +172,7 @@ terminalInCwd xid = let
 myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     [ ((modm,                   xK_Return   ), spawn $ XMonad.terminal conf )
-    --((modm,                   xK_Return   ), mkTerm )
+    -- ((modm,                   xK_Return   ), mkTerm )
     , ((modm,                   xK_d        ), spawn "$HOME/.config/dmenu/scripts/dmenu_apps.sh" )
     , ((modm .|. shiftMask,     xK_d        ), spawn "sudo -A $HOME/.config/dmenu/scripts/dmenu_apps.sh" )
     , ((modm .|. shiftMask,     xK_period   ), spawn "$HOME/.config/dmenu/scripts/dmenu_edit.sh" )
@@ -207,7 +207,6 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. shiftMask,     xK_k        ), windows W.swapUp )
     , ((modm,                   xK_h        ), sendMessage Shrink )
     , ((modm,                   xK_l        ), sendMessage Expand )
-    , ((modm,                   xK_t        ), withFocused $ windows . W.sink )
     , ((modm .|. shiftMask,     xK_plus     ), sendMessage (IncMasterN 1) )
     , ((modm .|. shiftMask,     xK_minus    ), sendMessage (IncMasterN (-1)) )
     , ((modm,                   xK_g        ), XMonad.Layout.MySpacing.toggleAuto16x9SpacingEnabled ) -- toggle widscreen gaps
@@ -239,7 +238,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. controlMask,   xK_Down     ), sendMessage $ Swap D)
     
     -- SubLayout 
-    , ((modm .|. controlMask,   xK_t        ), sendMessage $ Toggle ENABLETABS)
+    --, ((modm .|. controlMask,   xK_t        ), sendMessage $ Toggle ENABLETABS)
     , ((modm .|. controlMask,   xK_h        ), sendMessage $ pullGroup L)
     , ((modm .|. controlMask,   xK_l        ), sendMessage $ pullGroup R)
     , ((modm .|. controlMask,   xK_k        ), sendMessage $ pullGroup U)
@@ -260,7 +259,6 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     
     -- NOTE: XDG_CONFIG_HOME not work when recompiling has errors because it create a xmonad.errors in ~/.xmonad and then xmonad do search for the xmonad.hs in ~/.xmonad. Workaround:
     , ((modm .|. shiftMask,     xK_r        ), spawn "mkdir -p $HOME/.xmonad; cp -rf $HOME/.config/xmonad/* $HOME/.xmonad; xmonad --recompile && xmonad --restart" )
-
     ]
 
     -- mod-[1..9], Switch to workspace N
@@ -271,9 +269,11 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
         | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
         , (f, m) <- [(W.greedyView, 0), (copy, shiftMask .|. controlMask), (W.shift, shiftMask), (swapWithCurrent, controlMask) ]]
     
-    -- web search engines
+    -- web search/translator
     ++ [((modm, xK_w), submap . M.fromList $ [((0, k), S.promptSearch myPromptTheme f) | (k,f) <- searchList ])]  -- search with prompt
     ++ [((modm .|. controlMask, xK_w), submap . M.fromList $ [((0, k), S.selectSearch f) | (k,f) <- searchList ])]  -- search from clipbard
+    ++ [((modm, xK_t), submap . M.fromList $ [((0, k), S.promptSearch myPromptTheme f) | (k,f) <- translateList ])]  -- translate with prompt
+    ++ [((modm .|. controlMask, xK_t), submap . M.fromList $ [((0, k), S.selectSearch f) | (k,f) <- translateList ])]  -- translate from clipbard
     
     -- pass prompt
     ++ [((modm .|. controlMask, xK_p), submap . M.fromList $ [((0, k), f myPromptTheme) | (k,f) <- [(xK_g, passPrompt), (xK_n, passGeneratePrompt)] ])]
@@ -427,6 +427,10 @@ archwiki, reddit :: S.SearchEngine
 archwiki = S.searchEngine "archwiki" "https://wiki.archlinux.org/index.php?search="
 reddit   = S.searchEngine "reddit" "https://www.reddit.com/search/?q="
 
+deepl_de2en, deepl_en2de :: S.SearchEngine
+deepl_de2en = S.searchEngine "deepl de2en" "https://www.deepl.com/translator#de/en/"
+deepl_en2de = S.searchEngine "deepl en2de" "https://www.deepl.com/translator#en/de/"
+
 searchList :: [(KeySym, S.SearchEngine)]
 searchList = [ (xK_a, archwiki)
              , (xK_d, S.duckduckgo)
@@ -434,6 +438,11 @@ searchList = [ (xK_a, archwiki)
              , (xK_i, S.images)
              , (xK_r, reddit)
              , (xK_y, S.youtube)
+             ]
+
+translateList :: [(KeySym, S.SearchEngine)]
+translateList = [ (xK_e, deepl_de2en)
+             , (xK_d, deepl_en2de)
              ]
 
 
@@ -457,7 +466,8 @@ xPropMatches = [ ([ (wM_CLASS, any ("firefox" ==)) ], pmX (addTag "browser")) ]
 
 myStartupHook = do
     setDefaultCursor xC_left_ptr  -- set mouse cursor
-    spawn "pkill stalonetray; stalonetray -c $HOME/.config/xmobar/stalonetrayrc"
+    -- spawn "pkill stalonetray; stalonetray -c $HOME/.config/xmobar/stalonetrayrc"
+    spawn "pkill trayer; trayer --edge top --align right --padding 2 --distance 1 --widthtype request --SetDockType true --SetPartialStrut false --expand true --transparent true --alpha 0 --tint 0x000000 --height 22"
 
 
 ------------------------------------------------------------------------

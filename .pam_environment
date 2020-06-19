@@ -1,0 +1,14 @@
+# User PAM Environment Variables
+
+# XDG Base Directories
+XDG_CONFIG_HOME DEFAULT=@{HOME}/.config
+XDG_CACHE_HOME DEFAULT=@{HOME}/.cache
+XDG_DATA_HOME DEFAULT=@{HOME}/.local/share
+XDG_DATA_DIRS DEFAULT=/usr/local/share:/usr/share
+XDG_CONFIG_DIRS DEFAULT=/etc/xdg
+
+# NOTE: Some KDE applications like kwallet need this environemnt variable set by pam!
+# XDG_CURRENT_DESKTOP DEFAULT=KDE
+
+# Required for systemd user ssh-agent service (~/.config/systemd/user/ssh-agent.service) 
+SSH_AUTH_SOCK DEFAULT="${XDG_RUNTIME_DIR}/ssh-agent.socket"

@@ -1,0 +1,48 @@
+/* Xresources */
+
+/* st config */
+st.alpha:    0.92
+st.font:     Hack-10
+st.termname: st
+st.borderpx: 5
+
+
+/* breeze color */
+*.background:  #232627
+*.foreground:  #ffffff
+*.cursorColor: #ffffff
+*.color0:	   #232627
+*.color1:	   #ed1515
+*.color2:	   #11d116
+*.color3:	   #f67400
+*.color4:	   #1d99f3
+*.color5:	   #9b59b6
+*.color6:	   #1abc9c
+*.color7:	   #fcfcfc
+*.color8:	   #7f8c8d
+*.color9:	   #c0392b
+*.color10:	   #1cdc9a
+*.color11:	   #fdbc4b
+*.color12:	   #3daee9
+*.color13:	   #8e44ad
+*.color14:	   #16a085
+*.color15:	   #ffffff
+
+
+/* dmenu config */
+dmenu.font:          Hack-12
+dmenu.background:    #000000
+dmenu.foreground:    #ffffff
+dmenu.selbackground: #1d99f3
+dmenu.selforeground: #ffffff
+dmenu.height:        25
+
+
+/* dwm config */
+dwm.normbordercolor: #444444
+dwm.normbgcolor:     #000000
+dwm.normfgcolor:     #cccccc
+dwm.selbordercolor:  #ffffff
+dwm.selbgcolor:      #1d99f3
+dwm.selfgcolor:      #ffffff
+

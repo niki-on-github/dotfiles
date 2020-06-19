@@ -1,0 +1,242 @@
+#!/bin/bash
+# Description: Script to use oathtool on Linux command line for 2 step verification (2FA)
+# Dependencies: sudo pacman -Sy gnupg oath-toolkit expect
+
+# 2FA Database Path
+OATH_HOME="${HOME}/.local/share/2fa"
+
+err() {
+    notify-send "Error" "$@"
+    echo "$@"
+    exit 1
+}
+
+# Path to binaries
+_gpg="$(command -v gpg)"
+_gpgconf="$(command -v gpgconf)"
+_oathtool="$(command -v oathtool)"
+
+[ -z "$_gpg" ] && err "pgp not found"
+[ -z "$_gpgconf" ] && err "pgpconf not found"
+[ -z "$_oathtool" ] && err "oathtool not found"
+command -v expect >/dev/null || err "expect not found"
+
+usage () {
+    cat <<EOF
+'`basename $0`' use oathtool Linux command line for 2 step verification (2FA)
+
+
+Dependecies: - gnupg
+             - oath-toolkit
+             - expect
+
+
+Usage: `basename $0` add|--add|-a <SERVICE>
+       `basename $0` code|--code|-c <SERVICE>
+       `basename $0` help|--help|-h
+       `basename $0` init|--init|-n
+       `basename $0` list|--list|-l
+       `basename $0` export-key|--export-key|-e <NAME>
+       `basename $0` import-key|--import-key|-i <FILE>
+
+
+This script use oathtool OTPs (one-time password) on Linux to secure your Gmail and other online accounts. Instead of waiting for text messages, get the verification codes direct to the clipboard.
+
+The main advantage of Linux command line is that you can easily backup your 2fa directory and your gpg key. Your totp secrets/keys are always encrypted and password protected by gpg. Mobile apps such as Google Authenticator usually do not allow you to sync or copy secrets/keys for security reasons. So if you lost phone or switch phone, you wouldn’t be able to login into the account. This set up is simple and easy to backup/restore as long as you remember your gpg passphrase. I strongly recommend that you enable full disk encryption too.
+
+
+The following specific options are supported:
+
+  -a, --add <service>     add a new 2FA service to the database
+  -c, --code <service>    display 2FA code on screen
+  -h, --help              display this help
+  -n, --init              initialize the 2FA database (n for new)
+  -l, --list              display all available 2FA service
+  -e, --export-key <name> export the gpg secret key to <name>
+  -i, --import-key <file> import the gpg secret key
+
+EOF
+    exit $1
+}
+
+
+# COLOR
+LBLUE='\033[1;34m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' #No Color
+
+
+check_2fa_db() {
+    if [ ! -d "${OATH_HOME}" ]; then
+        notify-send "2FA" "Service database not Found"
+        echo -e "${RED}[ERROR]${NC} 2FA service database not Found: ${OATH_HOME}"
+        echo -e "${LBLUE}[INFO]${NC} Run \"$0 init\" to initialize OATH_HOME=\"${OATH_HOME}\""
+        exit 1
+    fi
+}
+
+
+get_uid() {
+    if [ ! -f "${OATH_HOME}/.gpg_userid" ]; then
+        notifiy-send "2FA" "GPG userid not found"
+        echo -e "${RED}[ERROR]${NC} File not Found: ${OATH_HOME}/.gpg_userid"
+        exit 1
+    fi
+
+    uid=$(cat "${OATH_HOME}/.gpg_userid")
+}
+
+check_gpg_secret() {
+    if ! gpg --list-secret-keys | grep "uid" | grep "$1" > /dev/null ; then
+        notify-send "2FA" "GPG secret key not found"
+        echo -e "${RED}[ERROR]${NC} GPG Secret not Found: $1"
+        exit 1
+    fi
+}
+
+add() {
+    check_2fa_db
+    get_uid
+    check_gpg_secret "$uid"
+
+    [ -z "$1" ] && usage 1
+
+    # Now build CLI args
+    service_name="$1"
+    service_dir="${OATH_HOME}/${service_name}"
+    key_file="${service_dir}/.key"
+    key_file_gpg="${key_file}.gpg"
+
+    # Read Key
+    echo -e "Generate the new 2FA Service: ${service_name}"
+    read -p 'Key: ' key
+
+    # Failsafe stuff
+    [ "$service_name" == "" ] && { echo -e "${RED}[ERROR]${NC} Usage: $0 add <service>"; exit 1; }
+    [ -d "$service_dir" ] && { echo -e "${RED}[ERROR]${NC} Service \"$service_name\" exists."; exit 1; }
+    [ -f "$key_file_gpg" ] && { echo -e "${RED}[ERROR]${NC} Encrypted file \"$key_file_gpg\" exists."; exit 1; }
+
+    # Create new service .key file
+    mkdir -p "${service_dir}"
+    echo -n "$key" > "${key_file}"
+
+    # Encrypt your service .key file
+    $_gpg -r "${uid}" --encrypt "$key_file" && rm "$key_file"
+}
+
+
+code() {
+    check_2fa_db
+    get_uid
+    check_gpg_secret "$uid"
+
+    # Build CLI arg
+    service_name="$1"
+    service_dir="${OATH_HOME}/$service_name"
+    key_file="${service_dir}/.key"
+    key_file_gpg="${key_file}.gpg"
+
+    # Failsafe stuff
+    [ "$service_name" == "" ] && { echo "${RED}[ERROR]${NC} Usage: $0 code <service>"; exit 1; }
+    [ ! -f "$key_file_gpg" ] && { echo "${RED}[ERROR]${NC} Encrypted file \"$key_file_gpg\" not found."; exit 1; }
+
+    # Get totp secret for given service
+    totp=$($_gpg --quiet -r "${uid}" --decrypt "$key_file_gpg")
+
+    if [ -z "$totp" ]; then
+        echo -e "${RED}[ERROR]${NC} Key Decryption Failed"
+        exit 1
+    fi
+
+    # Generate 2FA totp code
+    code=$($_oathtool -b --totp "$totp")
+
+    # Copy to clipboard, if xclip command found  on Linux system
+    type -a xclip &>/dev/null
+    [ $? -eq 0 ] && { echo -e $code | xclip -sel clip; notify-send "2FA" "Copied code $code for $service_name to clipboard"; }
+
+    # Display 2FA totp code on screen
+    echo -e "Your code for $service_name is: "
+    echo -e "$code"
+
+    # Make sure we don't have .key file in plain text format ever #
+    [ -f "$key_file" ] && echo -e "${RED}[WARN]${NC} Plain text key file \"$key_file\" found."
+    exit 0
+}
+
+
+init() {
+    if [ -f "${OATH_HOME}/.gpg_userid" ]; then
+        echo -e "[ERROR] The oath folder (\"${OATH_HOME}\") has already been initialized"
+        exit 1
+    fi
+
+    mkdir -p "${OATH_HOME}"
+
+    echo -e "Generate OpenPGP key"
+    #read -p 'Ihr Name (Vorname Nachname): ' name
+    #read -p 'Email-Adresse: ' email
+    name="2FA User"
+    email="2fa@local"
+
+    cat >"${OATH_HOME}/.key_settings" <<EOF
+     %echo Generating a basic OpenPGP key
+     %echo Please enter a password
+     Key-Type: RSA
+     Key-Length: 4096
+     Name-Real: $name
+     Name-Comment: 2FA Key
+     Name-Email: $email
+     Expire-Date: 0
+     %commit
+EOF
+
+    $_gpg --batch --generate-key "${OATH_HOME}/.key_settings" && rm -f "${OATH_HOME}/.key_settings"
+    echo -n "$name (2FA Key) <$email>" > "${OATH_HOME}/.gpg_userid"
+    chmod 700 "${OATH_HOME}/.gpg_userid"
+}
+
+
+list() {
+    check_2fa_db
+    get_uid
+    check_gpg_secret "$uid"
+
+    for dir in ${OATH_HOME}/*/ ; do
+        dir=${dir%*/}
+        [ -d "${OATH_HOME}/${dir##*/}" ] && echo -e ${dir##*/}
+    done
+}
+
+
+exportGpgKey() {
+    check_2fa_db
+    get_uid
+    check_gpg_secret "$uid"
+
+    [ -z "$1" ] && echo "ERROR: No export file name was specified" && exit 1
+    gpg --export-secret-keys --armor "$uid" > $1
+}
+
+importGpgKey() {
+    check_2fa_db
+    get_uid
+
+    [ -z "$1" ] && echo "ERROR: No import file name was specified" && exit 1
+    gpg --import $1
+    expect -c "spawn gpg --edit-key \"$uid\" trust quit; send \"5\rj\r\"; expect eof"
+}
+
+# MAIN
+case "$1" in
+    add|--add|-a)               shift; add "$@" ;;
+    code|--code|-c)             shift; code "$@" ;;
+    help|--help|-h)             usage ;;
+    init|--init|-n)             shift; init ;;
+    list|--list|-l)             shift; list ;;
+    export-key|--export-key|-e) shift; exportGpgKey "$@" ;;
+    import-key|--import-key|-i) shift; importGpgKey "$@" ;;
+    *)                          usage 1 ;;
+esac
+

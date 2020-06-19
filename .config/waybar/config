@@ -1,0 +1,84 @@
+{
+    "layer": "bottom", // Waybar at (top|bottom) layer
+    "position": "top", // Waybar position (top|bottom|left|right)
+    "height": 28, // Waybar height (to be removed for auto height)
+    "modules-left": ["sway/workspaces", "sway/mode", "sway/window"],
+    //"modules-center": ["mpd"],
+    
+    "modules-right": ["pulseaudio", "cpu", "memory", "network", "battery", "clock", "tray"],
+    
+    "sway/mode": {
+        "format": "<span style=\"italic\">{}</span>"
+    },
+    "sway/window": {
+        "format": "\t{}",
+        "max-length": 100
+    },
+    "tray": {
+        "spacing": 10
+    },
+    "clock": {
+        "interval": 2,
+        "tooltip-format": "{:%Y-%m-%d  %H:%M:%S}",
+        "format-alt": "<span color=\"#666666\"></span> {:%H:%M:%S}",
+        "format": "<span color=\"#666666\"></span> {:%H:%M:%S}"
+    },
+    "cpu": {
+        "format": " <span color=\"#666666\">CPU</span> {usage}% ",
+        "tooltip": false
+    },
+    "memory": {
+        "format": " <span color=\"#666666\">RAM</span> {}% "
+    },
+    "network": {
+       "interval": 3,
+       /* "format": "{bandwidthUpBits}  {bandwidthDownBits}", */
+       "format": "{bandwidthUpOctets}  {bandwidthDownOctets} ",
+       //"on-click": "nm-connection-editor",
+       "format-disconnected": " <span color=\"#666666\"></span> Disconnected",
+       "format-wifi": " <span color=\"#666666\"> </span> {essid} : {signalStrength}%",
+       "format-ethernet": " <span color=\"#666666\"> </span> {bandwidthUpOctets}  {bandwidthDownOctets}",
+       "tooltip-format" : "{ifname} {ipaddr}/{cidr}"
+    },
+    "pulseaudio": {
+        //"format": " {volume}% {icon} {format_source}",
+        "format": " <span color=\"#666666\">VOL</span> {volume}%",
+        "format-bluetooth": " <span color=\"#666666\">VOL</span> {volume}% ",
+        "format-muted": " <span color=\"#666666\">muted</span> ",
+        //"format-source": " {volume}% ",
+        //"format-source-muted": " 0% ",
+        //"on-click": "pavucontrol"
+        "format-icons": {
+            "headphones": "",
+            "default": ["", "", ""]
+        }
+    },
+    "battery": {
+        "format": " {icon} {capacity}% ",
+        "format-icons": ["", "", "", "", ""]
+    },
+    "mpd": {
+        "format": " {stateIcon} {consumeIcon}{randomIcon}{repeatIcon}{singleIcon}{artist} - {album} - {title} ({elapsedTime:%M:%S}/{totalTime:%M:%S}) ",
+        "format-disconnected": " Disconnected  ",
+        "format-stopped": " {consumeIcon}{randomIcon}{repeatIcon}{singleIcon}Stopped ",
+        "unknown-tag": " N/A",
+        "interval": 2,
+        "random-icons": {
+            "off": "<span color=\"#f53c3c\"></span> ",
+            "on": " "
+        },
+        "repeat-icons": {
+            "on": " "
+        },
+        "single-icons": {
+            "on": "1 "
+        },
+        /*
+        "state-icons": {
+            "paused": "",
+            "playing": ""
+        }, */
+        "tooltip-format": "MPD (connected)",
+        "tooltip-format-disconnected": "MPD (disconnected)"
+    }
+}

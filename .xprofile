@@ -28,7 +28,7 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
         picom --backend glx --unredir-if-possible --vsync -c -b
        
         # start usb mount helper if installed
-        command -v udiskie && udiskie -A -n -s --file-manager="$terminal --working-directory " &
+        command -v udiskie && udiskie -A -n -s --file-manager="$TERMINAL --working-directory " &
         
         # lock screen
         xidlehook --not-when-fullscreen --not-when-audio --timer 300 \
@@ -39,19 +39,30 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
         xset -dpms
         xset s off
 
+        # set german keymap
+        setxkbmap de
+
         # set key repeat rate
         xset r rate 350 30
         
         # set default mouse cursor to left_ptr (~/.icons/default/cursors)
         xsetroot -cursor_name left_ptr
 
-        # create a executable .xrandr file in your directory to set a custom resolution
-        # e.g. xrandr -s 3440x1440 -r 120
-        # [[ -f ~/.xrandr ]] && sh ~/.xrandr
+        if [ -d ~/.xmonad ] && grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
+            # Fix: recompile xmonad if the compiler version has changed so that xmonad works after a system update.
+            if ! grep "$(ghc --version)" ~/.xmonad/ghc.version >/dev/null 2>&1 ; then
+                ghc --version > ~/.xmonad/ghc.version
+                xmonad --recompile && xmonad --restart
+            fi
+        fi
 
         # Fix for my Xmonad Swallow extension
         export LD_PRELOAD=$HOME/.local/lib/X11/net-wm-pid/ld-preload-xcreatewindow.so
         
+        # create a (executable) .xrandr file in your directory to set a custom resolution
+        # e.g. with 'xrandr -s 3440x1440 -r 120'
+        # [[ -f ~/.xrandr ]] && sh ~/.xrandr
+
         # set wallpaper
         $HOME/.local/bin/x11-wallpaper random
     fi
@@ -68,7 +79,7 @@ elif [[ "$XDG_SESSION_TYPE" = "wayland" ]]; then
         wl-paste -t text --watch clipman store &
 
         # start usb mount helper if installed
-        command -v udiskie && udiskie -A -n -s --appindicator --file-manager="$terminal --working-directory " &
+        command -v udiskie && udiskie -A -n -s --appindicator --file-manager="$TERMINAL --working-directory " &
     fi
 fi
 

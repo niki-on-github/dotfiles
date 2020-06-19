@@ -1,0 +1,57 @@
+#!/bin/sh
+#NOTE: use in VIM by add 'map <leader>c :w! \| !/path/to/compiler.sh <c-r>%<CR>' to your vim config
+
+usage() {
+    cat <<EOF
+'`basename $0`' is a script to easily compile various documents.
+
+Dependecies: - biber
+             - groff
+             - pandoc
+             - pdflatex
+
+Usage:       `basename $0` [FILE]
+
+Compiles:    *.tex, *.groff. *.mom, *.ms, *.rmd, *.md
+
+EOF
+    exit $1
+}
+
+[ -z "$1" ] && usage 1
+case "$1" in --help|-h) usage 0 ;; esac
+file=$(readlink -f "$1")
+dir=$(dirname "$file")
+parentDir=$(dirname "$dir")
+base="${file%.*}"
+cd "$dir" || exit 1
+
+compileTex() {
+	command="pdflatex"
+    if [ -f "${dir}/main.tex" ]; then
+        file="${dir}/main.tex"
+        base="${dir}/main"
+        echo "use main.tex to compile tex"
+    elif [ -f "${parentDir}/main.tex" ]; then
+        file="${parentDir}/main.tex"
+        dir="$parentDir" && cd "$dir" || exit 1
+        base="${parentDir}/main"
+        echo "use ../main.tex to compile tex"
+    fi
+	( sed 5q "$file" | grep -i -q 'xelatex' ) && command="xelatex"
+	$command --output-directory="$dir" "$base" &&
+	grep -i addbibresource "$file" >/dev/null &&
+	biber --input-directory "$dir" "$base" &&
+	$command --output-directory="$dir" "$base" &&
+	$command --output-directory="$dir" "$base"
+}
+
+case "$file" in
+	*\.ms)          refer -PS -e "$file" | groff -me -ms -kept -T pdf > "$base".pdf ;;
+	*\.mom)         refer -PS -e "$file" | groff -mom -kept -T pdf > "$base".pdf ;;
+	*\.[0-9])       refer -PS -e "$file" | groff -mandoc -T pdf > "$base".pdf ;;
+	*\.[rR]md)      Rscript -e "require(rmarkdown); rmarkdown::render('$file', quiet=TRUE)" ;;
+	*\.tex)         compileTex "$file" ;;
+	*\.md|*\.MD)    pandoc --metadata-file=$HOME/.local/share/markdown/pandoc_default_metadata.yml "$file" --pdf-engine=xelatex -o "$base".pdf ;;
+    *)              echo "[ERROR] File type not implemented!" && exit 1 ;;
+esac

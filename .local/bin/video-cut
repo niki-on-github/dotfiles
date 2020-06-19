@@ -1,0 +1,73 @@
+#!/bin/bash
+
+usage() {
+    cat <<EOF
+'`basename $0`' is a script to cut video files
+
+Dependecies: - ffmpeg
+
+Usage: `basename $0` [START_TIME] [STOP_TIME] [VIDEO]
+       `basename $0` --help|-h
+
+The following specific options are supported:
+
+  -h, --help        Display this help
+
+EOF
+    exit $1
+}
+
+error() { echo "$@"; exit 1; }
+
+start=$1; shift
+stop=$1; shift
+file=$@
+
+[ -z "$start" ] && usage 1
+[ "$start" = "-h" ] && usage 0
+[ "$start" = "--help" ] && usage 0
+[ -z "$stop" ] && usage 1
+[ -z "$file" ] && usage 1
+[ -f "$file" ] || error "FileNotFound: $file"
+
+# auto sugesstion start time
+if echo "$start" | grep -E "^[0-9]:[0-9][0-9]$" >/dev/null ; then
+    start="00:0$start"
+elif echo "$start" | grep -E "^[0-9][0-9]:[0-9][0-9]$" >/dev/null ; then
+    start="00:$start"
+elif echo "$start" | grep -E "^[0-9]:[0-9][0-9]:[0-9][0-9]$" >/dev/null ; then
+    start="0$start"
+fi
+
+# auto sugesstion stop time
+if echo "$stop" | grep -E "^[0-9]:[0-9][0-9]$" >/dev/null ; then
+    stop="00:0$stop"
+elif echo "$stop" | grep -E "^[0-9][0-9]:[0-9][0-9]$" >/dev/null ; then
+    stop="00:$stop"
+elif echo "$stop" | grep -E "^[0-9]:[0-9][0-9]:[0-9][0-9]$" >/dev/null ; then
+    stop="0$stop"
+fi
+
+echo "$start" | grep -E "^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$" >/dev/null || error "Incorrect formating: start time"
+echo "$stop" | grep -E "^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$" >/dev/null || error "Incorrect formating: stop time"
+
+startInSec=$(date -d "$start" "+%s")
+stopInSec=$(date -d "$stop" "+%s")
+[ "$startInSec" -le "$stopInSec" ] || error "Error: start time is greater than stop time"
+
+
+dif=$(( $stopInSec - $startInSec ))
+duration="$(date -d "@$dif" "+%M:%S")" #NOTE: Hour return value+1 -> we calc it manual
+duration="$(expr $dif / 3600):$duration"
+echo "$duration" -E "^[0-9]:[0-9][0-9]$" >/dev/null && duration="0$duration"
+
+saveAs="${file::-4}"
+n=$((0))
+while [ -f "${saveAs}-${n}.mp4" ]; do
+   n=$((n+1))
+done
+saveAs="${saveAs}-${n}.mp4"
+echo "$saveAs"
+
+eval "ffmpeg -ss ${start} -i \"${file}\" -t ${duration} -acodec copy -vcodec copy \"${saveAs}\""
+

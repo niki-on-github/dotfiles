@@ -1,0 +1,18 @@
+---
+geometry:
+    # pdf document margin
+  - margin=2.2cm
+classoption:
+    # equation left aligned
+  - fleqn
+header-includes:
+    # tables left aligned
+  - \usepackage{longtable}\setlength{\LTleft}{1.5em}
+    # no floating figure
+  - \usepackage{float}\let\origfigure\figure\let\endorigfigure\endfigure\renewenvironment{figure}[1][2]{\expandafter\origfigure\expandafter[H]}{\endorigfigure}
+    # equation left aligned
+  - \setlength{\mathindent}{1.5em}
+    # set default image width to 80% (override this with ![...](...){width=xx%} in your markdown file)
+  - \usepackage{graphicx}\makeatother\setkeys{Gin}{width=0.8\linewidth,keepaspectratio}
+---
+

@@ -1,0 +1,22 @@
+#!/bin/sh
+# Description: Helper Script to creat screenshots
+# Dependencies: grim, maim, slurp
+
+shot=/tmp/$(date +%+s).png
+
+cd /tmp
+if test -z "$WAYLAND_DISPLAY"; then
+   # X11
+   if maim --format=png -s "$shot" ; then
+      echo -n "$shot" | xclip -selection clipboard
+      notify-send "Screenshot" "$shot"
+   fi
+else
+   # Wayland
+   s=$(slurp)
+   if test "$s"; then
+      set -- $s
+      grim -g "$s" $shot
+      notify-send "Screenshot" "$shot"
+   fi
+fi

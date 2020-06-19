@@ -1,0 +1,80 @@
+#!/bin/bash
+# Description:  Script to execute commands what need an IP, instead with a Mac-Address.
+#               Made for people using DHCP without running their own DNS. 
+# Dependencies: route, ping, arp
+
+# script syntax
+if [ -z "$2" ]; then
+	echo
+	echo "Running programs with the MAC instead of the IP."
+	echo
+	echo "SYNTAX: mac2ip [MAC] \"CMD\""
+	echo 
+	echo "MAC - is the Mac-Address (or distinctive[!] part)"
+	echo "      you want to get substituted by the related IP."
+	echo "CMD - is the command you want to execute. Please write"
+	echo "      it in quotes"
+	echo
+	echo "Examples: mac2ip A1:B2:C3:D4:E5:F6 \"ssh root@IP\""
+	echo "          mac2ip B2:C3:D4 \"vncviewer IP:1\""
+	echo "          mac2ip A1:B2:C3:D4:E5:F6 \"krdc IP\""
+else
+	TIP=`arp | grep $1 | cut -d' ' -f1`
+
+	# If MAC already exists in arp table, skip this...
+	if [ -z "$TIP" ]; then
+	
+		for subnetInfo in "$(ip route | grep -E "(dev e|dev w)" | grep "^[0-2]" | cut -d' ' -f1)" ; do
+            subnetIP="$(echo "$subnetInfo" | cut -d '/' -f1)"
+            subnetMask="$(echo "$subnetInfo" | cut -d '/' -f2)"
+            ipPrefix="$(echo "$subnetIP" | rev | cut -d'.' -f2- | rev)."
+            
+            [ "$subnetMask" -lt "24" ] && echo "large subnets not implemented" && exit 1
+
+            # Ping subnet to complete arp information
+            echo -n "Gathering informations in subnet $subnetInfo "
+            for a in {1..254}; do
+                ping -c 1 ${ipPrefix}${a} >/dev/null &
+            done
+
+            # Wait for ping to be done
+            while pgrep ping >/dev/null; 
+                do sleep 2;
+                echo -n .
+            done
+
+            # Wait for arp to be done
+            ARP="00:00:00:00:00:00"
+            while [ ! -z "$ARP" ]; do 
+                ARP=`cat /proc/net/arp | grep 00:00:00:00:00:00`;
+                sleep 2;
+                echo -n .;
+            done
+
+            echo  # line feed 
+        done
+
+		# Cut matching IP from arp
+		TIP=`arp | grep $1 | cut -d' ' -f1`
+	fi
+
+	# if MAC is not in the list
+	if [ -z "$TIP" ]; then
+		# show arp list
+		arp
+		echo "MAC $1 not known!"
+	else 
+		echo $1 "-->" $TIP
+
+		# Replace MAC with IP
+		CMD=$2
+		CMD=${CMD/IP/$TIP}
+		echo "Run Command: "$CMD
+
+		# Execute command
+		bash -c "$CMD"
+	fi
+fi
+echo
+
+# read  # debug

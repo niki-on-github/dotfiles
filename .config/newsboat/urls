@@ -1,0 +1,18 @@
+# newsboat url list
+# see: https://newsboat.org/releases/2.18/docs/newsboat.html
+# NOTE: use 't' shortcut to group rss feeds by tags
+
+# show group of unreaded article at top
+"query:Unread Entries:unread = \"yes\"" "All"
+
+
+https://www.youtube.com/feeds/videos.xml?channel_id=UC2eYFnH61tmytImy1mTYvhA "~Luke Smith (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCVls1GmFKf6WlTraIb_IaJg "~Distro Tube (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?user=OmegaDungeon "~Brodie Robertson (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCnZIn_CYjz0ErPs1ktH-2lQ "~unicks.eu (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?channel_id=UC-owjHGqIuElqJTFV-VcM7w "~OfficialVentor (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCFzGyNKXPAglNq28qWYTDFA "~Kai Hendry (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCsnGwSIHyoYN0kiINAGUKxg "~Wolfgangs Channel (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?user=MentalOutlawStudios "~Mental Outlaw (YouTube)" "YouTube" "Linux" "All"
+https://www.youtube.com/feeds/videos.xml?user=msjche "~msjche (YouTube)" "YouTube" "Linux" "All"
+

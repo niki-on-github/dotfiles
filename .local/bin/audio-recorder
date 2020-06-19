@@ -1,0 +1,23 @@
+#!/bin/sh
+
+if ! pamixer --list-sinks | grep "Record-and-Play" >/dev/null ; then
+    echo "Create record-n-play sink"
+    DEFAULT_OUTPUT=$(pacmd list-sinks | grep -A1 "* index" | grep -oP "<\K[^ >]+")
+    pactl load-module module-combine-sink sink_name=record-n-play slaves=$DEFAULT_OUTPUT sink_properties=device.description="Record-and-Play"
+fi
+
+echo "NOTE: Use pulsemixer to set recording Application (Move Application to Record-and-Play output)"
+echo "Press Enter to start Recording"
+read continue_with_enter
+
+recordFile="/tmp/$(date +'%Y-%m-%d_%H-%M-%S')"
+echo "Start Recording to $recordFile"
+echo "Press Ctrl+C to stop recording"
+parec --format=s16le -d record-n-play.monitor | lame -r -q 3 --quiet --lowpass 17 --abr 192 - "$recordFile"
+
+# fix audio duration
+ffmpeg -i "$recordFile" -acodec copy "${recordFile}.mp3" 2>/dev/null
+rm "$recordFile"
+echo "Record saved as ${recordFile}.mp3"
+notify-send "Audio Recorder" "Record saved as ${recordFile}.mp3"
+echo -n "${recordFile}.mp3" | xclip -selection clipboard

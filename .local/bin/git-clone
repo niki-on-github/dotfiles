@@ -1,0 +1,31 @@
+#!/bin/sh
+# Description: git helper script to use multiple ssh keys for diffrent accounts on same gitserver host
+# Require: ~/.ssh/config with host <user>.<host> entries
+#
+# Example:
+# ```
+# host user1.github.com
+#  HostName github.com
+#  IdentityFile ~/.ssh/github_user1
+#  User user1
+
+# host user2.github.com
+#  HostName github.com
+#  IdentityFile ~/.ssh/github_user2
+#  User user2
+# ```
+
+host=$(echo "$@" | grep -Eo "@.+:")
+host=${host:1:-1}
+
+usr=$(echo "$@" | grep -Eo ":.+/")
+usr=${usr:1:-1}
+
+prefixed=$(echo "$@" | grep -Eo "^.+@")
+surfixed=$(echo "$@" | grep -Eo ":.+$")
+
+if grep "host ${usr}.${host}" ~/.ssh/config >/dev/null ; then
+    eval "git clone ${prefixed}${usr}.${host}${surfixed}"
+else
+    eval "git clone $@"
+fi

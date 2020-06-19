@@ -1,0 +1,317 @@
+;==========================================================
+;
+;
+;   ██████╗  ██████╗ ██╗  ██╗   ██╗██████╗  █████╗ ██████╗
+;   ██╔══██╗██╔═══██╗██║  ╚██╗ ██╔╝██╔══██╗██╔══██╗██╔══██╗
+;   ██████╔╝██║   ██║██║   ╚████╔╝ ██████╔╝███████║██████╔╝
+;   ██╔═══╝ ██║   ██║██║    ╚██╔╝  ██╔══██╗██╔══██║██╔══██╗
+;   ██║     ╚██████╔╝███████╗██║   ██████╔╝██║  ██║██║  ██║
+;   ╚═╝      ╚═════╝ ╚══════╝╚═╝   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
+;
+;==========================================================
+; NOTE: see TODOs!
+
+[colors]
+background = #000
+background-alt = #555
+foreground = #ffffff
+foreground-alt = #666
+primary = #FFFFFF
+secondary = #e60053
+alert = #bd2c40
+
+
+
+[bar/top]
+width = 100%
+height = 25
+radius = 0.0
+fixed-center = false
+
+background = ${colors.background}
+foreground = ${colors.foreground}
+
+line-size = 2
+
+border-bottom-size = 3
+border-color = #FF1793D1
+
+padding-left = 0
+padding-right = 2
+
+module-margin-top = 6
+module-margin-left = 3
+module-margin-right = 3
+
+; font = <config><vertical offset>
+font-0 = Font Awesome 5 Free Regular:size=13;1
+font-1 = Font Awesome 5 Free Solid:size=13;1
+font-2 = Font Awesome 5 Brands Regular:size=13;1
+font-3 = Font Weather Icons:size=13;1
+font-4 = Noto Sans:size=13.5;1
+
+modules-left = i3 xwindow
+modules-center = 
+modules-right = pulseaudio cpu memory vpn wlan eth battery date powermenu
+
+tray-position = right
+tray-padding = 2
+
+wm-restack = i3
+
+cursor-click = pointer
+cursor-scroll = ns-resize
+
+
+
+; XWINDOW
+[module/xwindow]
+type = internal/xwindow
+label = %title:0:125:...%
+
+
+
+; WM
+[module/i3]
+type = internal/i3
+format = <label-state> <label-mode>
+index-sort = true
+wrapping-scroll = false
+
+; Only show workspaces on the same output as the bar
+;pin-workspaces = true
+
+label-mode-padding = 1
+label-mode-foreground = #000
+label-mode-background = ${colors.primary}
+
+; focused = Active workspace on focused monitor
+label-focused = %index%
+label-focused-background = ${colors.background-alt}
+label-focused-underline= ${colors.primary}
+label-focused-padding = 1
+
+; unfocused = Inactive workspace on any monitor
+label-unfocused = %index%
+label-unfocused-padding = 1
+
+; visible = Active workspace on unfocused monitor
+label-visible = %index%
+label-visible-background = ${self.label-focused-background}
+label-visible-underline = ${self.label-focused-underline}
+label-visible-padding = ${self.label-focused-padding}
+
+; urgent = Workspace with urgency hint set
+label-urgent = %index%
+label-urgent-background = ${colors.alert}
+label-urgent-padding = 1
+
+; Separator in between workspaces
+label-separator = |
+
+
+
+; MPD
+[module/mpd]
+type = internal/mpd
+label-offline = Stopped
+format-online = "<icon-prev>  <toggle>  <icon-next>  <label-song> (<label-time>)"
+;format-playing = " <label-song> (<label-time>)"
+;format-paused =
+format-stopped = " Stopped"
+
+host = 127.0.0.1
+port = 6600
+interval = 2
+
+icon-prev = 
+icon-stop = 
+icon-play = 
+icon-pause = 
+icon-next = 
+icon-repeat = 
+icon-random = 
+
+label-song-maxlen = 75
+label-song-ellipsis = true
+
+
+
+; CPU
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = CPU
+format-prefix-foreground = ${colors.foreground-alt}
+label = " %percentage:2%%"
+
+
+
+; RAM
+[module/memory]
+type = internal/memory
+interval = 2
+; symbol: 
+format-prefix = RAM
+format-prefix-foreground = ${colors.foreground-alt}
+label = " %percentage_used%%"
+
+
+; VPN
+[module/vpn]
+type = custom/script
+exec = ~/.config/polybar/scripts/vpn.sh
+interval = 6
+format-prefix = "VPN  " 
+format-prefix-foreground = ${colors.foreground-alt}
+
+
+; WLAN
+; TODO: set interface
+[module/wlan]
+type = internal/network
+interface = wlo1
+interval = 2.0
+
+format-connected-prefix = 
+format-connected-prefix-foreground = ${colors.foreground-alt}
+
+format-connected = <label-connected>
+;label-connected = " %essid%"
+label-connected = %upspeed:9%%downspeed:9%
+
+format-disconnected =
+;format-disconnected = <label-disconnected>
+;format-disconnected-underline = ${self.format-connected-underline}
+;label-disconnected = %ifname% disconnected
+;label-disconnected-foreground = ${colors.foreground-alt}
+
+
+
+; LAN
+; TODO: set interface
+[module/eth]
+type = internal/network
+interface = eno1
+interval = 2.0
+
+format-connected-prefix = 
+format-connected-prefix-foreground = ${colors.foreground-alt}
+label-connected = %upspeed:9%%downspeed:9%
+
+format-disconnected =
+
+
+
+; DATE
+[module/date]
+type = internal/date
+interval = 1
+
+date =
+date-alt = " %Y-%m-%d"
+
+time = "%H:%M:%S"
+time-alt = %H:%M:%S
+
+format-prefix = 
+format-prefix-foreground = ${colors.foreground-alt}
+
+label = %date% %time%
+
+
+
+; PULSEAUDIO
+[module/pulseaudio]
+type = internal/pulseaudio
+
+format-volume = %{F#666}VOL%{F-} <label-volume>
+label-volume = "%percentage%%"
+label-volume-foreground = ${root.foreground}
+
+label-muted = muted
+label-muted-foreground = #666
+
+
+
+; BATTERY
+[module/battery]
+type = internal/battery
+; use: ls -1 /sys/class/power_supply/
+battery = BAT1
+adapter = ACAD
+full-at = 97
+
+format-charging = <animation-charging> <label-charging>
+format-discharging = <ramp-capacity> <label-discharging>
+
+ramp-capacity-0 = 
+ramp-capacity-1 = 
+ramp-capacity-2 = 
+ramp-capacity-3 = 
+ramp-capacity-4 = 
+ramp-capacity-foreground = ${colors.foreground-alt}
+
+animation-charging-0 = 
+animation-charging-1 = 
+animation-charging-2 = 
+animation-charging-3 = 
+animation-charging-4 = 
+
+animation-charging-foreground = ${colors.foreground-alt}
+animation-charging-framerate = 750
+
+label-full = %{F#666}%{F-} Fully charged
+
+
+; POWERMENU
+[module/powermenu]
+type = custom/menu
+
+expand-right = true
+
+format-spacing = 1
+
+label-open = ""
+label-open-foreground = ${colors.secondary}
+label-close = cancel
+label-close-foreground = ${colors.secondary}
+label-separator = |
+label-separator-foreground = ${colors.foreground-alt}
+
+menu-0-0 = logout
+menu-0-0-exec = menu-open-1
+menu-0-1 = reboot
+menu-0-1-exec = menu-open-2
+menu-0-2 = power off
+menu-0-2-exec = menu-open-3
+
+menu-1-0 = yes, logout
+menu-1-0-exec = i3-msg exit
+
+menu-2-0 = yes, reboot
+menu-2-0-exec = reboot
+
+menu-3-0 = yes, power off
+menu-3-0-exec = poweroff
+
+
+; WEATHER
+;[module/weather]
+;type = custom/script
+;exec = ~/.config/polybar/scripts/weather.sh
+;interval = 600
+;label-font = 4
+
+
+; SETTINGS
+[settings]
+screenchange-reload = true
+
+
+; GLOBAL
+[global/wm]
+margin-top = 5
+margin-bottom = 5
+
+; vim:ft=dosini

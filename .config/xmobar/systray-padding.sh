@@ -8,7 +8,11 @@
 # `Run Com "/bin/sh" ["-c", "$HOME/.config/xmobar/systray-padding.sh"] "systray" 10`
 # and use `%systray%` in your template.
 
-TRAY_NAME="stalonetray"
+if pgrep stalonetray >/dev/null; then
+    TRAY_NAME="stalonetray"
+else
+    TRAY_NAME="panel"  # trayer
+fi 
 
 # Function to create a transparent Wx1 px XPM icon
 create_xpm_icon () {
@@ -35,6 +39,7 @@ EOF
 
 # Width of the systray window
 width=$(xprop -name "$TRAY_NAME" | grep 'program specified minimum size' | cut -d ' ' -f 5)
+[ -z "$width" ] && width=0
 
 # Icon file name
 iconfile="/tmp/xmobar-systray-padding-${width}px.xpm"

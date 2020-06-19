@@ -1,0 +1,18 @@
+# mako config
+# @see: https://www.mankier.com/1/mako
+
+font=Hack 12
+text-color=#FFFFFFFF
+background-color=#000000FF
+border-color=#1793D1FF
+border-size=4
+border-radius=0
+anchor=bottom-right
+default-timeout=10000
+width=450
+height=225
+padding=25
+max-icon-size=64
+max-visible=10
+icons=true
+layer=overlay

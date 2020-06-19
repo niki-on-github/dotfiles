@@ -1,0 +1,5 @@
+{
+  "suggest.noselect": false,
+  "python.jediEnabled": false,
+  "coc.preferences.formatOnSaveFiletypes": ["markdown", "json", "xml"]
+}

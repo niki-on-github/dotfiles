@@ -1,0 +1,14 @@
+# zathura config
+
+# default bindings:
+# toggle fulscreen: F5
+
+# enable text to clipboard
+set selection-clipboard clipboard
+
+# bindings (default bindings see: https://git.pwmt.org/pwmt/zathura/-/blob/develop/doc/man/_bindings.txt)
+map r reload
+map R rotate
+map p print
+map b toggle_statusbar 
+map i recolor

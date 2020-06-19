@@ -1,0 +1,5 @@
+# .gitignore for my dotfiles
+
+# avoid recursion problems
+.dotfiles/
+

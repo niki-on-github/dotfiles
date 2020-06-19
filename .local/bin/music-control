@@ -1,0 +1,83 @@
+#!/bin/sh
+
+usage() {
+    cat <<EOF
+'`basename $0`' is a script to control multiple music players
+
+Dependecies: - playerctl
+             - mpc
+
+Usage: `basename $0` toggle|--toggle|-t
+       `basename $0` prev|--prev|-p
+       `basename $0` next|--next|-n
+       `basename $0` stop|--stop|-s
+       `basename $0` help|--help|-h
+
+The following specific options are supported:
+
+  -t, --toggle      Toggle Play/Pause
+  -p, --prev        Play previous Song
+  -n, --next        Play next Song
+  -s, --stop        Stop music
+  -h, --help        Display this help
+
+EOF
+    exit $1
+}
+
+mpc_toggle() { 
+    if [ $(mpc | grep playing| wc -l) = 1 ]; then
+        mpc pause >> /dev/null
+    else
+        mpc play >> /dev/null
+    fi
+}
+
+toggle() {
+    if [ $(mpc | grep playing| wc -l) = 1 ]; then
+        mpc pause
+    elif playerctl -l | grep spotify >/dev/null ; then
+        playerctl --player=spotify play-pause
+    else
+        mpc_toggle
+    fi
+}
+
+prev() {
+    if [ $(mpc | grep playing| wc -l) = 1 ]; then
+        mpc prev
+    elif playerctl -l | grep spotify >/dev/null ; then
+        playerctl --player=spotify previous
+    else
+        mpc prev
+    fi
+}
+
+next() {
+    if [ $(mpc | grep playing| wc -l) = 1 ]; then
+        mpc next
+    elif playerctl -l | grep spotify >/dev/null ; then
+        playerctl --player=spotify next
+    else
+        mpc next
+    fi
+}
+
+stop() {
+    if [ $(mpc | grep playing| wc -l) = 1 ]; then
+        mpc stop
+    elif playerctl -l | grep spotify >/dev/null ; then
+        playerctl --player=spotify stop
+    else
+        mpc stop
+    fi
+}
+
+case "$1" in
+    toggle|--toggle|-t) toggle >/dev/null 2>&1 ;;
+    prev|--prev|-p)     prev >/dev/null 2>&1 ;;
+    next|--next|-n)     next >/dev/null 2>&1 ;;
+    stop|--stop|-s)     stop >/dev/null 2>&1 ;;
+    help|--help|-h)     usage 0 ;;
+    *)                  usage 1 ;;
+esac
