@@ -4,6 +4,7 @@ import XMonad hiding ( (|||) )
 
 import Control.Monad
 import Data.Monoid
+import Data.List
 import Data.Maybe
 import Numeric
 import System.Exit
@@ -17,12 +18,13 @@ import XMonad.Actions.TagWindows
 import XMonad.Actions.WindowBringer
 import XMonad.Actions.WithAll
 
+--import XMonad.Config.Prime
 import XMonad.Config.Desktop
 
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
-import XMonad.Hooks.ManageHelpers 
+import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.XPropManage
 
@@ -38,6 +40,7 @@ import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Renamed
+import XMonad.Layout.ResizableTile
 import XMonad.Layout.Simplest
 import XMonad.Layout.Spacing
 import XMonad.Layout.SubLayouts
@@ -62,23 +65,24 @@ import XMonad.Prompt.Window
 import Graphics.X11.ExtraTypes.XF86
 
 import qualified Data.Map as M
-import qualified Data.HashTable.IO as H 
+import qualified Data.HashTable.IO as H
 import qualified XMonad.Actions.Search as S
 import qualified XMonad.StackSet as W
 
 -- ./lib
+import XMonad.Actions.NoSPCycleWS
 import XMonad.Hooks.Swallow
 import XMonad.Layout.HorizontalMaster
 import XMonad.Layout.MyPerScreen
 import XMonad.Layout.MySpacing
-import XMonad.Util.MyHelpers
+import XMonad.Prompt.Tmux
 
 
 ------------------------------------------------------------------------
 -- VARIABLES
 --
 
--- NOTE: Some terminal parameters in this configuration are specific to the alacritty terminal! 
+-- NOTE: Some terminal parameters in this configuration are specific to the alacritty terminal!
 myTerminal = "alacritty"
 
 myFont = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
@@ -104,6 +108,9 @@ myBackgroundColor    = "#000000"
 myForegroundColor    = "#ffffff"
 myUrgentColor        = "#ff0000"
 myCopyWindowColor    = "#00ff00"
+
+myWorkspaces :: [String]
+myWorkspaces =  ["1", "2", "3", "4" , "5", "6", "7", "8", "9"]
 
 
 ------------------------------------------------------------------------
@@ -194,7 +201,8 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. shiftMask,     xK_space    ), withFocused $ windows . W.sink )
     , ((modm,                   xK_f        ), sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL )
     , ((modm .|. shiftMask,     xK_Tab      ), setLayout $ XMonad.layoutHook conf )  -- reset to layout default setting
-    , ((modm,                   xK_r        ), refresh )
+    --, ((modm,                   xK_r        ), refresh )
+    , ((modm,                   xK_r        ), XMonad.Layout.MySpacing.triggerResizeEvent )
     --, ((modm .|. shiftMask,     xK_f        ), gotoMenuArgs ["-l", "20"] )
     , ((modm .|. shiftMask,     xK_f        ), windowPrompt myPromptTheme Goto allWindows )
     -- , ((modm .|. shiftMask,     xK_w        ), bringMenuArgs ["-l", "20"] )
@@ -219,8 +227,8 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. shiftMask,     xK_i        ), namedScratchpadAction myScratchPads "htop" )
     , ((modm,                   xK_i        ), tagPrompt myPromptTheme (\s -> withFocused (addTag s)))
     , ((modm .|. shiftMask,     xK_g        ), tagPrompt myPromptTheme (\s -> withTaggedGlobalP s shiftHere))
-    , ((modm,                   xK_BackSpace), withFocused hideWindow )
-    , ((modm .|. shiftMask,     xK_BackSpace), popOldestHiddenWindow )
+    --, ((modm,                   xK_BackSpace), withFocused hideWindow )
+    --, ((modm .|. shiftMask,     xK_BackSpace), popOldestHiddenWindow )
     , ((modm,                   xK_F1       ), sendMessage $ JumpToLayout "HL" )
     , ((modm,                   xK_F2       ), sendMessage $ JumpToLayout "HR" )
     , ((modm,                   xK_F3       ), sendMessage $ JumpToLayout "3ColMid" )
@@ -236,8 +244,16 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. controlMask,   xK_Left     ), sendMessage $ Swap L)
     , ((modm .|. controlMask,   xK_Up       ), sendMessage $ Swap U)
     , ((modm .|. controlMask,   xK_Down     ), sendMessage $ Swap D)
-    
-    -- SubLayout 
+    , ((modm,                   xK_Page_Up  ), nextNonEmptyWS)
+    , ((modm,                   xK_Page_Down), prevNonEmptyWS)
+    , ((modm .|. shiftMask,     xK_Page_Up  ), shiftAndView Next)
+    , ((modm .|. shiftMask,     xK_Page_Down), shiftAndView Prev)
+    --, ((modm .|. shiftMask,     xK_Page_Up  ), sequence_[ shiftAndView Next, refresh])
+
+    --, ((0,                   xK_Page_Up  ), nextNonEmptyWS)
+    --, ((0,                   xK_Page_Down), prevNonEmptyWS)
+
+    -- SubLayout
     --, ((modm .|. controlMask,   xK_t        ), sendMessage $ Toggle ENABLETABS)
     , ((modm .|. controlMask,   xK_h        ), sendMessage $ pullGroup L)
     , ((modm .|. controlMask,   xK_l        ), sendMessage $ pullGroup R)
@@ -247,18 +263,16 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. controlMask,   xK_u        ), withFocused (sendMessage . UnMerge))
     , ((modm .|. controlMask,   xK_comma    ), onGroup W.focusUp')
     , ((modm .|. controlMask,   xK_period   ), onGroup W.focusDown')
-    
+
     -- Media Keys (Graphics.X11.ExtraTypes.XF86)
     , ((0, xF86XK_AudioLowerVolume          ), spawn "$HOME/.local/bin/volume-control down 1" )
     , ((0, xF86XK_AudioRaiseVolume          ), spawn "$HOME/.local/bin/volume-control up 1" )
     , ((0, xF86XK_AudioMute                 ), spawn "$HOME/.local/bin/volume-control toggle" )
 
     , ((modm .|. shiftMask,     xK_e        ), confirmPrompt warningPromptTheme "Quit XMonad" $ io (exitWith ExitSuccess) )
-    , ((modm,                   xK_q        ), XMonad.Actions.CopyWindow.kill1 ) --  Remove the focused window from this workspace. If it is last window copy, then kill it instead. 
+    , ((modm,                   xK_q        ), XMonad.Actions.CopyWindow.kill1 ) --  Remove the focused window from this workspace. If it is last window copy, then kill it instead.
     , ((modm .|. shiftMask,     xK_q        ), confirmPrompt warningPromptTheme "kill all" $ XMonad.Actions.WithAll.killAll ) -- Kill all windows on current workspace
-    
-    -- NOTE: XDG_CONFIG_HOME not work when recompiling has errors because it create a xmonad.errors in ~/.xmonad and then xmonad do search for the xmonad.hs in ~/.xmonad. Workaround:
-    , ((modm .|. shiftMask,     xK_r        ), spawn "mkdir -p $HOME/.xmonad; cp -rf $HOME/.config/xmonad/* $HOME/.xmonad; xmonad --recompile && xmonad --restart" )
+    , ((modm .|. shiftMask,     xK_r        ), spawn "rm -rf ~/.xmonad; xmonad --recompile && xmonad --restart" )
     ]
 
     -- mod-[1..9], Switch to workspace N
@@ -268,13 +282,13 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     ++ [((m .|. modm, k), windows $ f i)
         | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
         , (f, m) <- [(W.greedyView, 0), (copy, shiftMask .|. controlMask), (W.shift, shiftMask), (swapWithCurrent, controlMask) ]]
-    
+
     -- web search/translator
     ++ [((modm, xK_w), submap . M.fromList $ [((0, k), S.promptSearch myPromptTheme f) | (k,f) <- searchList ])]  -- search with prompt
     ++ [((modm .|. controlMask, xK_w), submap . M.fromList $ [((0, k), S.selectSearch f) | (k,f) <- searchList ])]  -- search from clipbard
     ++ [((modm, xK_t), submap . M.fromList $ [((0, k), S.promptSearch myPromptTheme f) | (k,f) <- translateList ])]  -- translate with prompt
     ++ [((modm .|. controlMask, xK_t), submap . M.fromList $ [((0, k), S.selectSearch f) | (k,f) <- translateList ])]  -- translate from clipbard
-    
+
     -- pass prompt
     ++ [((modm .|. controlMask, xK_p), submap . M.fromList $ [((0, k), f myPromptTheme) | (k,f) <- [(xK_g, passPrompt), (xK_n, passGeneratePrompt)] ])]
 
@@ -285,62 +299,66 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
 myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 
-    [ ((modm,               button3) ,(\w -> XMonad.focus w
+    [ ((modm .|. shiftMask, button1), (\w -> XMonad.focus w
       >> mouseMoveWindow w
-      >> ifClick (snapMagicMove (Just 50) (Just 50) w)
+      >> ifClick (snapMagicMove (Just 50) (Just 50) w)  -- double-left-click to snap
       >> windows W.shiftMaster))
 
     , ((modm .|. shiftMask, button3), (\w -> XMonad.focus w
+     --  >> setDefaultCursor xC_lr_angle -- does not work
       >> mouseResizeWindow w
-      >> ifClick (snapMagicResize [R,D] (Just 50) (Just 50) w)
+      >> ifClick (snapMagicResize [R,D] (Just 50) (Just 50) w)  -- double-right-click to resize up to nearest border
       >> windows W.shiftMaster))
+      -- >> setDefaultCursor xC_left_ptr))
     ]
 
 
 ------------------------------------------------------------------------
 -- LAYOUTS
 --
--- NOTE: If you change layout be sure to use 'setLayout $ XMonad.layoutHook conf' from keybindings after restarting 
+-- NOTE: If you change layout be sure to use 'setLayout $ XMonad.layoutHook conf' from keybindings after restarting
 -- to reset your layout state to the new defaults, as xmonad preserves your old layout settings by default.
 --
--- TODO: set better layout names
 
-enableTabs x = addTabs shrinkText myTabTheme $ subLayout [] Simplest x
+enableTabs x = renamed [(XMonad.Layout.Renamed.CutWordsLeft 1)] $ addTabs shrinkText myTabTheme $ subLayout [] Simplest x
 data ENABLETABS = ENABLETABS deriving (Read, Show, Eq, Typeable)
 instance Transformer ENABLETABS Window where
-     transform ENABLETABS x k = k (enableTabs x) (const x)
+    transform ENABLETABS x k = k (enableTabs x) (const x)
 
-myLayout = prefixed "[" $ suffixed "]" $ windowNavigation $ boringWindows $ avoidStruts $ smartBorders $ fullScreenToggle $ silent $ enableTabs $ silent $ hiddenWindows $ XMonad.Layout.MyPerScreen.ifWideScreen wideLayouts standardLayouts 
+myLayout = prefixed "[" $ suffixed "]" $ navigation $ avoidStruts $ smartBorders $ fullScreenToggle $ enableTabs $ enableHiddenWindows $ layoutSelector wideLayouts standardLayouts
 
   where
     -- first layout is default
-     wideLayouts     = wHL ||| wHR ||| wThreeColMid ||| wThreeCol ||| wMulCol ||| wRow
-     standardLayouts = tall ||| tabs ||| mirrorTall
+    wideLayouts     = wHL ||| wHR ||| wThreeColMid ||| wThreeCol ||| wMulCol ||| wRow
+    standardLayouts = tall ||| tabs ||| mirrorTall
 
     -- wide screen Layouts
-     wHL                = named "HL"        $ widescreenGaps $ ColMasterLeft 2 (2/100) (2/3)
-     wHR                = named "HR"        $ widescreenGaps $ ColMasterRight 2 (2/100) (2/3)
-     wThreeColMid       = named "3ColMid"   $ widescreenGaps $ ThreeColMid 1 (2/100) (2/5)
-     wThreeCol          = named "3Col"      $ widescreenGaps $ ThreeCol 1 (2/100) (2/5)
-     wMulCol            = named "nCol"      $ widescreenGaps $ multiCol [1] 3 (2/100) (2/5)
-     wRow               = named "zROW"      $ widescreenGaps $ zoomRow
-     
+    wHL                   = named "HL"        $ widescreenGaps $ ColMasterLeft 2 (2/100) (2/3)
+    wHR                   = named "HR"        $ widescreenGaps $ ColMasterRight 2 (2/100) (2/3)
+    wThreeColMid          = named "3ColMid"   $ widescreenGaps $ ThreeColMid 1 (2/100) (2/5)
+    wThreeCol             = named "3Col"      $ widescreenGaps $ ThreeCol 1 (2/100) (2/5)
+    wMulCol               = named "nCol"      $ widescreenGaps $ multiCol [1] 3 (2/100) (2/5)
+    wRow                  = named "zROW"      $ widescreenGaps $ zoomRow
+
     -- standard Layouts
-     tall               = named "TALL"      $ standardGaps $ Tall 1 (2/100) (2/3)
-     mirrorTall         = named "MTALL"     $ standardGaps $ Mirror $ Tall 1 (2/100) (2/3)
-     tabs               = named "TAB"       $ tabbed shrinkText myTabTheme  -- do not add gaps/spacing
+    tall                  = named "TALL"      $ standardGaps $ Tall 1 (2/100) (2/3)
+    mirrorTall            = named "MTALL"     $ standardGaps $ Mirror $ Tall 1 (2/100) (2/3)
+    tabs                  = named "TAB"       $ tabbed shrinkText myTabTheme  -- do not add gaps/spacing
 
     -- functions
-     named n            = renamed [(XMonad.Layout.Renamed.Replace n)]
-     suffixed n         = renamed [(XMonad.Layout.Renamed.Append n)]
-     prefixed n         = renamed [(XMonad.Layout.Renamed.Prepend n)]
-     silent             = renamed [(XMonad.Layout.Renamed.CutWordsLeft 1)]
-     widescreenGaps     = XMonad.Layout.MySpacing.auto16x9Spacing True (Border myGaps myGaps myGaps myGaps) (Border myGaps myGaps myGaps myGaps)
-     standardGaps       = XMonad.Layout.Spacing.spacingRaw True (Border halfGaps halfGaps halfGaps halfGaps) True (Border myGaps myGaps myGaps myGaps) True
-     halfGaps           = (div myGaps 2) + 1
-     fullScreenToggle x = mkToggle (single FULL) x
-     tabsToggle x       = mkToggle (ENABLETABS ?? EOT) x  -- add this to enable toggle tabs (currently we have tabs allways enabled - required for my swallow extension)
-   
+    named n               = renamed [(XMonad.Layout.Renamed.Replace n)]
+    suffixed n            = renamed [(XMonad.Layout.Renamed.Append n)]
+    prefixed n            = renamed [(XMonad.Layout.Renamed.Prepend n)]
+    silent                = renamed [(XMonad.Layout.Renamed.CutWordsLeft 1)]
+    enableHiddenWindows x = silent $ hiddenWindows x
+    widescreenGaps        = XMonad.Layout.MySpacing.auto16x9Spacing True (Border myGaps myGaps myGaps myGaps) (Border myGaps myGaps myGaps myGaps)
+    standardGaps          = XMonad.Layout.Spacing.spacingRaw True (Border halfGaps halfGaps halfGaps halfGaps) True (Border myGaps myGaps myGaps myGaps) True
+    halfGaps              = (div myGaps 2) + 1
+    layoutSelector        = XMonad.Layout.MyPerScreen.ifWideScreen
+    navigation x          = configurableNavigation noNavigateBorders $ boringWindows x
+    fullScreenToggle x    = mkToggle (single FULL) x
+    tabsToggle x          = mkToggle (ENABLETABS ?? EOT) x  -- add this to enable toggle tabs (currently we have tabs allways enabled - required for my swallow extension)
+
 
 ------------------------------------------------------------------------
 -- SCRATCHPADS
@@ -356,7 +374,7 @@ myScratchPads = [ NS "terminal" spawnTerm findTerm manageTerm
         spawnTerm  = myTerminal ++ " --class scratchpad-terminal -t scratchpad-terminal"
         findTerm   = resource =? "scratchpad-terminal"
         manageTerm = ( noTaskbar <+> customFloating (W.RationalRect 0.25 0.1 0.5 0.8) )
-    
+
         spawnNcmpcpp = myTerminal ++ " --class ncmpcpp -t ncmpcpp -e ncmpcpp"
         findNcmpcpp = resource =? "ncmpcpp"
         manageNcmpcpp = ( noTaskbar <+> customFloating (W.RationalRect 0.25 0.1 0.5 0.8) )
@@ -372,27 +390,6 @@ myScratchPads = [ NS "terminal" spawnTerm findTerm manageTerm
         spawnHtop = myTerminal ++ " --class htop -t htop -e htop"
         findHtop = resource =? "htop"
         manageHtop = ( noTaskbar <+> customFloating (W.RationalRect 0.25 0.1 0.5 0.8) )
-
-
-------------------------------------------------------------------------
--- WORKSPACES
--- info: My workspaces in xmobar are clickable (requires xdotool)
---
-
-xmobarEscape = concatMap doubleLts
-  where
-        doubleLts '<' = "<<"
-        doubleLts x   = [x]
-        
-myWorkspaces :: [String]   
-myWorkspaces = clickable . (map xmobarEscape)
-        -- we use the space and star symbol to increase the clickabel area.
-        -- in xmobarPP we replace the star symbol with a space if no window exist on this workspace
-        $ [" 1*", " 2*", " 3*", " 4*" , " 5*", " 6*", " 7*", " 8*", " 9*"]
-  where           
-        -- NOTE: set your Modkey to alt or super (windows key)
-        clickable l = [ "<action=xdotool key alt+" ++ show (n) ++ ">" ++ ws ++ "</action>" |
-                      (i,ws) <- zip [1..9] l, let n = i ]
 
 
 ------------------------------------------------------------------------
@@ -452,7 +449,7 @@ translateList = [ (xK_e, deepl_de2en)
 
 myManageHook = myWindowRules
             <+> xPropManageHook xPropMatches
-            <+> namedScratchpadManageHook myScratchPads 
+            <+> namedScratchpadManageHook myScratchPads
             <+> manageDocks
             <+> manageHook desktopConfig
 
@@ -466,7 +463,6 @@ xPropMatches = [ ([ (wM_CLASS, any ("firefox" ==)) ], pmX (addTag "browser")) ]
 
 myStartupHook = do
     setDefaultCursor xC_left_ptr  -- set mouse cursor
-    -- spawn "pkill stalonetray; stalonetray -c $HOME/.config/xmobar/stalonetrayrc"
     spawn "pkill trayer; trayer --edge top --align right --padding 2 --distance 1 --widthtype request --SetDockType true --SetPartialStrut false --expand true --transparent true --alpha 0 --tint 0x000000 --height 22"
 
 
@@ -474,26 +470,29 @@ myStartupHook = do
 -- LOG HOOK
 --
 
+clickWorkspace :: String -> String -> String -> String
+clickWorkspace a b ws = "<action=xdotool key alt+" ++ show(index) ++ ">" ++ a ++ ws ++ b ++ "</action>" where
+	wsIdxToString Nothing = "1"
+	wsIdxToString (Just n) = show (n+1)
+	index = wsIdxToString (elemIndex ws myWorkspaces)
+
 myLogHook h = do
-    -- color workspaces with copy windows instances in diffrent color
+    --color workspaces with copy windows instances in diffrent color
     copies <- wsContainingCopies
-    let check ws | ws `elem` copies =
-           xmobarColor myCopyWindowColor "" $ ws
-         | otherwise = xmobarColor myForegroundColor "" $ ws
+    let check ws | ws `elem` copies = xmobarColor myCopyWindowColor "" . clickWorkspace " " "*" $ ws
+                 | otherwise        = xmobarColor myForegroundColor "" . clickWorkspace " " "*" $ ws
     -- xmobar config
-    dynamicLogWithPP xmobarPP { 
+    dynamicLogWithPP xmobarPP {
         ppOutput = hPutStrLn h
-        -- we replace the star symbol from workspace name with a space if no window exist on this workspace 
-        , ppCurrent = xmobarColor myForegroundColor myFocusedBorderColor . map (\c -> if c=='*' then ' '; else c)
-        , ppVisible = xmobarColor myForegroundColor ""
-        , ppHidden = check
-        , ppHiddenNoWindows = xmobarColor myForegroundColor "" . map (\c -> if c=='*' then ' '; else c)
-        , ppTitle = xmobarColor myForegroundColor "" . shorten 128
-        , ppSep =  "   "
-        , ppUrgent = xmobarColor myUrgentColor ""
-        , ppOrder = id
-        , ppExtras = []
-        , ppSort = fmap (namedScratchpadFilterOutWorkspace.) (ppSort def)
+        , ppCurrent          = xmobarColor myForegroundColor myFocusedBorderColor . clickWorkspace " " " "
+        , ppVisible          = xmobarColor myForegroundColor "" . clickWorkspace " " " "
+        , ppHiddenNoWindows  = xmobarColor myForegroundColor "" . clickWorkspace " " " "
+        , ppUrgent           = xmobarColor myUrgentColor     "" . clickWorkspace " " "*"
+        , ppTitle            = xmobarColor myForegroundColor "" . shorten 128
+        , ppHidden           = check
+        , ppOrder            = id
+        , ppSep              = " : "
+        , ppSort             = fmap (namedScratchpadFilterOutWorkspace.) (ppSort def)
     }
 
 
@@ -501,17 +500,74 @@ myLogHook h = do
 -- URGENCY HOOK
 --
 
-replace :: Eq a => a -> a -> [a] -> [a]
-replace a b = map $ \c -> if c == a then b else c
-
 data LibNotifyUrgencyHook = LibNotifyUrgencyHook deriving (Read, Show)
 
 instance UrgencyHook LibNotifyUrgencyHook where
     urgencyHook LibNotifyUrgencyHook w = do
         name     <- getName w
-        Just idx <- fmap (W.findTag w) $ gets windowset 
+        Just idx <- fmap (W.findTag w) $ gets windowset
 
-        safeSpawn "notify-send" [show name, "Workspace" ++ replace '*' ' ' idx]
+        safeSpawn "notify-send" [show name, "Workspace" ++ idx]
+
+
+------------------------------------------------------------------------
+-- REMOVE BORDER
+--
+
+removeBorderQuery :: Query Bool
+removeBorderQuery = className =? "mpv"
+
+removeBorder :: Window -> X ()
+removeBorder ws = withDisplay $ \d -> mapM_ (\w -> io $ setWindowBorderWidth d w 0) [ws]
+
+myBorderEventHook :: Event -> X All
+
+myBorderEventHook (ConfigureEvent {ev_window = window, ev_above  = above}) = do
+    whenX (runQuery removeBorderQuery window) (removeBorder window)
+    whenX (runQuery removeBorderQuery window) (refresh)  -- refresh required to get correct mpv floating position
+    return $ All True
+
+myBorderEventHook _ = return $ All True
+
+
+------------------------------------------------------------------------
+-- TEST AREA
+--
+
+-- debugPrint :: String -> IO ()
+-- debugPrint = appendFile "/tmp/xmonad-debug"  -- debug on
+
+-- removeBorderQuery :: Query Bool
+-- removeBorderQuery = className =? "mpv"
+
+-- removeBorder :: Window -> X ()
+-- removeBorder ws = withDisplay $ \d -> mapM_ (\w -> io $ setWindowBorderWidth d w 0) [ws]
+
+-- addBorder :: Window -> X ()
+-- addBorder ws = withDisplay $ \d -> mapM_ (\w -> io $ setWindowBorderWidth d w myBorderWidth) [ws]
+
+-- myBorderEventHook :: Event -> X All
+
+-- myBorderEventHook (PropertyEvent {ev_window = window, ev_atom = a, ev_propstate = s}) = do
+--     foc <- withWindowSet $ return . W.peek
+--     when (foc /= Just window) $ (removeBorder window)
+--     when (foc == Just window) $ (addBorder window)
+--     return $ All True
+
+-- myBorderEventHook (ConfigureEvent {ev_window = window, ev_above  = above}) = do
+--     refresh
+--     return $ All True
+
+-- myBorderEventHook e@(AnyEvent {ev_event_type=t, ev_window=win})
+--         | t == focusIn = do
+--                    addBorder window
+--                    return $ All True
+--         | t == focusOut = do
+--                    removeBorder window
+--                    return $ All True
+--         | otherwise = return $ All True
+
+-- myBorderEventHook _ = return $ All True
 
 
 ------------------------------------------------------------------------
@@ -522,7 +578,7 @@ main = do
     xmproc <- spawnPipe "xmobar -x 0 ~/.config/xmobar/xmobarrc"
     pidHashTable <- H.new :: IO(H.BasicHashTable Int Window)
     windowHashTable <- H.new :: IO(H.BasicHashTable Window Int)
-    xmonad $ docks $ withUrgencyHook LibNotifyUrgencyHook $ ewmh desktopConfig { 
+    xmonad $ docks $ withUrgencyHook LibNotifyUrgencyHook $ ewmh desktopConfig {
         manageHook         = myManageHook,
         XMonad.workspaces  = myWorkspaces,
         logHook            = myLogHook xmproc,
@@ -534,10 +590,11 @@ main = do
         normalBorderColor  = myNormalBorderColor,
         focusedBorderColor = myFocusedBorderColor,
         keys               = myKeys,
+        --clientMask = structureNotifyMask .|. enterWindowMask .|. propertyChangeMask .|. focusChangeMask,
         mouseBindings      = myMouseBindings,
         layoutHook         = myLayout,
         startupHook        = myStartupHook,
-        handleEventHook    = swallowEventHook pidHashTable windowHashTable
+        handleEventHook    = swallowEventHook pidHashTable windowHashTable <+> myBorderEventHook
         --handleEventHook    = mempty
-    } 
-    
+    }
+

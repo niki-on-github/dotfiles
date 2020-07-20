@@ -10,10 +10,10 @@
 -- Stability   :  ultra stable
 -- Portability :  unportable
 --
--- The windows in the master area are arranged in colums of equal size. The 
--- number of columns is always nmaster + 1, and the last column is a stack of 
--- leftover windows just like the normal tile layout (Tall). It effectively 
--- acts like the default tiling mode, except provides for vertical instead 
+-- The windows in the master area are arranged in colums of equal size. The
+-- number of columns is always nmaster + 1, and the last column is a stack of
+-- leftover windows just like the normal tile layout (Tall). It effectively
+-- acts like the default tiling mode, except provides for vertical instead
 -- of horizontal master windows.
 --
 -----------------------------------------------------------------------------
@@ -28,7 +28,7 @@ import qualified XMonad.StackSet as W
 -----------------------------------------------------------------------------
 -- col master left layout
 
-data ColMasterLeft a = ColMasterLeft { 
+data ColMasterLeft a = ColMasterLeft {
                    leftMasterColNMaster :: !Int
                  , leftMasterColRatioIncrement :: !Rational
                  , leftMasterColRatio :: !Rational
@@ -65,7 +65,7 @@ colMasterLeftLayout f r nmaster n = if n <= nmaster || nmaster == 0
 -----------------------------------------------------------------------------
 -- col master right layout
 
-data ColMasterRight a = ColMasterRight { 
+data ColMasterRight a = ColMasterRight {
                    rightMasterColNMaster :: !Int
                  , rightMasterColRatioIncrement :: !Rational
                  , rightMasterColRatio :: !Rational
@@ -95,5 +95,5 @@ colMasterRightLayout
     -> [Rectangle]
 colMasterRightLayout f r nmaster n = if n <= nmaster || nmaster == 0
     then splitHorizontally n r
-    else splitHorizontally nmaster r2 ++ splitVertically (n-nmaster) r1 
+    else splitHorizontally nmaster r2 ++ splitVertically (n-nmaster) r1
   where (r1,r2) = splitHorizontallyBy (1-f) r

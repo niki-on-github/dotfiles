@@ -2,26 +2,26 @@
 --
 -- Module      :  XMonad.Hooks.Swallow
 -- Copyright   :  (c) none
--- License     :  SübraWay v7 - no public access to this License available!
+-- License     :  none
 -- Maintainer  :  none
 -- Stability   :  unstable
 -- Portability :  unportable
 -- Dependency  :  sudo pacman -Sy haskell-hashtables
 --
 -- This extension adds "window swallowing" to xmonad as known from dwm swallow
--- Patch. In contrast to the original patch, we group the window with a tab group, 
+-- Patch. In contrast to the original patch, we group the window with a tab group,
 -- so the terminal output remains accessible.
 --
 -- In this haskell file the terminal "alacritty" and the shell "zsh" is hard code.
--- If other tools are used, the corresponding entries must be adjusted to activate 
+-- If other tools are used, the corresponding entries must be adjusted to activate
 -- the swallow function!
 --
 -----------------------------------------------------------------------------
 
-module XMonad.Hooks.Swallow 
+module XMonad.Hooks.Swallow
     ( -- * Usage
       -- $usage
-      swallowEventHook 
+      swallowEventHook
     ) where
 
 import XMonad
@@ -38,14 +38,14 @@ import System.IO.Unsafe (unsafePerformIO)
 import System.IO.Error (isDoesNotExistError)
 
 import qualified XMonad.StackSet as W
-import qualified Data.HashTable.IO as H 
+import qualified Data.HashTable.IO as H
 
 -- $usage
 --
 -- > import XMonad.Hooks.Swallow
 -- > import XMonad.Layout.Simplest
 -- > import XMonad.Layout.SubLayouts
--- > import qualified Data.HashTable.IO as H 
+-- > import qualified Data.HashTable.IO as H
 --
 -- > myTabTheme :: XMonad.Layout.Tabbed.Theme
 -- > myTabTheme = def { ... }
@@ -63,9 +63,25 @@ import qualified Data.HashTable.IO as H
 -- >    }
 --
 
+-- set the name contained in a proc/$pid/stat without brackets
+myShellName :: String
+myShellName = "zsh"
+
+-- set the name contained in a proc/$pid/stat without brackets
+myTerminalName :: String
+myTerminalName = "alacritty"
+
+-- return true for the terminal specified in myTerminalName
+isTerminal :: Query Bool
+isTerminal = className =? "Alacritty"
+
+-- return false to ignore window
+isInteresting :: Query Bool
+isInteresting = ((className =? "Dunst") <||> (className =? "stalonetray") <||> (className =? "panel") <||> (resource =? "xmobar")) =? False
+
 debugPrint :: String -> IO ()
---debugPrint = appendFile "/tmp/xmonad-debug"
-debugPrint _ = return ()
+--debugPrint = appendFile "/tmp/xmonad-debug"  -- debug on
+debugPrint _ = return ()  -- debug off
 
 swallow :: H.BasicHashTable Int Window -> Int -> X()
 swallow pidHashTable swallowPid = do
@@ -104,7 +120,7 @@ getSwallowPID pid = case unsafePerformIO . tryJust (guard . isDoesNotExistError)
                                          _ : _ : _ : ppid : _ -> do
                                             let val = fromIntegral (read ppid :: Int)
                                             let name = (getPidName val)
-                                            if (name == "(zsh)") then (getSwallowPID val) else if (name == "(alacritty)") then val else -1 
+                                            if (name == "(" ++ myShellName ++ ")") then (getSwallowPID val) else if (name == "(" ++ myTerminalName ++ ")") then val else -1
 
 
 getPidName :: Int -> String
@@ -132,7 +148,7 @@ addTerminalPID :: H.BasicHashTable Int Window -> H.BasicHashTable Window Int -> 
 addTerminalPID pidHashTable windowHashTable window = do
   pid <- getProp32s "_NET_WM_PID" window
   case pid of
-    Just [p] -> do 
+    Just [p] -> do
       --io $ debugPrint $ "addTerminalPid " ++ (show p) ++ "\n"
       _ <- io $ H.insert windowHashTable window (fromIntegral p)
       _ <- io $ H.insert pidHashTable (fromIntegral p) window
@@ -144,20 +160,12 @@ removeEntry :: H.BasicHashTable Int Window -> H.BasicHashTable Window Int -> Win
 removeEntry pidHashTable windowHashTable window = do
   pid <- io $ H.lookup windowHashTable window
   case pid of
-    Just p -> do 
+    Just p -> do
       --io $ debugPrint $ "removeEntry " ++ (show p) ++ "\n"
       _ <- io $ H.delete windowHashTable window
       _ <- io $ H.delete pidHashTable (fromIntegral p)
       return ()
     _ -> return ()
-
-
-isTerminal :: Query Bool
-isTerminal = className =? "Alacritty"
-
--- return false to ignore window
-isInteresting :: Query Bool
-isInteresting = ((className =? "Dunst") <||> (className =? "stalonetray") <||> (resource =? "xmobar")) =? False
 
 
 swallowEventHook :: H.BasicHashTable Int Window -> H.BasicHashTable Window Int -> Event -> X All

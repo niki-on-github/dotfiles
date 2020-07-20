@@ -11,10 +11,10 @@
 -- Portability :  unportable
 -- Fork of     :  XMonad.Layout.PerScreen
 --
--- Select available layouts based on the width of your screen: 
--- use horizontal master layouts for wide screens (e.g 21:9) and 
+-- Select available layouts based on the width of your screen:
+-- use horizontal master layouts for wide screens (e.g 21:9) and
 -- vertical master layouts for obsolete screen ratios (e.g. 16:9).
--- 
+--
 -----------------------------------------------------------------------------
 
 module XMonad.Layout.MyPerScreen

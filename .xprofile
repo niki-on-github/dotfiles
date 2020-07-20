@@ -3,10 +3,19 @@
 # Description: This file runs when a DM logs you into a x11 graphical session.
 
 # history clean up
-[[ -d $HOME/.local/share/RecentDocuments ]] && find $HOME/.local/share/RecentDocuments -type f -exec rm -f {} \;
+[ -d $HOME/.local/share/okular/docdata ] && rm -rf $HOME/.local/share/okular/docdata
+[ -d $HOME/.local/share/gwenview/recentfolders ] && rm -rf $HOME/.local/share/gwenview/recentfolders
+[ -d $HOME/.local/share/RecentDocuments ] && rm -rf $HOME/.local/share/RecentDocuments
+[ -d $HOME/.cache/sxiv ] && rm -rf $HOME/.cache/sxiv
+[ -d $HOME/.cache/bunkus.org ] && rm -rf $HOME/.cache/bunkus.org
+[ -d $HOME/.cache/thumbnails ] && rm -rf $HOME/.cache/thumbnails
+
+# clean trash
+command -v trash-empty >/dev/null && trash-empty
 
 # music deamon
 pgrep mpd || mpd &
+export MPD_HOST=/tmp/mpd.socket  # path set in mpd config
 
 # start nextcloud client if installed
 command -v nextcloud && nextcloud --background &
@@ -17,7 +26,7 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
 
         # Notification service
         dunst -icon_path "$HOME/.config/dunst/icons/" &
-        
+
         # Network service
         nm-applet &
 
@@ -25,11 +34,11 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
         clipmenud &
 
         # x11 compositor (transparent windows)
-        picom --backend glx --unredir-if-possible --vsync -c -b
-       
+        picom --backend glx -c -b
+
         # start usb mount helper if installed
         command -v udiskie && udiskie -A -n -s --file-manager="$TERMINAL --working-directory " &
-        
+
         # lock screen
         xidlehook --not-when-fullscreen --not-when-audio --timer 300 \
             'notify-send -t 10000 -- "LOCKING screen in 30 seconds"' '' --timer 30 'i3lock -e -f --nofork -B=100' '' &
@@ -44,21 +53,22 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
 
         # set key repeat rate
         xset r rate 350 30
-        
+
         # set default mouse cursor to left_ptr (~/.icons/default/cursors)
         xsetroot -cursor_name left_ptr
 
-        if [ -d ~/.xmonad ] && grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
+        if [ -d ~/.local/share/xmonad ] && grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
             # Fix: recompile xmonad if the compiler version has changed so that xmonad works after a system update.
-            if ! grep "$(ghc --version)" ~/.xmonad/ghc.version >/dev/null 2>&1 ; then
-                ghc --version > ~/.xmonad/ghc.version
+            if ! grep "$(ghc --version)" ~/.loacl/share/xmonad/ghc.version >/dev/null 2>&1 ; then
+                mkdir -p ~/.local/share/xmonad/
+                ghc --version > ~/.local/share/xmonad/ghc.version
                 xmonad --recompile && xmonad --restart
             fi
         fi
 
         # Fix for my Xmonad Swallow extension
         export LD_PRELOAD=$HOME/.local/lib/X11/net-wm-pid/ld-preload-xcreatewindow.so
-        
+
         # create a (executable) .xrandr file in your directory to set a custom resolution
         # e.g. with 'xrandr -s 3440x1440 -r 120'
         # [[ -f ~/.xrandr ]] && sh ~/.xrandr
@@ -74,7 +84,7 @@ elif [[ "$XDG_SESSION_TYPE" = "wayland" ]]; then
 
         # network service
         GDK_BACKEND=x11 nm-applet --indicator &
-        
+
         # clipboard service
         wl-paste -t text --watch clipman store &
 
@@ -82,5 +92,8 @@ elif [[ "$XDG_SESSION_TYPE" = "wayland" ]]; then
         command -v udiskie && udiskie -A -n -s --appindicator --file-manager="$TERMINAL --working-directory " &
     fi
 fi
+
+# Filesystem Monitoring (Warning if storage is almost full)
+lsblk -P -p -o "FSUSE%,MOUNTPOINT" | grep -v "MOUNTPOINT=\"\"" | while read -r fuse mountpoint ; do [ "${fuse:8:-2}" -ge "95" ] && notify-send "Filesystem Monitoring" "Storage \"${mountpoint:12:-1}\" almost full (${fuse:8:-1})"; done
 
 [ ".xprofile" ]  # set exit code to 0
