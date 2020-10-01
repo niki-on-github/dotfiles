@@ -8,6 +8,7 @@
 [ -d $HOME/.local/share/RecentDocuments ] && rm -rf $HOME/.local/share/RecentDocuments
 [ -d $HOME/.cache/sxiv ] && rm -rf $HOME/.cache/sxiv
 [ -d $HOME/.cache/bunkus.org ] && rm -rf $HOME/.cache/bunkus.org
+[ -d $HOME/.config/bunkus.org ] && rm -rf $HOME/.config/bunkus.org
 [ -d $HOME/.cache/thumbnails ] && rm -rf $HOME/.cache/thumbnails
 
 # clean trash
@@ -18,11 +19,10 @@ pgrep mpd || mpd &
 export MPD_HOST=/tmp/mpd.socket  # path set in mpd config
 
 # start nextcloud client if installed
-command -v nextcloud && nextcloud --background &
-
+pgrep nextcloud || command -v nextcloud && nextcloud --background &
 
 if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
-    if [[ "$XDG_SESSION_DESKTOP" != "KDE" ]]; then
+    if [[ "$XDG_SESSION_DESKTOP" != "KDE" ]] && [[ "$XDG_SESSION_DESKTOP" != "xfce" ]]; then
 
         # Notification service
         dunst -icon_path "$HOME/.config/dunst/icons/" &
@@ -34,14 +34,14 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
         clipmenud &
 
         # x11 compositor (transparent windows)
-        picom --backend glx -c -b
+        picom -b --experimental-backends --vsync || picom -b --experimental-backends
 
         # start usb mount helper if installed
         command -v udiskie && udiskie -A -n -s --file-manager="$TERMINAL --working-directory " &
 
         # lock screen
         xidlehook --not-when-fullscreen --not-when-audio --timer 300 \
-            'notify-send -t 10000 -- "LOCKING screen in 30 seconds"' '' --timer 30 'i3lock -e -f --nofork -B=100' '' &
+            'notify-send -t 10000 -- "LOCKING screen in 30 seconds"' '' --timer 30 '~/.local/bin/x11-lock' '' &
 
         # disable dpms
         xset dpms 0 0 0
@@ -54,24 +54,32 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
         # set key repeat rate
         xset r rate 350 30
 
+        # Map the caps lock key to Shift_L, but when it is pressed only once, treat it as escape.
+        xmodmap -e "keycode 66 = Shift_L"
+        killall xcape 2>/dev/null ; xcape -e 'Shift_L=Escape'
+
         # set default mouse cursor to left_ptr (~/.icons/default/cursors)
         xsetroot -cursor_name left_ptr
 
-        if [ -d ~/.local/share/xmonad ] && grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
-            # Fix: recompile xmonad if the compiler version has changed so that xmonad works after a system update.
-            if ! grep "$(ghc --version)" ~/.loacl/share/xmonad/ghc.version >/dev/null 2>&1 ; then
-                mkdir -p ~/.local/share/xmonad/
-                ghc --version > ~/.local/share/xmonad/ghc.version
-                xmonad --recompile && xmonad --restart
-            fi
+        # NOTE: switch to pacman hook (see ~/.config/pacman/hooks)
+        # if [ -d ~/.local/share/xmonad ] && grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
+        #     # Fix: recompile xmonad if the compiler version has changed so that xmonad works after a system update.
+        #     if ! grep "$(ghc --version)" ~/.local/share/xmonad/ghc.version >/dev/null 2>&1 ; then
+        #         mkdir -p ~/.local/share/xmonad/
+        #         ghc --version > ~/.local/share/xmonad/ghc.version
+        #         xmonad --recompile && xmonad --restart
+        #     fi
+        # fi
+        if grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
+            [ -f /etc/pacman.d/hooks/recompile-xmonad.hook ] || notify-send "Xmonad" "Pacman hook for Xmonad is not installed (see ~/.config/pacman/hooks)"
         fi
 
         # Fix for my Xmonad Swallow extension
-        export LD_PRELOAD=$HOME/.local/lib/X11/net-wm-pid/ld-preload-xcreatewindow.so
+        # export LD_PRELOAD=$HOME/.local/lib/X11/net-wm-pid/ld-preload-xcreatewindow.so
 
         # create a (executable) .xrandr file in your directory to set a custom resolution
         # e.g. with 'xrandr -s 3440x1440 -r 120'
-        # [[ -f ~/.xrandr ]] && sh ~/.xrandr
+        [[ -f ~/.xrandr ]] && sh ~/.xrandr
 
         # set wallpaper
         $HOME/.local/bin/x11-wallpaper random

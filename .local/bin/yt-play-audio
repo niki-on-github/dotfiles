@@ -1,0 +1,44 @@
+#!/bin/sh
+# Description: play youtube (Video URL) as audio with mpd
+
+usage() {
+[ -z "${1}" ] || echo -e "\033[0;31mERROR: ${1}\033[0m\n"
+echo "\
+script to play music from youtube with mpd
+
+Usage:
+  ~\$ $(basename "$0") \"[URL]\""
+[ -z "${1}" ] && exit 2 || exit 0
+}
+
+# error messages
+WRONG_ARGS_ERR='wrong number of arguments passed to script'
+
+[ $# -gt 0 ] || usage "${WRONG_ARGS_ERR}"
+[ "$1" = "-h" ] && usage
+
+# get the audio url and title
+url=$(youtube-dl --no-check-certificate --no-playlist -e -f bestaudio -g "$@")
+link=$(echo "${url}" | awk -F' ' '/https:/ {print $1}') # audio url
+name=$(echo "${url}" | awk -F'https:' '{print $1}') # name of song
+
+play() {
+    if [ -z "$(mpc current)" ]; then # nothing playing
+        if [ -z "$(mpc playlist)" ]; then # playlist empty
+            mpc add "${link}"
+            mpc play 
+            notify-send "Now Playing ♫" "${name}"
+        else # playlist not empty so clear add url and play
+            mpc clear
+	        mpc add "${link}"
+            mpc play 
+	        notify-send "Now Playing ♫" "${name}"
+	    fi
+    else # audio playing insert url and play next
+        mpc insert "${link}" 
+	    mpc next
+	    notify-send "Now Playing ♫" "${name}"
+    fi
+}
+
+play

@@ -1,0 +1,22 @@
+#!/bin/sh
+# Description: ssh x11 desktop environment forwarding helper script
+# Usage: ssh-x11 vagrant@192.168.121.160 startplasma-x11
+
+for ((num=1 ; num <= 100 ; num++)) ; do
+    if [ ! -e /tmp/.X11-unix/X$num ] && [ ":$num" != "$DISPLAY" ] ; then
+        break
+    fi
+done
+DISPNUM=":$num"
+
+DISPRES=$(xdpyinfo  | grep 'dimensions:' | head -n1 | awk '{print $2}')
+DISPWIDTH=$(echo "$DISPRES" | cut -d 'x' -f 1)
+DISPHEIGHT=$(echo "$DISPRES" | cut -d 'x' -f 2)
+
+# virtual display resolution, NOTE: resolution determines font scaling
+VDISPWIDTH=`expr $DISPWIDTH - $DISPWIDTH / 9`
+VDISPHEIGHT=`expr $DISPHEIGHT - $DISPHEIGHT / 9`
+
+echo "Create Display $DISPNUM"
+Xephyr $DISPNUM -br +extension randr -nolisten tcp -resizeable -once -screen ${VDISPWIDTH}x${VDISPHEIGHT} &
+DISPLAY="$DISPNUM" ssh -o ForwardX11Timeout=2147423s -X $@

@@ -1,8 +1,9 @@
 #!/bin/bash
+# Description: terminal video cut without reencoding
 
 usage() {
     cat <<EOF
-'`basename $0`' is a script to cut video files
+'`basename $0`' is a script to lossless cut video files
 
 Dependecies: - ffmpeg
 

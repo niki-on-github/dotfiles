@@ -1,9 +1,9 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " NEOVIM CONFIG
 "
-" The setup is fully automated. When neovim is called first time, the setup process get invoked. 
-" Some error messages are displayed which must be confirmed to complete the setup. Wenn the setup 
-" is completed you have to manualy restart neovim to have full access to all defined functions 
+" The setup is fully automated. When neovim is called first time, the setup process get invoked.
+" Some error messages are displayed which must be confirmed to complete the setup. Wenn the setup
+" is completed you have to manualy restart neovim to have full access to all defined functions
 " and plugins.
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -27,32 +27,40 @@ if ! filereadable(expand('~/.config/nvim/autoload/plug.vim'))
 endif
 
 call plug#begin('~/.config/nvim/plugged')
-" Light status and tabline "
+" status and tabline "
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 " Provide mappings to easily delete, change and add parentheses, brackets, quotes, XML tags, and more "
 Plug 'tpope/vim-surround'
 " Add icons to vim statusline and more "
 Plug 'ryanoasis/vim-devicons'
-" File system explorer "
-Plug 'scrooloose/nerdtree'
-Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
-Plug 'Xuyuanp/nerdtree-git-plugin'
 " fzf for vim "
 Plug 'junegunn/fzf.vim'
-" Git for vim"
+" highlight trailing whitespace characters "
+Plug 'ntpeters/vim-better-whitespace'
+" run git commands with :G <command> and more (better integration in vim than use :!git <command>) "
 Plug 'airblade/vim-gitgutter'
+" better git mergetool "
 Plug 'samoshkin/vim-mergetool'
+" show git changes in vim "
 Plug 'tpope/vim-fugitive'
-" Comment/uncomment helper (gcc to comment out (toggle) a line, gc in visual mode to comment out the selection) "
+" comment/uncomment helper (gcc to comment out (toggle) a line, gc in visual mode to comment out the selection) "
 Plug 'tpope/vim-commentary'
-" provides support for LaTeX documents (Required for coc latex extension) "
+" provides support for LaTeX documents "
 Plug 'lervag/vimtex'
+" Go language support for Vim "
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+" vertical lines at each indentation level for code indented with spaces "
+Plug 'Yggdroot/indentLine'
+" terminal in floating popup window inside vim "
+Plug 'voldikss/vim-floaterm'
 " color preview "
 Plug 'ap/vim-css-color'
+" much simpler vim motions "
+Plug 'easymotion/vim-easymotion'
 " Code Completion / Intellisense Engine "
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-" Vim Theme "
+" My preferred vim theme "
 Plug 'dikiaap/minimalist'
 call plug#end()
 
@@ -63,10 +71,13 @@ call plug#end()
 
 source $HOME/.config/nvim/plug-config/minimalist.vim
 source $HOME/.config/nvim/plug-config/coc.vim
-source $HOME/.config/nvim/plug-config/nerdtree.vim
 source $HOME/.config/nvim/plug-config/gitgutter.vim
 source $HOME/.config/nvim/plug-config/mergetool.vim
 source $HOME/.config/nvim/plug-config/fzf.vim
+source $HOME/.config/nvim/plug-config/indentline.vim
+source $HOME/.config/nvim/plug-config/floaterm.vim
+source $HOME/.config/nvim/plug-config/easymotion.vim
+source $HOME/.config/nvim/plug-config/vimtex.vim
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -98,15 +109,18 @@ map <C-l> <C-w>l
 set hlsearch
 " Press ESC to turn off seach highlighting and clear any message already displayed.
 nnoremap <silent> <ESC> :nohlsearch<Bar>:echo<CR>
-" Press Space to turn off spell highlighting and clear any messages already displayed.
-nnoremap <silent> <Space> :set<space>nospell<Bar>:echo<CR>
 " Press F4 to toggle highlighting on/off, and show current value.
 noremap <F4> :set hlsearch! hlsearch?<CR>
 " I frequently type :W instead of :w and :Q insetd of :q, because the colon needs a shift, w and q doesn't"
+" my vim auto sugestion for commands "
 command WQ wq
 command Wq wq
 command W w
 command Q q
+map :Vs :vs
+map :Sp :sp
+" Do not show stupid q: window
+map q: :q
 " Use smart tabs "
 set expandtab
 set smarttab
@@ -116,16 +130,27 @@ set tabstop=4
 set softtabstop=4
 "fix for yankring "
 let g:yankring_clipboard_monitor=0
+" show search results in center "
+nnoremap n nzzzv
+nnoremap N Nzzzv
+" make backspace key more powerful "
+set backspace=indent,eol,start
+" smart case insensitive search (case sensitive when search pattern contains upper case characters)"
+set ignorecase
+set smartcase
+" keep indenting visual block
+vmap < <gv
+vmap > >gv
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Helper
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Spell-check "
-map <leader>s :setlocal spell! spelllang=de_de<CR>
+" toggle Spell-check "
+map <leader>s :setlocal spell! spelllang=de_de,en_us<CR>
 " Sugest a list of spell alternatives "
-nnoremap <silent> z z=
+map <leader>z z=
 " Open bibliography file in split "
 if filereadable(expand("./Literatur.bib"))
     map <leader>b :vsp<space>./Literatur.bib<CR>
@@ -157,7 +182,6 @@ filetype plugin indent on
 " Ensure files are read as what I want "
 autocmd BufRead,BufNewFile *.ms,*.me,*.mom,*.man set filetype=groff
 autocmd BufRead,BufNewFile *.tex set filetype=tex
-autocmd BufRead,BufNewFile /tmp/calcurse*,~/calcurse/notes/* set filetype=markdown
 autocmd BufRead,BufNewFile *.md,*.MD set filetype=markdown
 
 
@@ -169,4 +193,24 @@ autocmd BufRead,BufNewFile *.md,*.MD set filetype=markdown
 nmap P :pu<CR>
 " replace all (:%s/Search/Replace/Flags)"
 nnoremap R :%s//g<Left><Left>
+" remove trailing space and leave cursor at the last change location and clear output "
+nnoremap <Leader>w :let _save_pos=getpos(".") <Bar>
+    \ :let _s=@/ <Bar>
+    \ :%s/\s\+$//e <Bar>
+    \ :let @/=_s <Bar>
+    \ :nohl <Bar>
+    \ :unlet _s<Bar>
+    \ :call setpos('.', _save_pos)<Bar>
+    \ :unlet _save_pos<CR>
+    \ :echo<CR>
 
+" move current line to the end of the current paragraph and leave cursor on current location "
+nnoremap <Leader>e :let _save_pos=getpos(".") <Bar>
+    \ :let _s=@/ <Bar>
+    \ :m '}-1 <Bar>
+    \ :let @/=_s <Bar>
+    \ :nohl <Bar>
+    \ :unlet _s<Bar>
+    \ :call setpos('.', _save_pos)<Bar>
+    \ :unlet _save_pos<CR>
+    \ :echo<CR>

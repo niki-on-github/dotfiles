@@ -1,0 +1,184 @@
+#!/bin/sh
+# Description: Script to record the audio of the Spotify client using Pulse Audio
+
+MUSIC_LIB=~/Musik/Spotify
+[ ! -d $MUSIC_LIB ] && echo "[ERROR] DirectoryNotFound: $MUSIC_LIB" && exit 1
+
+! command -v pacmd >/dev/null && echo "[ERROR] program pacmd is not installed" && exit 1
+! command -v pactl >/dev/null && echo "[ERROR] program pactl is not installed" && exit 1
+! command -v parec >/dev/null && echo "[ERROR] program parec is not installed" && exit 1
+! command -v lame >/dev/null && echo "[ERROR] program lame is not installed" && exit 1
+! command -v ffmpeg >/dev/null && echo "[ERROR] program ffmpeg is not installed" && exit 1
+! command -v pulsemixer >/dev/null && echo "[ERROR] program pulsemixer is not installed" && exit 1
+! command -v eyeD3 >/dev/null && echo "[ERROR] program eyeD3 is not installed" && exit 1
+! command -v mp3info >/dev/null && echo "[ERROR] program mp3info is not installed" && exit 1
+! command -v spotify-info >/dev/null && echo "[ERROR] program spotify-info is not installed" && exit 1
+
+usage() {
+    cat <<EOF
+'`basename "$0"`' record the audio of the Spotify desktop client using lame, FFmpeg and PulseAudio
+
+Usage:
+  ~\$ $(basename "$0")
+  ~\$ $(basename "$0") -p "[FILE_PATTERN]"
+
+Parameter:
+  -h                   Display this help menu
+  -p "[FILE_PATTERN]"  Set file name pattern, can contain the following keywords: %album, %artist, %title, %track
+EOF
+    exit $1
+}
+
+# chack args
+FILE_PATTERN="%artist - %title"
+if [ "$#" = "1" ]; then
+    if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+        usage 0
+    else
+        usage 1
+    fi
+elif [ "$#" = "2" ]; then
+    if [ "$1" = "-p" ]; then
+        FILE_PATTERN="$2"
+    else
+        usage 1
+    fi
+elif [ "$#" -ge "3" ]; then
+    usage 1
+fi
+
+if [ -z "$(pacmd list-sinks | grep record)" ]; then
+    default_output=$(pacmd list-sinks | grep -A1 "* index" | grep -oP "<\K[^ >]+")
+    pactl load-module module-combine-sink \
+        sink_name=record-n-play \
+        slaves=$default_output \
+        sink_properties=device.description="Record-and-Play" >/dev/null
+fi
+
+record=true
+recorderClose() {
+    killall parec >/dev/null 2>&1
+    killall lame >/dev/null 2>&1
+    record=false
+    echo -en "\033[2K\r"  # clear current line (^C)
+}
+trap recorderClose SIGHUP SIGINT SIGTERM
+
+recorderExitHook() {
+    echo "exit"
+    while [ "$(pidof ffmpeg | wc -l)" != "0" ]; do
+        sleep 0.2
+    done
+    find $MUSIC_LIB -name "*.record" -exec rm "{}" \;
+}
+trap recorderExitHook EXIT
+
+function recorderPostHook {
+    local _title=$1; shift
+    local _track=$1; shift
+	local _artist=$1; shift
+	local _album=$1; shift
+    local _file=$1; shift
+    local _corrupt=$1; shift
+
+    # fix audio duration and tag audio file
+    ffmpeg -i "$_file.record" -acodec copy "${_file}${_postfix}" >/dev/null 2>&1 && \
+    eyeD3 --artist "$_artist" \
+          --album "$_album" \
+          --track "$_track" \
+          --title "$_title" \
+          "${_file}" >/dev/null
+
+    if $_corrupt ; then
+        [ -f "${_file}" ] && eval "mv \"${_file}\" \"${_file}.corrupt\""
+    fi
+}
+
+echo "wait for spotify ..."
+if [ "$(pidof spotify | wc -l)" = "0" ]; then
+    while [ "$(pidof spotify | wc -l)" = "0" ] && $record; do
+        sleep 0.2
+    done
+    sleep 3
+fi
+
+echo "wait for audio ..."
+while [ -n "$(spotify-info -e "1" -p "1")" ] && $record; do
+    sleep 0.2
+done
+
+if $record ; then
+    echo "spotify recorder attached (use Ctrl+c to stop recording or close spotify application)"
+    sink_index=$(pulsemixer -l | grep Spotify | grep -Eo "sink-input-[0-9]*" | cut -c 12-)
+    pactl move-sink-input $sink_index record-n-play
+
+    FILE_PATTERN=$(echo "$FILE_PATTERN" | sed 's/.mp3$//g')
+    echo "use file name pattern: $FILE_PATTERN.mp3"
+fi
+
+while $record; do
+
+    # spotify terminated
+    if [ "$(pidof spotify | wc -l)" = "0" ]; then
+        echo "spotify was terminated, exit recorder ..."
+        break
+    fi
+
+    # spotify pause
+    if [ -n "$(spotify-info -p "1")" ]; then
+        sleep 0.2
+        continue
+    fi
+
+	title=$(spotify-info -i %title)
+	track=$(spotify-info -i %track)
+	artist=$(spotify-info -i %artist)
+	album=$(spotify-info -i %album)
+    length=$(spotify-info -i %length)
+
+    file="$FILE_PATTERN"
+    file="${file//"%title"/$title}"
+    file="${file//"%track"/$track}"
+    file="${file//"%artist"/$artist}"
+    file="${file//"%album"/$album}"
+    file="$MUSIC_LIB/$file.mp3"
+
+    # do not record advertising
+    if [ "$artist" = "Ad" ]; then
+        sleep 0.2
+        continue
+    fi
+
+    # record already exist
+    if [ -f "$file" ]; then
+        sleep 0.2
+        continue
+    fi
+
+    echo "recording: $file.record"
+	parec --format=s16le -d record-n-play.monitor | \
+		lame -r --quiet -q 3 --lowpass 17 --abr 192 - "$file.record" &
+
+    # recording loop
+    while $record; do
+        if [ "$title" != "$(spotify-info -i %title)" ]; then
+            killall parec >/dev/null 2>&1
+            sleep 0.1
+            killall lame >/dev/null 2>&1
+            record_length=$(mp3info -p "%S" "$file.record")
+            record_length=`expr 1000000 \* $record_length`
+            length=`expr 9 \* $length / 10`  # mp3 has min 90% recording length
+            if [ "$record_length" -ge "$length" ]; then
+                echo "save: $file"
+                recorderPostHook "$title" "$track" "$artist" "$album" "$file" false &
+            else
+                echo "corrupt: $file"
+                recorderPostHook "$title" "$track" "$artist" "$album" "$file" true &
+            fi
+            break
+        else
+            sleep 0.2
+        fi
+    done
+done
+

@@ -1,41 +1,39 @@
 # vim:ft=zsh ts=2 sw=2 sts=2
 #
-# agnoster's Theme - https://gist.github.com/3712874
-# A Powerline-inspired theme for ZSH
-#
-# # README
+# Fork of agnoster's Theme - https://gist.github.com/3712874
 #
 # In order for this theme to render correctly, you will need a
 # [Powerline-patched font](https://gist.github.com/1595572).
 #
-# In addition, I recommend the
-# [Solarized theme](https://github.com/altercation/solarized/) and, if you're
-# using it on Mac OS X, [iTerm 2](http://www.iterm2.com/) over Terminal.app -
-# it has significantly better color fidelity.
+# This Theme defines additional prompt segemts.
 #
-# # Goals
-#
-# The aim of this theme is to only show you *relevant* information. Like most
-# prompts, it will only show git information when in a git working directory.
-# However, it goes a step further: everything from the current user and
-# hostname to whether the last call exited with an error to whether background
-# jobs are running in this shell will all be displayed automatically when
-# appropriate.
+
 
 ### Segments of the prompt, default order declaration
 
-typeset -aHg AGNOSTER_PROMPT_SEGMENTS=(
-    prompt_status
-#    promt_vim
-    prompt_exec_time
-    prompt_context
-    prompt_conda
-    prompt_virtualenv
-#    prompt_time
-    prompt_dir
-    prompt_git
-    prompt_end
-)
+if [ "$ZSH_KEYMAP" = "vim" ]; then
+  typeset -aHg AGNOSTER_PROMPT_SEGMENTS=(
+      promt_vim
+      prompt_status
+      prompt_context
+      prompt_conda
+      prompt_virtualenv
+      prompt_dir
+      prompt_git
+      prompt_end
+  )
+else
+  typeset -aHg AGNOSTER_PROMPT_SEGMENTS=(
+      prompt_exec_time
+      prompt_status
+      prompt_context
+      prompt_conda
+      prompt_virtualenv
+      prompt_dir
+      prompt_git
+      prompt_end
+  )
+fi
 
 ### Segment drawing
 # A few utility functions to make it easy and re-usable to draw segmented prompts
@@ -52,7 +50,8 @@ BRANCH="\ue0a0"
 DETACHED="\u27a6"
 CROSS="\u2718"
 LIGHTNING="\u26a1"
-GEAR="\u2699"
+GEAR="\uf013"
+CHECK="\uf42e"
 
 # Begin a segment
 # Takes two arguments, background and foreground. Both can be omitted,
@@ -88,7 +87,7 @@ prompt_end() {
 prompt_context() {
   local user=`whoami`
 
-  if [[ "$user" != "$DEFAULT_USER" || -n "$SSH_CONNECTION" ]]; then
+  if [[ -n "$SSH_CONNECTION" ]]; then
     prompt_segment $PRIMARY_FG default " %(!.%{%F{yellow}%}.)$user@%m "
   fi
 }
@@ -133,8 +132,8 @@ prompt_status() {
   [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}$CROSS"
   [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}$LIGHTNING"
   [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}$GEAR"
-
-  [[ -n "$symbols" ]] && prompt_segment $PRIMARY_FG default " $symbols "
+  [[ -z "$symbols" ]] && symbols+="%{%F{green}%}$CHECK"
+  [[ -n "$symbols" ]] && prompt_segment '#fcfcfc' default "$symbols "
 }
 
 prompt_time() {
@@ -162,12 +161,11 @@ add-zsh-hook precmd _pr_exec_time
 
 prompt_exec_time() {
   if [ -n "$pr_exec_time" ]; then
-    #[old] out="$(date -d "@${pr_exec_time}" "+%Mm %Ss")" || return
     local out total_seconds=$pr_exec_time
     local hours=$(( total_seconds / 60 / 60 % 24 ))
     local minutes=$(( total_seconds / 60 % 60 ))
     local seconds=$(( total_seconds % 60 ))
-    (( hours > 0 )) && human+="${hours}h "
+    (( hours > 0 )) && out+="${hours}h "
     (( minutes > 0 )) && out+="${minutes}m "
     out+="${seconds}s"
     prompt_segment '#fcfcfc' 'black' " ${out} "

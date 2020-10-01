@@ -1,6 +1,6 @@
 #!/bin/sh
 # Description: git helper script to use multiple ssh keys for diffrent accounts on same gitserver host
-# Require: ~/.ssh/config with host <user>.<host> entries
+# Require: ~/.ssh/config with 'host <user>.<host>' entries
 #
 # Example:
 # ```

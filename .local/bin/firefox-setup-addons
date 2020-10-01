@@ -1,0 +1,35 @@
+#!/bin/sh
+# Description: Helper Script to install my prefered firefox addons
+
+# run firefox in non blocking mode
+if ! pidof firefox >/dev/null; then
+    setsid firefox >/dev/null 2>&1 &
+    sleep 1
+fi
+
+# Theme: Mattle Black (Blue) by Elijah Lopez
+firefox "https://addons.mozilla.org/firefox/downloads/file/3596772"
+# uMatrix by Raymond Hill
+firefox "https://addons.mozilla.org/firefox/downloads/file/3396815"
+# uBlock Origin by Raymond Hill
+firefox "https://addons.mozilla.org/firefox/downloads/file/3609157"
+# Dark Reader by Alexander Shutau
+firefox "https://addons.mozilla.org/firefox/downloads/file/3615260"
+# Cookie AutoDelete by CAD Team
+firefox "https://addons.mozilla.org/firefox/downloads/file/3593707"
+# CanvasBlocker by kkapsner
+firefox "https://addons.mozilla.org/firefox/downloads/file/3586373"
+# Bitwarden - Password Manager by Bitwarden Inc.
+firefox "https://addons.mozilla.org/firefox/downloads/file/3599242"
+# Temporary Containers by stoically
+firefox "https://addons.mozilla.org/firefox/downloads/file/3623550"
+# HTTPS Everywhere by EFF Technologists
+firefox "https://addons.mozilla.org/firefox/downloads/file/3574076"
+# Decentraleyes by Thomas Rientjes
+firefox "https://addons.mozilla.org/firefox/downloads/file/3539177"
+# Firefox Multi-Account Containers by Mozilla Firefox
+firefox "https://addons.mozilla.org/firefox/downloads/file/3610087"
+# I don't care about cookies by Kiko
+firefox "https://addons.mozilla.org/firefox/downloads/file/3633489"
+# ClearURLs by Kevin R.
+firefox "https://addons.mozilla.org/firefox/downloads/file/3612592"

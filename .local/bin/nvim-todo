@@ -1,0 +1,9 @@
+#!/bin/env sh
+# Description: list all todos in current directory with fzf and open selected todo in nvim
+
+selection=$(grep -r --exclude-dir="\.git" -i -n "TODO" . | fzf) || exit
+[ -z "$selection" ] && exit
+todoFile=$(echo "$selection" | cut -d ':' -f 1)
+todoLine=$(echo "$selection" | cut -d ':' -f 2)
+
+eval "nvim +$todoLine \"$todoFile\""

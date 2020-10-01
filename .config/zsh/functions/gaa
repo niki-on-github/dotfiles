@@ -1,0 +1,14 @@
+# vim:ft=zsh:et:sts=4:sw=4:wrap
+# Description: better git add all alias
+
+echo "processing git add -all ..."
+count=$(git add --all -n | wc -l)
+[ "$count" = 0 ] && return
+if [ "$count" -gt "5" ]; then
+    git add --all -n
+    echo -en "execute process? [N/y]" && read choice
+    if [ "$choice" != "Y" ] && [ "$choice" != "y" ] && [ "$choice" != "Yes" ] && [ "$choice" != "yes" ]; then
+        echo ">> cancel" && return
+    fi
+fi
+git add --all -v

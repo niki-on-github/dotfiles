@@ -7,7 +7,7 @@
 [ "$XDG_SESSION_TYPE" = "wayland" ] && [ "$QT_QPA_PLATFORM" != "xcb" ] && notify-send "VirtualBox" "Environment Variable QT_QPA_PLATFORM is missing" && exit 1
 [ -n "$(pgrep qemu-system)" ] && notify-send "ERROR" "KVM and VirtualBoxVM cannot run at the same time" && exit 1
 
-vm=$(vboxmanage list vms | cut -d '"' -f 2 | sort | eval "dmenu -i -p \"VirtualBox Start VM >\" $DMENU_STYLE") || exit
+vm=$(vboxmanage list vms | grep -v "inaccessible" | cut -d '"' -f 2 | sort | eval "dmenu -i -p \"VirtualBox Start VM >\" $DMENU_STYLE") || exit
 
 vmMemorySizeMB=$(vboxmanage showvminfo "$vm" | awk '/^Memory size/{print $3}')
 vmMemorySizeMB="${vmMemorySizeMB//MB/}" #remove MB
@@ -17,7 +17,7 @@ vmMemorySizeMB=$(expr $vmMemorySizeMB + 256) #additional safety measure
 freeMemorySizeMB=$(free -m | awk '/^Speicher:/{print $7}') #get free RAM in MB,
 
 if [ "$freeMemorySizeMB" -gt "$vmMemorySizeMB" ]; then
-    exec vboxmanage startvm "$vm"
+    vboxmanage startvm "$vm" 2>&1 | grep "already locked by a session" && notify-send "VirtualBox" "VM \"$vm\" already running"
 else
     notify-send "VirtualBox" "Not enought memmory available"
 fi

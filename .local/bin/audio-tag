@@ -1,6 +1,7 @@
 #!/bin/sh
+# Description: helper script to tag audio files
 
-usage() { 
+usage() {
     echo "Usage:
     $(basename $0) [OPTIONS] file
 
@@ -75,7 +76,7 @@ esac
 
 newName="${artist} - ${title} ($date).${file##*.}"
 echo -n "Rename \"$file\" to \"$newName\" [Y/n]? " && read -r choice
-if [ "$choice" != "n" ] && [ "$choice" != "N" ] && [ "$choice" != "no" ] && [ "$choice" != "No" ]; then 
+if [ "$choice" != "n" ] && [ "$choice" != "N" ] && [ "$choice" != "no" ] && [ "$choice" != "No" ]; then
     mv "$file" "$newName"
     echo "save as \"$newName\""
 fi

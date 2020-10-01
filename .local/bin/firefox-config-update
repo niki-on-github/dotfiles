@@ -1,0 +1,30 @@
+#!/bin/sh
+# Description: Helper Script to update firefox user.js, user-overrides.js, userCrome.css and more
+
+error() {
+    echo "$@"
+    exit 1
+}
+
+GHACKS_USERJS_DIRECTORY="$HOME/.config/firefox/ghacks-user.js"
+OVERRIDES_FILES="$HOME/.config/firefox/my-overrides"
+FIREFOX_CONFIG_DIRECTORY="$HOME/.mozilla/firefox"
+FIREFOX_CACHE_DIRECTORY="$HOME/.cache/mozilla/firefox"
+
+[ -d $GHACKS_USERJS_DIRECTORY ] || error "Directory not Found: $GHACKS_USERJS_DIRECTORY"
+[ -d $OVERRIDES_FILES ] || error "Directory not Found: $OVERRIDES_FILES"
+[ -d $FIREFOX_CONFIG_DIRECTORY ] || error "Directory not Found: $FIREFOX_CONFIG_DIRECTORY (make sure you run firefox once on the system)"
+
+read -p "Press the [Enter] key to continue. This will close all instances of Firefox"
+pidof firefox >/dev/null && kill $(pidof firefox) && echo -n "close Firefox ." && sleep 1 && echo -n "." && sleep 1 && echo ". OK"
+
+[ -f $FIREFOX_CONFIG_DIRECTORY/installs.ini ] || error "File not Found: $FIREFOX_CONFIG_DIRECTORY/installs.ini"
+firefoxUserDirectory=$(fgrep "Default=" $FIREFOX_CONFIG_DIRECTORY/installs.ini)
+firefoxUserDirectory="${firefoxUserDirectory:8}"
+firefoxCacheDirectory="$FIREFOX_CACHE_DIRECTORY/$firefoxUserDirectory"
+firefoxConfigDirectory="$FIREFOX_CONFIG_DIRECTORY/$firefoxUserDirectory"
+[ -d $firefoxConfigDirectory ] || error "Firefox user directory not Found: $firefoxConfigDirectory"
+[ -d $firefoxCacheDirectory ] && rm -rf $firefoxCacheDirectory
+
+cp -rfv $OVERRIDES_FILES/* $firefoxConfigDirectory/
+cd $GHACKS_USERJS_DIRECTORY && sh updater.sh -s -b -p "$firefoxConfigDirectory" && cd - >/dev/null

@@ -1,4 +1,5 @@
 #!/bin/sh
+# Desciption: my music control api
 
 usage() {
     cat <<EOF
@@ -25,7 +26,7 @@ EOF
     exit $1
 }
 
-mpc_toggle() { 
+mpc_toggle() {
     if [ $(mpc | grep playing| wc -l) = 1 ]; then
         mpc pause >> /dev/null
     else

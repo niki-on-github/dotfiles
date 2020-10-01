@@ -1,0 +1,4 @@
+# vim:ft=zsh:et:sts=4:sw=4:wrap
+# Description: mkdir & cd to it
+
+mkdir -p "$1" && cd "$1";

@@ -37,40 +37,66 @@ set nohidden
 # Set tabstop
 set tabstop 4
 
+# auto reload
+set period 5
+
 
 #################################################################
 # Functions
 #################################################################
 
-# auto rename pane title (if not set) an run inside tmux
+# if lf run inside tmux set pane title
 ${{
     [[ -v TMUX ]] || TMUX=""
-    [ -n "$TMUX" ] && tmux display -p '#{pane_title}' | grep -v "lf-right-pane" >/dev/null && \
-        printf "\033]2;%s\033\\" "lf-left-pane"
+    if [ -n "$TMUX" ]; then
+        if tmux lsp -F '#{pane_title}' | fgrep "lf-pane-1" >/dev/null; then
+            printf "\033]2;%s\033\\" "lf-pane-2"
+        else
+            printf "\033]2;%s\033\\" "lf-pane-1"
+        fi
+    fi
     [ -z "" ]  # return 0
 }}
 
-# move selected/current file(s) to ~/.trash (requires trash-cli pkg)
+# move selected/current file(s) to trash (requires trash-cli pkg)
 #NOTE: commands: trash-put, trash-empty, trash-list, trash-restore, trash-rm
-cmd trash %{{
-    trash-put $fx
-    notify-send "Files were moved to trash" "$fx" 
-    printf "Files were moved to trash"
+cmd trash ${{
+    countItems=$(echo "$fx" | wc -l)
+
+    choice="No"
+    # NOTE: if you change order of yes and no the fzf binding also need to change!
+    if [ "$countItems" -le "1" ]; then
+        grep "$PWD" <<< "$fx" >/dev/null || return  # if we have an old file selected
+        choice=$(echo -e "No\nYes" | fzf --prompt="delete $fx ? > " --bind=n:down+accept,y:up+accept) || return
+    else
+        echo "$fx" | head -n1 | grep "$PWD" >/dev/null || return  # if we have an old file selected
+        choice=$(echo -e "No\nYes" | fzf --prompt="delete $countItems items? > " --bind=n:down+accept,y:up+accept) || return
+    fi
+    if [ "$choice" = "Yes" ]; then
+        if echo "$fx" | head -n1 | grep "$PWD" >/dev/null && grep "ramdisk" <<< "$PWD" >/dev/null; then
+            for f in $fx; do eval "rm -rf \"$f\""; done
+            notify-send "Delete" "$countItems item(s) were deleted"
+            lf -remote "send $id echo \"$countItems item(s) were deleted\""
+        else
+            for f in $fx; do eval "trash-put \"$f\""; done
+            notify-send "Trash" "$countItems item(s) were moved to trash"
+            lf -remote "send $id echo \"$countItems item(s) were moved to trash\""
+        fi
+    fi
 }}
 
 # use `:q` to quit lf
 cmd q ${{
     [[ -v TMUX ]] || TMUX=""
     [ -n "$TMUX" ] && tmux kill-window
-    lf -remote "send $id quit" 
+    lf -remote "send $id quit"
 }}
 cmd Q :q  # not case sensitive
 
-# open/(toggle) terminal
+# toggle terminal
 cmd terminal ${{
     [[ -v TMUX ]] || TMUX=""
     if [ -n "$TMUX" ]; then
-        # use tmux to manage panes
         if tmux lsp -F "#{pane_title}" | grep "^lf-terminal$" >/dev/null ; then
             tmux killp -t $(tmux lsp -F "#{pane_id} #{pane_title}" | grep " lf-terminal$" | awk '{print $1}')
         else
@@ -78,7 +104,6 @@ cmd terminal ${{
         fi
     else
         # use window manager to manage new windows
-        echo "$DESKTOP_SESSION" | grep "i3" >/dev/null && i3-msg split v >/dev/null 2>&1
         setsid $TERMINAL >/dev/null 2>&1 &
     fi
 }}
@@ -90,6 +115,20 @@ cmd cp-name ${{
     notify-send "Copy2Clipboard" "$name"
 }}
 
+cmd rename-by-clipboard ${{
+    newName=$(xsel -b | head -n1)
+    [ -z "$newName" ] && return
+    if [ -f "$newName" ]; then
+        n=$((0))
+        while [ -f "${newName}-${n}" ]; do
+            n=$((n+1))
+        done
+        newName="${newName}-${n}"
+    fi
+    eval "mv \"$f\" \"$newName\""
+    lf -remote "send $id reload"
+}}
+
 # print lf id
 cmd get-id %{{
     echo "lf-id: $id"
@@ -97,7 +136,7 @@ cmd get-id %{{
 
 # rename/change the pane title
 cmd rename-title ${{
-    printf "\033]2;%s\033\\" "$@" 
+    printf "\033]2;%s\033\\" "$@"
 }}
 
 # open selected files with gui programs
@@ -105,20 +144,25 @@ cmd open-gui ${{
     case $(file --mime-type $f -b) in
         application/pdf)
             if [[ -v READER_GUI ]]; then
-                setsid $READER_GUI "$f" >/dev/null 2>&1 & 
+                setsid $READER_GUI "$f" >/dev/null 2>&1 &
             else
+                # open with terminal application
                 lf -remote "send $id open"
                 return
             fi ;;
+        image/*)
+            setsid gimp "$f" >/dev/null 2>&1 & ;;
         text/*)
             if [[ -v EDITOR_GUI ]] ; then
                 for f in $fx; do setsid $EDITOR_GUI $f >/dev/null 2>&1 & done;
             else
+                #open with terminal application
                 lf -remote "send $id open"
                 return
             fi ;;
         *)
-            lf -remote "send $id open" ;;   
+            # open with terminal application
+            lf -remote "send $id open" ;;
     esac
 }}
 
@@ -134,54 +178,63 @@ cmd open ${{
         done
     }
 
-    open-image() {
-        pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Ei "(*.png$|*.jpg$|*.jpeg$|*.tif$)" | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
-        setsid sxiv -aobq -n $pos "$PWD" 2>/dev/null | lfSelect & 
+    open-gif() {
+        setsid sxiv -a "$f" &
     }
-    
+
+    open-image() {
+        pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
+        setsid sxiv -aobq -n $pos "$PWD" 2>/dev/null | lfSelect &
+    }
+
     open-audio() {
-        mpv --vo=null --speed=1.0 $f 
+        mpv --vo=null --speed=1.0 $f
     }
 
     open-video() {
-        setsid mpv $f >/dev/null 2>&1 & 
+        setsid mpv $f >/dev/null 2>&1 &
     }
 
     open-document() {
-        setsid $READER $fx >/dev/null 2>&1 & 
+        setsid $READER $fx >/dev/null 2>&1 &
     }
 
     open-editor() {
         eval "$EDITOR \"$f\""
     }
 
+    open-browser() {
+        eval "$BROWSER \"$f\""
+    }
+
     case "$f" in
-        *mp3|*.flac|*.m4a) open-audio ;;
+        *.mp3|*.flac|*.m4a) open-audio ;;
         *.mp4|*.mkv) open-video ;;
+        *.svg|*.svgz) open-browser ;;
+        *.gif) open-gif ;;
         *.png|*.jpg|*.jpeg|*.tif) open-image ;;
         *.pdf) open-document ;;
-        *.txt|*.md|*.MD) open-editor ;;
-        *)  # fallback is mime-type  
+        *.txt|*.md|*.MD|*.tex|*.html|*.css) open-editor ;;
+        *)  # fallback is mime-type
             case $(file --mime-type $f -b) in
                 text/*) eval "$EDITOR \"$fx\"" ;;
                 image/*) open-image ;;
                 audio/*) open-audio ;;
                 video/*|application/octet-stream) open-video ;;
-                application/pdf) open-document ;;
+                application/pdf|application/epub*) open-document ;;
                 *) open-editor ;;
             esac ;;
     esac
 }}
 
-# open/(toggle) a second lf file manager pane
+# toggle a second lf file manager pane
 cmd split ${{
     [[ -v TMUX ]] || TMUX=""
     if [ -n "$TMUX" ]; then
-        # use tmux to manage panes
-        if tmux lsp -F "#{pane_title}" | grep "^lf-right-pane$" >/dev/null ; then
-            tmux killp -t $(tmux lsp -F "#{pane_id} #{pane_title}" | grep " lf-right-pane$" | awk '{print $1}')
+        if [ "$(tmux lsp -F "#{pane_title}" | grep "^lf-pane-" | wc -l)" -ge "2" ] ; then
+            tmux killp -t 2
         else
-            tmux split-window -h 'printf "\033]2;%s\033\\" "lf-right-pane" && exec lf'
+            tmux split-window -h 'exec lf'
         fi
     else
         # use window manager to manage windows
@@ -189,10 +242,22 @@ cmd split ${{
     fi
 }}
 
+# swap first and second lf file manager pane
+cmd swap ${{
+    [[ -v TMUX ]] || TMUX=""
+    if [ -n "$TMUX" ]; then
+        if tmux lsp -F "#{pane_title}" | grep "^lf-pane-1$" >/dev/null ; then
+            if tmux lsp -F "#{pane_title}" | grep "^lf-pane-2$" >/dev/null ; then
+                tmux swap-pane -s 1 -t 2
+            fi
+        fi
+    fi
+}}
+
 # open a new lf file manager (in new tab)
 cmd new-tab ${{
     [[ -v TMUX ]] || TMUX=""
-    if [ -n "$TMUX" ]; then 
+    if [ -n "$TMUX" ]; then
         tmux new-window lf
     else
         # use window manager to manage tabs
@@ -343,14 +408,36 @@ cmd mkrar ${{
 
 # create directory (override unix mkdir so folder names can contain spaces without using quotation marks)
 cmd mkdir ${{
-    [ -z "$(echo -n $@)"  ] && return 
+    [ -z "$(echo -n $@)"  ] && return
     eval "mkdir -p \"$@\""
+    dirName=$(echo "$@" | sed 's/ /\\ /g')
+    lf -remote "send $id select $dirName"
 }}
 
 # create a new file and open in $EDITOR (file name can contain spaces without using quotation marks)
 cmd mkfile ${{
-    [ -z "$(echo -n $@)"  ] && return 
+    [ -z "$(echo -n $@)"  ] && return
     eval "$EDITOR \"$@\""
+}}
+
+# rename multiple selected files at the same time using your text editor
+cmd bulk-rename ${{
+    old=$(mktemp)
+    new=$(mktemp)
+    [ -n $fs ] && fs=$(ls)
+    printf "$fs\n" > $old
+    printf "$fs\n" > $new
+    $EDITOR $new
+    [ $(cat $new | wc -l) -ne $(cat $old | wc -l) ] && exit
+    paste $old $new | while read names; do
+        src=$(printf $names | cut -f1)
+        dst=$(printf $names | cut -f2)
+        [ $src = $dst ] && continue
+        [ -e $dst ] && continue
+        mv $src $dst
+    done
+    rm $old $new
+    lf -remote "send $id unselect"
 }}
 
 # show a popup window with all selected files for drag-and-drop into another graphical application
@@ -372,32 +459,40 @@ cmd ssh-add %{{
     [ -z "$(grep "@" <<< "$@")" ] && usage && return
     [ -z "$(grep "/" <<< "$@")" ] && usage && return
 
-    echo "$@" >> ~/.cache/lf-ssh.bookmarks
+    mkdir -p ~/.local/share/lf
+    echo "$@" >> ~/.local/share/lf/ssh
 }}
 
 # list files from selected bookmark servers and rsyncs selected files to the current directory
 cmd ssh-download ${{
-    [ -f ~/.cache/lf-ssh.bookmarks ] || return
-    choice="$(fzf --multi < ~/.cache/lf-ssh.bookmarks)" || return
+    [ -f ~/.local/share/lf/ssh ] || return
+    choice="$(fzf --multi < ~/.local/share/lf/ssh)" || return
     [ -z "$choice" ] && return
     choice=$(echo "$choice" | tr '\n' ' '| sed -e 's/[[:space:]]*$//')
     lf -remote "send $id ssh-get $choice"
 }}
 
-# lists files from remote servers addresses and rsyncs the selected files to the current directory 
+# lists files from remote servers addresses and rsyncs the selected files to the current directory
 cmd ssh-get &{{
     [ -f ~/.config/lf/scripts/ssh-get.sh ] && ~/.config/lf/scripts/ssh-get.sh "$id" "$@"
 }}
 
 # upload selectet file to a ssh device from ssh bookmarks
 cmd ssh-upload ${{
-    [ -f ~/.cache/lf-ssh.bookmarks ] || return
-    choice="$(fzf < ~/.cache/lf-ssh.bookmarks)" || return
+    [ -f ~/.local/share/lf/ssh ] || return
+    choice="$(fzf < ~/.local/share/lf/ssh)" || return
     [ -z "$choice" ] && return
     choice=$(echo "$choice" | tr '\n' ' '| sed -e 's/[[:space:]]*$//')
-    rsync --protect-args -auv --progress -e ssh $fx $choice
-    notify-send "ssh-push" "files uploaded to $choice"
-    lf -remote "send $id :unselect"
+    if ! rsync --protect-args -auv --progress -e ssh $fx $choice ; then
+        echo "ssh-push failed!"
+        notify-send --urgency critical "ssh-push failed" "files upload to $choice failed"
+        lf -remote "send $id echo \"ssh-push failed!\""
+        read
+    else
+        notify-send "ssh-push" "files uploaded to $choice"
+        lf -remote "send $id :unselect"
+        lf -remote "send $id echo \"files uploaded to $choice\""
+    fi
 }}
 
 # mount rclone network drives
@@ -429,7 +524,7 @@ cmd rmount-run ${{
 # unmount a rclone network derive
 cmd rumount ${{
     if [ ! -f ~/.cache/lf-rmount.csv ]; then; lf -remote "send $id echo \"no device mounted\""; return; fi
-    
+
     remoteList=()
     while IFS=, read -r pid remote dest; do
         [ -z "$dest" ] && continue
@@ -437,10 +532,10 @@ cmd rumount ${{
         remoteList+=( "$remote" )
     done < ~/.cache/lf-rmount.csv
     unset IFS
-    
+
     if [ "${#remoteList[@]}" -le "0" ]; then
         lf -remote "send $id echo \"no device mounted\""
-        rm -f ~/.cache/lf-rmount.csv 
+        rm -f ~/.cache/lf-rmount.csv
         return
     fi
 
@@ -458,7 +553,7 @@ cmd rumount ${{
                 lf -remote "send $id echo \"Error: device $choice in use\""
             else
                 [ -n "$(ls -A $dest)" ] && eval "kill $pid" && sleep 0.5
-                lf -remote "send $id echo \"device $choice unmounted\"" 
+                lf -remote "send $id echo \"device $choice unmounted\""
                 rm -d $dest >/dev/null 2>&1
                 continue
             fi
@@ -483,7 +578,7 @@ cmd rumount-all ${{
                 lf -remote "send $id echo \"Error: device $remote in use\""
                 return
             fi
-            
+
             # is $dest not empty?
             [ -n "$(ls -A $dest)" ] && eval "kill $pid" && sleep 0.5
 
@@ -492,20 +587,20 @@ cmd rumount-all ${{
         done < ~/.cache/lf-rmount.csv
         unset IFS
     fi
-  
-    lf -remote "send $id echo \"all devices unmounted\"" 
+
+    lf -remote "send $id echo \"all devices unmounted\""
     rm -f ~/.cache/lf-rmount.csv
 }}
 
 # use fzf to select files by specific sequence
 cmd quick-select ${{
     lf -remote "send $id unselect"
-   
-    # solution 1
-    find $PWD -maxdepth 2 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all | xargs -d $'\n' -I{} sh -c 'lf -remote "send $id select \"{}\""; lf -remote "send $id toggle"'
-    
+
+    # solution 1 (slow)
+    #find $PWD -maxdepth 2 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all | xargs -d $'\n' -I{} sh -c 'lf -remote "send $id select \"{}\""; lf -remote "send $id toggle"'
+
     # solution 2 (can only select files in working directory): matches pattern character c (c != '*', '?', '\\', '[')
-    # find $PWD -maxdepth 1 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all | xargs -d $'\n' -I{} sh -c 'fpattern=$(basename "{}" | sed -e "s/[\[\*]/?/g"); lf -remote "send $id glob-select \"$fpattern\""'
+    find $PWD -maxdepth 1 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all | xargs -d $'\n' -I{} sh -c 'fpattern=$(basename "{}" | sed -e "s/[\[\*]/?/g"); lf -remote "send $id glob-select \"$fpattern\""'
 }}
 
 # select all files in working directory with given pattern (e.g. *Favorite*)
@@ -526,6 +621,8 @@ cmd rpaste &{{
         | while read line; do
             lf -remote "send $id echo $line"
         done
+        lf -remote "send $id echo \"rsync check ...\""
+        rsync -c $list . || notify-send --urgency critical "lf copy" "rsync failed"
     elif [ $mode = 'move' ]; then
         mv -n $list .
     fi
@@ -537,7 +634,7 @@ cmd rpaste &{{
 cmd clpaste ${{
     clip=$(xclip -o -selection clipboard)
     grep "/" <<< "$clip" >/dev/null || return
-    
+
     [ -f "$clip" ] && cp "$clip" "$PWD" && return
     [ -d "$clip" ] && cp -r "$clip" "$PWD" && return
 }}
@@ -545,7 +642,7 @@ cmd clpaste ${{
 # set default file/folder permissions on selected files
 cmd set-default-permissions ${{
     set -f # disable filename expansion
-    for f in $fx; do 
+    for f in $fx; do
         if [ -d "$f" ]; then
             chmod 755 "$f"
         else
@@ -557,15 +654,24 @@ cmd set-default-permissions ${{
 }}
 
 # rename a file to its parent folder name
-cmd base-rename ${{
+cmd rename-by-parent-directory ${{
     # parse file infos
     fulldname="$(dirname "$f")"
     dname="$(basename "$fulldname")"
     file="$(basename "$f")"
     extension="${file##*.}"
     fname="${file%.*}"
-    
-    eval "mv \"$file\" \"${dname}.${extension}\""
+
+    # Movie Subtitles
+    if [ "$dname" = "Subs" ]; then
+        dname="$(basename "$(dirname "$fulldname")")"
+        if grep -E "(-eng|-ger|-forced)" <<< "$fname" >/dev/null ; then
+            postfix="${fname##*-}"
+            dname="${dname}-${postfix}"
+        fi
+    fi
+
+    [ "$file" = "${dname}.${extension}" ] || eval "mv \"$file\" \"${dname}.${extension}\""
 }}
 
 # open clipboard path (can contain spaces)
@@ -575,6 +681,26 @@ cmd browse-clipboard-path ${{
     [ -f $clipboardPath ] && clipboardPath="${clipboardPath%/*}"
     [ -d $clipboardPath ] || return
     lf -remote "send $id cd \"$clipboardPath\""
+}}
+
+# lf thumbnail mode via sxiv
+cmd thumbnail-mode ${{
+    # Reads file names from stdin and selects them in lf
+    lfSelect() {
+        while read -r file; do
+            [ -z "$file" ] && continue
+            [ -e "$file" ] || contine
+            lf -remote "send select \"$file\""
+            lf -remote "send toggle"
+        done
+    }
+
+    lf -remote "send $id unselect"
+    pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
+    id=$(xdo id)
+    xdo hide
+    sxiv -p -t -o -b -q -n $pos "$PWD" | lfSelect
+    xdo show "$id"
 }}
 
 
@@ -611,7 +737,7 @@ cmd browse-clipboard-path ${{
 # search-next              (default 'n')
 # search-prev              (default 'N')
 # $$EDITOR $f              (default 'e')
-# $$SHELL                  (default 'w') 
+# $$SHELL                  (default 'w')
 # command history up       (default '<c-p>')
 # command history down     (default '<c-n>')
 # show info                (default 'zn')
@@ -631,20 +757,26 @@ map '"'     # mark-remove
 map "'"     # mark-load
 map i       # $$PAGER $f
 map p       # paste (we use rpaste)
+map <c-d>
 
 # Add custom functions (space at the end sometimes break bindings!)
 map Q :q
-map D delete
-map <delete> delete
+map D :trash
+map <c-d> delete
+map <delete> :trash
 map Sd :ssh-download
+map SD :ssh-download
 map Su :ssh-upload
-map T trash
+map SU :ssh-upload
+map T :thumbnail-mode
 map <enter> open
 map <bs2> updir
 map E extract
 map tg $lazygit
 map tt $tig
-map tr :base-rename
+map trd :rename-by-parent-directory
+map trs :bulk-rename
+map trc :rename-by-clipboard
 map gs :get-size
 map bs mark-save
 map bl mark-load
@@ -657,6 +789,9 @@ map mx $(chmod +x $fx && lf -remote "send $id reload")
 map mz push :mkzip<space>
 map mt push :mktar<space>
 map mr push :mkrar<space>
+map mn :set-default-permissions
+map gl $ git pull && lf -remote "send $id echo \"git pull ... done\""
+map gp $ git push && lf -remote "send $id echo \"git push ... done\""
 map i invert
 map I set preview!
 map O open-gui
@@ -680,10 +815,12 @@ map <f-8> set hidden!
 map <f-10> push %mkdir<space>
 map <f-11> set preview!
 map ~ cd
+map V :thumbnail-mode
 map <esc> unselect
 map + :clpaste
 map \# :drag
 map . set hidden!
-map mn :set-default-permissions
 map C &lf -remote "send $id echo \"compile $f\"" && ~/.local/bin/compile $f && lf -remote "send $id reload" || lf -remote "send $id echo \"compile failed\""
 map <f-12> &lf -server && lf -remote "send $id echo \"server was successfully restarted\""
+map - :swap
+map R :bulk-rename

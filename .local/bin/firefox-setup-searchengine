@@ -1,0 +1,46 @@
+#!/bin/sh
+# Description: Helper Script to setup my prefered search engines in firefox
+
+set -e
+
+error() {
+    echo "ERROR: $@"
+    exit 1
+}
+
+ENGINES="(Google|DuckDuckGo)"
+DEFAULT_ENGINE="DuckDuckGo"
+
+command -v jq >/dev/null || error "Please install jq"
+
+_mozlz4=$HOME/.local/bin/mozlz4
+[ -f $_mozlz4 ] || error "File not Found: $_mozlz4"
+
+FIREFOX_CONFIG_DIRECTORY="$HOME/.mozilla/firefox"
+[ -d $FIREFOX_CONFIG_DIRECTORY ] || error "Directory not Found: $FIREFOX_CONFIG_DIRECTORY (make sure you run firefox once on the system)"
+
+read -p "Press the [Enter] key to continue. This will close all instances of Firefox"
+pidof firefox >/dev/null && kill $(pidof firefox) && echo -n "close Firefox ." && sleep 1 && echo -n "." && sleep 1 && echo ". OK"
+
+[ -f $FIREFOX_CONFIG_DIRECTORY/installs.ini ] || error "File not Found: $FIREFOX_CONFIG_DIRECTORY/installs.ini"
+firefoxUserDirectory=$(fgrep "Default=" $FIREFOX_CONFIG_DIRECTORY/installs.ini)
+firefoxUserDirectory="${firefoxUserDirectory:8}"
+firefoxConfigDirectory="$FIREFOX_CONFIG_DIRECTORY/$firefoxUserDirectory"
+[ -f $firefoxConfigDirectory/search.json.mozlz4 ] || error "$firefoxConfigDirectory/search.json.mozlz4 not found"
+
+$_mozlz4 -x $firefoxConfigDirectory/search.json.mozlz4 /tmp/search.json
+search_json=$(cat /tmp/search.json)
+changeNumbers=$(jq '.engines | .[] | ._name' /tmp/search.json | grep -Env "$ENGINES" | cut -d ':' -f 1)
+for num in $changeNumbers ; do
+    search_json=$(echo "$search_json" | jq '.engines['$(($num-1))']._metaData.hidden = "true"')
+done
+
+if [ "$(echo "$search_json" | jq '.metaData')" = "{}" ]; then
+    echo "set default search engine to $DEFAULT_ENGINE"
+    echo "$search_json" | jq '. + {"metaData": {"current": "'$DEFAULT_ENGINE'"}}' > /tmp/search.json
+else
+    # Default Search Engine was already set by user
+    echo "$search_json" > /tmp/search.json
+fi
+$_mozlz4 -z /tmp/search.json $firefoxConfigDirectory/search.json.mozlz4
+echo "done"

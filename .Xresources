@@ -46,3 +46,8 @@ dwm.selbordercolor:  #ffffff
 dwm.selbgcolor:      #1d99f3
 dwm.selfgcolor:      #ffffff
 
+
+/* uncomment to fast override:
+dmenu.selbackground: #AA00FF
+dwm.selbgcolor:      #AA00FF
+*/

@@ -1,0 +1,39 @@
+#!/bin/sh
+# Description: play local audio file with mpd
+
+usage() {
+[ -z "${1}" ] || echo -e "\033[0;31mERROR: ${1}\033[0m\n"
+echo "\
+script to play local audio files with mpd
+
+Usage:
+  ~\$ $(basename "$0") \"[FILE]\""
+[ -z "${1}" ] && exit 2 || exit 0
+}
+
+# error messages
+WRONG_ARGS_ERR='wrong number of arguments passed to script'
+
+[ $# -gt 0 ] || usage "${WRONG_ARGS_ERR}"
+[ "$1" = "-h" ] && usage
+
+# get audio file absolute path
+link=$(readlink -f "$@")
+
+play () {
+    if [ -z "$(mpc current)" ]; then # nothing playing
+        if [ -z "$(mpc playlist)" ]; then # playlist empty
+            mpc add "file://${link}"
+            mpc play 
+        else # playlist not empty so clear add file and play
+            mpc clear
+	        mpc add "file://${link}"
+            mpc play 
+	    fi
+    else # audio playing insert file and play it
+        mpc insert "file://${link}" 
+	    mpc next
+    fi
+}
+
+play

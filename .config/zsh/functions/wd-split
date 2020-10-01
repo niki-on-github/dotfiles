@@ -1,0 +1,9 @@
+# vim:ft=zsh:et:sts=4:sw=4:wrap
+# Description: function to open a new terminal in current directory (working directory split)
+
+[ -v TMUX ] || TMUX=""
+if [ -n "$TMUX" ]; then
+    tmux new-window
+else
+    setsid $TERMINAL >/dev/null 2>&1
+fi

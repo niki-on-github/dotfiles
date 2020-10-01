@@ -1,5 +1,5 @@
 #!/bin/sh
-# Description: Helpser Script to control audio volume
+# Description: my volume control api
 
 usage() {
     cat <<EOF

@@ -3,8 +3,8 @@
 
 [ -z "$DMENU_STYLE" ] && DMENU_STYLE=""
 
-LOCK="i3lock --nofork -B=100"
-command -v $LOCK >/dev/null || notify-send "ERROR" "Locker not found: $LOCK"
+LOCK="$HOME/.local/bin/x11-lock"  # TODO wayland
+[ -f $LOCK ] || notify-send "ERROR" "Locker not found: $LOCK"
 
 menu=(' ﰸ cancel ' '  lock ' '  lockout ' '  shutdown ' '  reboot ')
 choice=$(printf '%s\n' "${menu[@]}" | eval "dmenu -i -p \"shutdown menu >\" $DMENU_STYLE") || exit

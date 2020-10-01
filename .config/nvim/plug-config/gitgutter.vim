@@ -19,7 +19,7 @@ let g:gitgutter_async = 1
 
 " dotfiles bare git repository "
 if filereadable(expand("~/.dotfiles/config"))
-    let shellcmd = 'git --git-dir=$HOME/.dotfiles --work-tree=$HOME ls-tree -r HEAD --name-only --full-name | xargs -I{} echo "$HOME/{}" | grep '
+    let shellcmd = 'git --git-dir=$HOME/.dotfiles --work-tree=$HOME ls-files --full-name | xargs -I{} echo "$HOME/{}" | grep '
     " NOTE: the dot in this if query is for concatenating strings "
     :call system(shellcmd . expand('%:p'))
     if !v:shell_error

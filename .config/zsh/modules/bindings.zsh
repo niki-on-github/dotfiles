@@ -22,11 +22,11 @@ setup_mode() {
 
     # Make sure that the terminal is in application mode when zle is active (required for some bindings)
     if (( ${+terminfo[smkx]} )) && (( ${+terminfo[rmkx]} )); then
-        function zle-line-init() { 
-            echoti smkx 
+        function zle-line-init() {
+            echoti smkx
             [ "$mode" = "vim" ] && zle -K viins # Start every prompt in insert mode
         }
-        function zle-line-finish() { 
+        function zle-line-finish() {
             echoti rmkx
             vim_mode=$vim_ins_mode
         }
@@ -52,7 +52,7 @@ setup_mode() {
 }
 
 # setup mode before assing bindings
-setup_mode "emacs"
+setup_mode "$ZSH_KEYMAP"
 
 
 #################################################################################################################
@@ -90,16 +90,69 @@ function run-again {
 }
 zle -N run-again
 
+# add string to zsh history
+function zshaddhistory() {
+    print -sr -- ${1%%$'\n'}
+}
+
+# toggel vim, emacs zsh keymap
+function toggle-zsh-keymap {
+    if [ "$ZSH_KEYMAP" = "emacs" ]; then
+        export ZSH_KEYMAP="vim"
+    else
+        export ZSH_KEYMAP="emacs"
+    fi
+    zshaddhistory "$BUFFER"
+    source $ZDOTDIR/.zshrc
+    zle kill-whole-line
+    zle accept-line
+}
+zle -N toggle-zsh-keymap
+
+# paste from system clipboard
+if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+    paste-clip() {
+        killring=("$CUTBUFFER" "${(@)killring[1,-2]}")
+        CUTBUFFER=$(wl-paste)
+        zle yank
+    }
+else
+    paste-clip() {
+        killring=("$CUTBUFFER" "${(@)killring[1,-2]}")
+        CUTBUFFER=$(xclip -selection clipboard -o 2>/dev/null)
+        [ "$?" -eq "0" ] || notify-send "Clipboard" "Error: target string not available"
+        zle yank
+    }
+fi
+zle -N paste-clip
+
+# print shortcuts list to improve your zsh productivity
+function bindings {
+  echo "\
+  ALT  + D              Delete the word after the cursor
+  ALT  + [Backspace]    Delete word backward
+  CTRL + A              Move to the beginning of the line
+  CTRL + E              Move to the end of the line
+  CTRL + [Left Arrow]   Move one word backward
+  CTRL + [Right Arrow]  Move one word forward
+  CTRL + U              Clear the entire line
+  CTRL + K              Clear the characters on the line after the current cursor position
+  CTRL + W              Delete the word in front of the cursor
+  CTRL + R              Search history
+  CTRL + G              Escape from search mode
+  CTRL + _              Undo the last change
+  CTRL + L              Clear screen
+  CTRL + C              Terminate/kill current foreground process
+  CTRL + Z              Suspend/stop current foreground process
+  ESC  + [Backspace]    Delete the word in front of the cursor"
+  # CTRL + S              Stop output to screen
+  # CTRL + Q              Re-enable screen output
+}
+
 
 #################################################################################################################
 # key bindings (use `sed -n l` to get the key code)
 #################################################################################################################
-
-# non zsh specific
-# Ctrl + U      delete from the cursor to the start of the line.
-# Ctrl + K      delete from the cursor to the end of the line.
-# Ctrl + W      delete from the cursor to the start of the preceding word.
-# Ctrl + L      clear the terminal.
 
 # function keys
 [[ "${terminfo[khome]}" != "" ]]    && bindkey "${terminfo[khome]}" beginning-of-line       # [Home] - Go to beginning of line
@@ -112,13 +165,15 @@ zle -N run-again
 
 bindkey ' ' magic-space                             # [Space] - do history expansion
 bindkey '^?' backward-delete-char                   # [Backspace] - delete backward
-bindkey '^[[1;5C' forward-word                      # [Ctrl-RightArrow] - move forward one word
-bindkey '^[[1;5D' backward-word                     # [Ctrl-LeftArrow] - move backward one word
-bindkey '^r' history-incremental-search-backward    # [Ctrl-r] - Search backward incrementally for a specified string
-bindkey '^ ' autosuggest-accept                     # [Ctrl+Space] - auto complete command
-bindkey '^x' run-again                              # [Ctrl+x] - run last command again
+bindkey '^[[1;5C' forward-word                      # [Ctrl+RightArrow] - move forward one word
+bindkey '^[[1;5D' backward-word                     # [Ctrl+LeftArrow] - move backward one word
+bindkey '^r' history-incremental-search-backward    # [Ctrl+r] - Search backward incrementally for a specified string
+bindkey '^ ' autosuggest-execute                    # [Ctrl+Space] - auto complete command and incrementaly execute command
+bindkey '^x' toggle-zsh-keymap                      # [Ctrl+x] - toggle vim, emacs zsh keymap
 bindkey '^o' lf-cd                                  # [Ctrl+o] - use lf to switch directory
 bindkey '^[OS' close                                # [F4] - close if terminal run inside tmux
+bindkey -r '^V'; bindkey "^V" paste-clip            # [Ctrl+v] - paste from system clipboard (vi-quoted-insert conflict with Paste)
+bindkey -r '^Y'                                     # [Ctrl+y] - conflict with Copy (alacritty)
 
 # start typing + [Up-Arrow] - fuzzy find history forward
 if [[ "${terminfo[kcuu1]}" != "" ]]; then
@@ -133,6 +188,3 @@ if [[ "${terminfo[kcud1]}" != "" ]]; then
     zle -N down-line-or-beginning-search
     bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
 fi
-
-# remove bindings
-bindkey -r '^V'  # vi-quoted-insert conflict with 'Ctrl+V' (Paste)

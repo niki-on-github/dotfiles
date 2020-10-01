@@ -175,8 +175,9 @@ swallowEventHook pidHashTable windowHashTable (MapNotifyEvent {ev_window = windo
     whenX (runQuery isInteresting window) (swallowCheck pidHashTable windowHashTable window)
     return $ All True
 
-swallowEventHook pidHashTable windowHashTable (DestroyWindowEvent {ev_window = window}) = do
-    removeEntry pidHashTable windowHashTable window
+swallowEventHook pidHashTable windowHashTable (DestroyWindowEvent {ev_event = eventId, ev_window = window}) = do
+    -- first ceck that the event is actually about closing a window
+    when (eventId == window) $ removeEntry pidHashTable windowHashTable window
     return $ All True
 
 swallowEventHook pidHashTable windowHashTable _ = return $ All True

@@ -1,0 +1,20 @@
+#!/bin/bash
+# Description: FC8482 deprecates the DNS ANY query type, workaround:
+
+LBLUE='\033[1;34m'; NC='\033[0m'
+echo -e "${LBLUE}# DNS Server${NC}"
+eval "nslookup $@" | head -n 3
+echo -e "${LBLUE}# A - IPv4-Adresse${NC}"
+eval "nslookup -q=A $@" | grep -v "Can't find" | tail -n +4
+echo -e "${LBLUE}# AAAA - IPv6-Adresse${NC}"
+eval "nslookup -q=AAAA $@" | grep -v "Can't find" | tail -n +4
+echo -e "${LBLUE}# MX - Domain-Name Mailserver (Mail Exchanger)${NC}"
+eval "nslookup -q=MX $@" | grep -v "Can't find" | tail -n +4
+echo -e "${LBLUE}# NS - Domain-Name Nameserver${NC}"
+eval "nslookup -q=NS $@" | grep -v "Can't find" | tail -n +4
+echo -e "${LBLUE}# PTR - Pointer-Eintrag (zeigt Host-Name zu einer IP-Adresse)${NC}"
+eval "nslookup -q=PTR $@" | grep -v "Can't find" | tail -n +4
+echo -e "${LBLUE}# SOA - Start of Authority-Eintrag (Angaben zur Verwaltung der DNS-Zone)${NC}"
+eval "nslookup -q=SOA $@" | grep -v "Can't find" | tail -n +4
+echo -e "${LBLUE}# TXT - Show DNS text entries${NC}"
+eval "nslookup -q=TXT $@" | grep -v "Can't find" | tail -n +4

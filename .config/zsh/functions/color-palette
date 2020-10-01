@@ -1,0 +1,8 @@
+# vim:ft=zsh:et:sts=4:sw=4:wrap
+# Description: print a color palatte
+
+local -a colors
+for i in {000..255}; do
+    colors+=("%F{$i}$i%f")
+done
+print -cP $colors

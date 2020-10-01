@@ -1,0 +1,55 @@
+#!/usr/bin/env sh
+# Description: My X11 sceen locker
+# Note: disable compositor @lock to prevent window leaks over lockscreen
+
+separatorcolor=00000000
+timecolor=ffffffff
+datecolor=ffffffff
+font="Noto Sans Mono"
+locktext='Type password to unlock ...'
+image="/tmp/lockscreen.png"
+
+slow_lock() {
+    maim --format=png $image
+    res=$(xdpyinfo | grep dimensions | sed -r 's/^[^0-9]*([0-9]+x[0-9]+).*$/\1/')
+    convert "$image" \
+        -resize 25% \
+        -fill black -colorize 25% \
+        -filter Gaussian \
+        -define "filter:sigma=2" \
+        -resize "$res^" -gravity center -extent "$res" \
+        "$image"
+
+    i3lock \
+        -n -t -i "$image" \
+        --timepos='x+110:h-70' \
+        --datepos='x+30:h-45' \
+        --clock --date-align 1 --datestr "$locktext" \
+        --separatorcolor=$separatorcolor \
+        --timecolor="$timecolor" --datecolor="$datecolor" \
+        --time-font="$font" --date-font="$font" --layout-font="$font" \
+        --ignore-empty-password --show-failed-attempts \
+        --noinputtext='' --force-clock --pass-media-keys
+
+    rm $image
+}
+
+fast_lock() {
+    i3lock \
+        -n -t -B 5 \
+        --timepos='x+110:h-70' \
+        --datepos='x+30:h-45' \
+        --clock --date-align 1 --datestr "$locktext" \
+        --separatorcolor=$separatorcolor \
+        --timecolor="$timecolor" --datecolor="$datecolor" \
+        --time-font="$font" --date-font="$font" --layout-font="$font" \
+        --ignore-empty-password --show-failed-attempts \
+        --noinputtext='' --force-clock --pass-media-keys
+}
+
+# Main
+if [ "$1" == "--fast" ]; then
+    fast_lock
+else
+    slow_lock
+fi

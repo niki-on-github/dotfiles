@@ -1,0 +1,12 @@
+#!/bin/sh
+# Description: function to remove a git submodule
+
+[ ! -d .git ] && echo "no git root directory" && return
+[ ! -f .gitmodules ] && echo ".gitmodules not exist" && return
+submodulPath="$@"
+[ ! -d "$submodulPath" ] && echo "submodul path not exist" && return
+grep "path = $submodulPath" .gitmodules >/dev/null || return
+git submodule deinit -f "$submodulPath"
+rm -rf ".git/modules/${submodulPath}"
+git rm -f "$submodulPath"
+echo -e ">> The submodule was successfully removed.\nNote: the changes still have to be committed."

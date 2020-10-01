@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Description: Lists files from remote servers and rsyncs them to the current directory 
+# Description: Lists files from remote servers and rsyncs them to the current directory
 # Usage: add to ~/.config/lfrc: 'cmd ssh-get &{{ ~/.config/lf/scripts/ssh-get.sh "$id" "$@" }}'
 # Alternatively, the shell pipe can be used: 'cmd ssh-get %{{ ... }}'
 
@@ -64,7 +64,7 @@ for s in "${!domains[@]}"; do
     print 'Login to '${domains[@]}''
     #NOTE: To avoid to try to ask for password on the tty we use setsid (This use the SSH_ASKPASS environment variabel)
     if ! setsid ssh-copy-id -i ${tmpSSHKeyFile} ${domains[$s]} >/dev/null 2>&1 ; then
-        notify-send "Error" "Remote connection to server \"${domains[$s]}\" failed" 
+        notify-send "Error" "Remote connection to server \"${domains[$s]}\" failed"
         echo -n "" >> "$fifo" & # simulate empty fifo input
         continue
     fi
@@ -72,7 +72,7 @@ for s in "${!domains[@]}"; do
     if ! ssh -i ${tmpSSHKeyFile} "${domains[$s]}" "command -v rsync" >/dev/null ; then
         notify-send "Error" "Please install \"rsync\" on remote computer \"${domains[$s]}\""
         echo -n "" >> "$fifo" & # simulate empty fifo input
-        continue 
+        continue
     fi
 
     ssh -i ${tmpSSHKeyFile} "${domains[$s]}" "find ${paths[$s]}" | sed -r "s|^|${domains[$s]}:|" >> "$fifo" &
@@ -97,7 +97,14 @@ if (( ${#files[@]} )); then
             lf -remote "send $lfid echo $line"
         done
     [ ! -z "$lfid" ] && lf -remote "send $lfid reload" # show new files
-    print 'rsync download completed'
-    notify-send "File Manager" "rsync download completed"
+    lf -remote "send $id echo \"rsync check ...\""
+    sleep 1
+    if ! rsync --protect-args -c -e "ssh -i ${tmpSSHKeyFile}" "${files[@]}" . ; then
+        print 'rsync download failed'
+        notify-send --urgency critical "File Manager" "rsync download failed"
+    else
+        print 'rsync download completed'
+        notify-send "File Manager" "rsync download completed"
+    fi
 fi
 

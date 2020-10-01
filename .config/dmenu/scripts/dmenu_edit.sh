@@ -5,7 +5,7 @@
 [ -z "$EDITOR" ] && notify-send "Error" "Environment variable \$EDITOR is not set" && exit 1
 [ ! -d $HOME/.dotfiles ] && notify-send "Error" "Dotfiles are not stored in a git bare repository" && exit 1
 
-choice=$(git --git-dir=$HOME/.dotfiles --work-tree=$HOME ls-tree -r master --name-only --full-name | \
+choice=$(git --git-dir=$HOME/.dotfiles --work-tree=$HOME ls-files --full-name | \
     xargs -I{} echo "$HOME/{}" | sort | eval "dmenu -i -l 15 -p \"Edit Config >\" $DMENU_STYLE") || exit
 
 [ -e $choice ] || exit

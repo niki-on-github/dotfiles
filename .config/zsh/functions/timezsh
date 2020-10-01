@@ -1,0 +1,5 @@
+# vim:ft=zsh:et:sts=4:sw=4:wrap
+# Description: time zsh startup time
+
+shell=${1-$SHELL}
+for i in $(seq 1 10); do time $shell -i -c exit; done
