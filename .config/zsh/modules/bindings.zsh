@@ -109,6 +109,26 @@ function toggle-zsh-keymap {
 }
 zle -N toggle-zsh-keymap
 
+# toggles "sudo/sudoedit" before the current/previous command
+function sudo-command-line() {
+    [[ -z $BUFFER ]] && zle up-history
+    if [[ $BUFFER == sudo\ * ]]; then
+        LBUFFER="${LBUFFER#sudo }"
+    elif [[ $BUFFER == $EDITOR\ * ]]; then
+        LBUFFER="${LBUFFER#$EDITOR }"
+        LBUFFER="sudoedit $LBUFFER"
+    elif [[ $BUFFER == v\ * ]]; then
+        LBUFFER="${LBUFFER#v }"
+        LBUFFER="sudoedit $LBUFFER"
+    elif [[ $BUFFER == sudoedit\ * ]]; then
+        LBUFFER="${LBUFFER#sudoedit }"
+        LBUFFER="$EDITOR $LBUFFER"
+    else
+        LBUFFER="sudo $LBUFFER"
+    fi
+}
+zle -N sudo-command-line
+
 # paste from system clipboard
 if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     paste-clip() {
@@ -174,6 +194,18 @@ bindkey '^o' lf-cd                                  # [Ctrl+o] - use lf to switc
 bindkey '^[OS' close                                # [F4] - close if terminal run inside tmux
 bindkey -r '^V'; bindkey "^V" paste-clip            # [Ctrl+v] - paste from system clipboard (vi-quoted-insert conflict with Paste)
 bindkey -r '^Y'                                     # [Ctrl+y] - conflict with Copy (alacritty)
+bindkey '^P' fuzzy-search-and-edit                  # seletskiy/zsh-fuzzy-search-and-edit plugin
+bindkey "\e\e" sudo-command-line                    # [ESC][ESC] toggles "sudo/sudoedit" before the current/previous command
+
+# fix tmux pos1 and ende key
+bindkey "\E[1~" beginning-of-line
+bindkey "\E[4~" end-of-line
+
+# Run manpage on Esc+h
+autoload -Uz run-help
+autoload -Uz run-help-git
+autoload -Uz run-help-sudo
+bindkey '^[h' run-help  # Esc+h
 
 # start typing + [Up-Arrow] - fuzzy find history forward
 if [[ "${terminfo[kcuu1]}" != "" ]]; then

@@ -1,0 +1,15 @@
+# vim:ft=zsh:et:sts=4:sw=4:wrap
+# Description: change title of terminal in ssh session
+
+if [[ ! -v TMUX ]] ; then
+    # restore title from stack
+    restoreTitle() {
+        echo -ne '\e[23t'
+    }
+    trap restoreTitle SIGHUP SIGINT SIGTERM EXIT
+
+    echo -ne '\e[22t' # store current title on the stack
+    [ -z "$@" ] || echo -n -e "\033]0;$@\007"
+fi
+
+/usr/bin/ssh "$@"

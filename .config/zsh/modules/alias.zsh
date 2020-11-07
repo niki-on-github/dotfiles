@@ -1,7 +1,7 @@
 # zsh alias
 
-alias zsh-vim="export ZSH_KEYMAP=\"vim\"; source $ZDOTDIR/.zshrc"
-alias zsh-emacs="export ZSH_KEYMAP=\"emacs\"; source $ZDOTDIR/.zshrc"
+alias zsh-vim="export ZSH_KEYMAP=\"vim\"; source ${ZDOTDIR:-$HOME}/.zshrc"
+alias zsh-emacs="export ZSH_KEYMAP=\"emacs\"; source ${ZDOTDIR:-$HOME}/.zshrc"
 alias vim="nvim" vimdiff="nvim -d" vi="nvim" v="nvim"
 alias ls="lsd" l="lsd -l" la="lsd -la" lt="lsd -Rl --depth 2" l.='ls -a | egrep "^\." | grep -vE "^(\.|\.\.)$"'
 alias dolphin="dolphin -stylesheet $HOME/.config/qt5ct/qss/dolphin.qss"
@@ -11,12 +11,11 @@ alias netstat="netstat --wide"
 alias yay="yay --sudoloop"
 alias calc="qalc"
 alias s="sxiv"
-alias z="zathura"
 alias yt-dl-audio="youtube-dl -x --audio-format mp3"
-alias watch-dir="inotifywait -e modify,create -r $PWD -m"
+alias watch-dir="inotifywait -e modify,create -r \$PWD -m"
 alias nmap="grc nmap"  # colorize nmap output
 alias pacman-unlock="sudo rm /var/lib/pacman/db.lck"
-alias grep="grep --color=auto" egrep="egrep --color=auto" fgrep="fgrep --color=auto"
+alias grep="grep --color=auto -I" egrep="egrep --color=auto -I" fgrep="fgrep --color=auto -I"
 alias df="df -h"
 alias free="free -m"
 alias pacman-fzf="pacman -Slq | fzf --multi --preview 'pacman -Si {1}' | xargs -ro sudo pacman -S"
@@ -24,7 +23,8 @@ alias grep-todo='grep --color=auto -r --exclude-dir="\.git" -i -n "TODO" .'
 alias gw-ping-tcp="sudo nping --tcp --dest-mac \$(arp | grep "gateway" | sed 's/ * / /g' | cut -d ' ' -f 3) " # [IP] -p [Port]
 alias gw-ping-icmp="sudo nping --icmp --dest-mac \$(arp | grep "gateway" | sed 's/ * / /g' | cut -d ' ' -f 3) " # [IP]
 alias mpv-vr="mpv --script=~/.config/mpv/src/vr-reversal/360plugin.lua"
-alias video-concat-all="ffmpeg -safe 0 -f concat -i <(find . -type f -maxdepth 1 -name '*' -printf \"file '\$PWD/%p'\n\" | sort) -c copy concat.mkv"
+alias video-concat-all="ffmpeg -safe 0 -f concat -i <(find . -maxdepth 1 -type f -name '*' -printf \"file '\$PWD/%p'\n\" | sort) -c copy concat.mkv"
+alias MP4Box-concat-all="eval \"MP4Box \$(find . -maxdepth 1 -type f -name '*' -printf \" -cat '\$PWD/%p'\") concat.mp4\""
 alias :q="exit" :Q="exit"
 alias h="history -30" clh="[ -f \$HISTFILE ] && echo '' > \$HISTFILE && exec \$SHELL -l"
 alias ..="cd .." ...="cd ../.." ....="cd ../../.." .....="cd ../../../.." ......="cd ../../../../.."
@@ -36,6 +36,8 @@ alias mv='mv -v'
 alias py="python3"
 alias cal="cal -m -3 --color=always"
 alias cl="clear"  #NOTE: use [Ctrl+l]
+alias mf="$EDITOR"
+alias journalctl-warn="journalctl -p 4"
 
 # web alias
 alias public-ip="curl http://ipecho.net/plain; echo"
@@ -43,14 +45,19 @@ alias weather="curl wttr.in/waiblingen"
 alias weather-details="curl v2.wttr.in/waiblingen"
 alias coin-rate="curl rate.sx"
 
+# conda
+alias conda-save-env="conda env export > environment.yml"
+alias jupyter-notebook="command -v jupyter >/dev/null || conda install jupyter; jupyter notebook"
+
 # git alias
 # forgit zsh plugin (see: https://github.com/wfxr/forgit):
 # ga (git add selector), glo (git log viewer), gi (gitignore generator), gd (git diff viewer), grh (gir reset HEAD <file> selector), \
 # gcf (git checkout <file> selector), gss (git stash viewer), gclean (git clean selector)
-alias g="git" gs="git status" gb="git branch" gcmsg="git commit -m" gco="git checkout" gf="git fetch" gl="git pull && git submodule update" \
-    gls="git ls-tree -r --name-only HEAD | sort" gm="git merge" gp="git pull && git push" greset="git reset --hard HEAD && git clean -f -d" git-edit-last-commit="git commit --amend"
+alias g="git" gs="git status" gb="git branch" gcmsg="git commit -m" gco="git checkout" gf="git fetch" gpl="git pull && git submodule update" \
+    gls="git ls-tree -r --name-only HEAD | sort" gm="git merge" gph="git push" gp="git pull && git push" greset="git reset --hard HEAD && git clean -f -d" \
+    git-edit-last-commit-msg="git commit --amend" gcmsgfix="git commit --amend" git-get-submodules="git submodule update --init --recursive --remote"
 
-alias add="git add" branch="git branch" commit="git commit -m" pull="git pull && git submodule update" push="git push" status="git status"
+alias add="git add" branch="git branch" clone="git clone --recursive" commit="git commit -m" init="git init" pull="git pull && git submodule update" push="git push" status="git status"
 
 # btrfs
 alias btrfs="sudo btrfs"
@@ -68,7 +75,7 @@ if [ -f $HOME/.dotfiles/config ]; then
     alias dotfiles-edit='dotfiles-ls | fzf --reverse | xargs -I{} $EDITOR "{}"'
     alias dotfiles-update='dotfiles pull && dotfiles submodule update --remote && echo "update completed"'
     alias dotfiles-reset='dotfiles reset --hard HEAD && dotfiles pull; dotfiles submodule update --remote'
-    alias dotfiles-search='dotfiles-ls | xargs -I{} echo "\"{}\"" | xargs grep --color=auto -n -s -H -i'
+    alias dotfiles-search='dotfiles-ls | xargs -I{} echo "\"{}\"" | xargs grep --color=auto -I -n -s -H -i'
     alias dotfiles-todo='dotfiles-search TODO'
     alias .aa="dotfiles add -u -v"
     alias .cmsg='dotfiles commit -m'

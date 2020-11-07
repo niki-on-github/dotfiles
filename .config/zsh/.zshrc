@@ -26,6 +26,22 @@ zsh-plugins() {
         autoload -Uz $f
     done
 
+    # z, autojump command
+    zinit ice wait blockf lucid
+    zinit light rupa/z
+
+    # z tab completion, lets z+[Tab] and zz+[Tab]
+    zinit ice wait lucid
+    zinit light changyuheng/fz
+
+    # z / fzf, Pick from most frecent folders with `Ctrl+g`
+    zinit ice wait lucid
+    zinit light andrewferrier/fzf-z
+
+    # Fuzzy search all text by `Ctrl+P` in a file and open line in `$EDITOR`
+    zinit load mafredri/zsh-async
+    zinit load seletskiy/zsh-fuzzy-search-and-edit
+
     # Git fzf wrapper
     zinit light wfxr/forgit
 
