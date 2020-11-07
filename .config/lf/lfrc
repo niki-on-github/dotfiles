@@ -19,9 +19,6 @@ set ifs "\n"
 # Space at the top and the bottom of the screen
 set scrolloff 10
 
-# Use 256 colors
-set color256
-
 # Enable icons (Requires nerd fonts)
 # By default there are only two icons defined (files and and directories)
 # Icons for different files can be configured using $LF_ICONS variable e.g. in .zshenv
@@ -38,7 +35,7 @@ set nohidden
 set tabstop 4
 
 # auto reload
-set period 5
+set period 4
 
 
 #################################################################
@@ -66,19 +63,23 @@ cmd trash ${{
     choice="No"
     # NOTE: if you change order of yes and no the fzf binding also need to change!
     if [ "$countItems" -le "1" ]; then
-        grep "$PWD" <<< "$fx" >/dev/null || return  # if we have an old file selected
+        grep -q "$PWD" <<< "$fx" || return  # if we have an old file selected
         choice=$(echo -e "No\nYes" | fzf --prompt="delete $fx ? > " --bind=n:down+accept,y:up+accept) || return
     else
-        echo "$fx" | head -n1 | grep "$PWD" >/dev/null || return  # if we have an old file selected
+        echo "$fx" | head -n1 | grep -q "$PWD" || return  # if we have an old file selected
         choice=$(echo -e "No\nYes" | fzf --prompt="delete $countItems items? > " --bind=n:down+accept,y:up+accept) || return
     fi
     if [ "$choice" = "Yes" ]; then
         if echo "$fx" | head -n1 | grep "$PWD" >/dev/null && grep "ramdisk" <<< "$PWD" >/dev/null; then
-            for f in $fx; do eval "rm -rf \"$f\""; done
+            echo "Delete $countItems item(s) ..."
+            rm -rf $fx
+            # [old] for f in $fx; do eval "rm -rf \"$f\""; done
             notify-send "Delete" "$countItems item(s) were deleted"
             lf -remote "send $id echo \"$countItems item(s) were deleted\""
         else
-            for f in $fx; do eval "trash-put \"$f\""; done
+            echo "Trash $countItems item(s) ..."
+            trash-put $fx
+            # [old] for f in $fx; do eval "trash-put \"$f\""; done
             notify-send "Trash" "$countItems item(s) were moved to trash"
             lf -remote "send $id echo \"$countItems item(s) were moved to trash\""
         fi
@@ -87,11 +88,19 @@ cmd trash ${{
 
 # use `:q` to quit lf
 cmd q ${{
+    #[[ -v TMUX ]] || TMUX=""
+    #[ -n "$TMUX" ] && tmux kill-pane
+    lf -remote "send $id quit"
+}}
+cmd Q :q  # not case sensitive
+
+# use `:q!` to quit all lf panes
+cmd q! ${{
     [[ -v TMUX ]] || TMUX=""
     [ -n "$TMUX" ] && tmux kill-window
     lf -remote "send $id quit"
 }}
-cmd Q :q  # not case sensitive
+cmd Q! :q!  # not case sensitive
 
 # toggle terminal
 cmd terminal ${{
@@ -105,6 +114,19 @@ cmd terminal ${{
     else
         # use window manager to manage new windows
         setsid $TERMINAL >/dev/null 2>&1 &
+    fi
+}}
+
+# change directory of lf-terminal to $PWD
+cmd cd-terminal ${{
+    [[ -v TMUX ]] || TMUX=""
+    if [ -n "$TMUX" ]; then
+        if tmux lsp -F "#{pane_title}" | grep -q "^lf-terminal$" ; then
+            lfTerminalPaneNumber=$(tmux lsp -F "#{pane_id} #{pane_title}" | grep " lf-terminal$" | awk '{print $1}')
+            tmux send-keys -t $lfTerminalPaneNumber C-l  # clear terminal
+            tmux send-keys -t $lfTerminalPaneNumber C-u  # clear current line
+            tmux send-keys -t $lfTerminalPaneNumber " cd \"$PWD\"" C-m
+        fi
     fi
 }}
 
@@ -141,28 +163,16 @@ cmd rename-title ${{
 
 # open selected files with gui programs
 cmd open-gui ${{
-    case $(file --mime-type $f -b) in
-        application/pdf)
-            if [[ -v READER_GUI ]]; then
-                setsid $READER_GUI "$f" >/dev/null 2>&1 &
-            else
-                # open with terminal application
-                lf -remote "send $id open"
-                return
-            fi ;;
-        image/*)
-            setsid gimp "$f" >/dev/null 2>&1 & ;;
-        text/*)
-            if [[ -v EDITOR_GUI ]] ; then
-                for f in $fx; do setsid $EDITOR_GUI $f >/dev/null 2>&1 & done;
-            else
-                #open with terminal application
-                lf -remote "send $id open"
-                return
-            fi ;;
-        *)
-            # open with terminal application
-            lf -remote "send $id open" ;;
+    case "$f" in
+        *.pdf)      setsid $READER_GUI "$f" >/dev/null 2>&1 & ;;
+        *.html)     setsid $BROWSER "$f" >/dev/null 2>&1 & ;;
+        *)  # fallback is mime-type
+            case $(file --mime-type $f -b) in
+                application/pdf)    setsid $READER_GUI "$f" >/dev/null 2>&1 & ;;
+                image/*)            setsid $IMAGE_EDITOR "$f" >/dev/null 2>&1 & ;;
+                text/*)             setsid $EDITOR_GUI $f >/dev/null 2>&1 & ;;
+                *)                  lf -remote "send $id open" ;; # falback is open function
+            esac ;;
     esac
 }}
 
@@ -173,8 +183,8 @@ cmd open ${{
         while read -r file; do
             [ -z "$file" ] && continue
             [ -e "$file" ] || contine
-            lf -remote "send select \"$file\""
-            lf -remote "send toggle"
+            lf -remote "send $id select \"$file\""
+            lf -remote "send $id toggle"
         done
     }
 
@@ -196,7 +206,7 @@ cmd open ${{
     }
 
     open-document() {
-        setsid $READER $fx >/dev/null 2>&1 &
+        setsid $READER $f >/dev/null 2>&1 &
     }
 
     open-editor() {
@@ -217,7 +227,7 @@ cmd open ${{
         *.txt|*.md|*.MD|*.tex|*.html|*.css) open-editor ;;
         *)  # fallback is mime-type
             case $(file --mime-type $f -b) in
-                text/*) eval "$EDITOR \"$fx\"" ;;
+                text/*) eval "$EDITOR \"$f\"" ;;
                 image/*) open-image ;;
                 audio/*) open-audio ;;
                 video/*|application/octet-stream) open-video ;;
@@ -258,6 +268,7 @@ cmd swap ${{
 cmd new-tab ${{
     [[ -v TMUX ]] || TMUX=""
     if [ -n "$TMUX" ]; then
+        tmux set-option -g status on
         tmux new-window lf
     else
         # use window manager to manage tabs
@@ -595,6 +606,7 @@ cmd rumount-all ${{
 # use fzf to select files by specific sequence
 cmd quick-select ${{
     lf -remote "send $id unselect"
+    echo "select files ..."
 
     # solution 1 (slow)
     #find $PWD -maxdepth 2 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all | xargs -d $'\n' -I{} sh -c 'lf -remote "send $id select \"{}\""; lf -remote "send $id toggle"'
@@ -621,8 +633,8 @@ cmd rpaste &{{
         | while read line; do
             lf -remote "send $id echo $line"
         done
-        lf -remote "send $id echo \"rsync check ...\""
-        rsync -c $list . || notify-send --urgency critical "lf copy" "rsync failed"
+        # lf -remote "send $id echo \"rsync check ...\""
+        # rsync -c $list . || notify-send --urgency critical "lf copy" "rsync failed"
     elif [ $mode = 'move' ]; then
         mv -n $list .
     fi
@@ -690,19 +702,64 @@ cmd thumbnail-mode ${{
         while read -r file; do
             [ -z "$file" ] && continue
             [ -e "$file" ] || contine
-            lf -remote "send select \"$file\""
-            lf -remote "send toggle"
+            lf -remote "send $id select \"$file\""
+            lf -remote "send $id toggle"
         done
     }
 
+    ls -p $PWD | grep -q / && lf -remote "send $id echo \"not an image directory!\"" && return
     lf -remote "send $id unselect"
     pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
-    id=$(xdo id)
+    wid=$(xdo id)
     xdo hide
-    sxiv -p -t -o -b -q -n $pos "$PWD" | lfSelect
-    xdo show "$id"
+    select=$(sxiv -p -t -o -b -q -n $pos "$PWD")
+    xdo show "$wid"
+    sleep 0.3
+    echo "$select" | lfSelect
 }}
 
+# print msg when files are selected (TODO only notify if pwd != selected file path)
+cmd notify-selected-files %{{
+    if [ -n "$fs" ]; then
+        if [ "$(echo "$fs" | wc -l)" -le "1" ]; then
+            echo -e "\033[0;31m 1 file selected! \033[0m"
+        else
+            echo -e "\033[0;31m $(echo "$fs" | wc -l) files selected! \033[0m"
+        fi
+    else
+        lf -remote "send $id reload"
+    fi
+}}
+
+# up + print msg when files are selected
+cmd up-notify-selected %{{
+    lf -remote "send $id up"
+    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
+}}
+
+# down + print msg when files are selected
+cmd down-notify-selected %{{
+    lf -remote "send $id down"
+    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
+}}
+
+# updir + print msg when files are selected
+cmd updir-notify-selected %{{
+    lf -remote "send $id updir"
+    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
+}}
+
+# open + print msg when files are selected
+cmd open-notify-selected %{{
+    lf -remote "send $id open"
+    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
+}}
+
+# unselect + reload
+cmd unselect-reload ${{
+    lf -remote "send $id unselect"
+    lf -remote "send $id reload"
+}}
 
 #################################################################
 # Key Bindings
@@ -755,9 +812,18 @@ map q       # quit
 map m       # mark-save
 map '"'     # mark-remove
 map "'"     # mark-load
-map i       # $$PAGER $f
 map p       # paste (we use rpaste)
-map <c-d>
+
+# Remap navigation to navigation + notify selected files
+# map <up> :up-notify-selected
+# map <down> :down-notify-selected
+# map <left> :updir-notify-selected
+# map <right> :open-notify-selected
+# map k :up-notify-selected
+# map j :down-notify-selected
+# map h :updir-notify-selected
+# map l :open-notify-selected
+# map u :unselect-reload
 
 # Add custom functions (space at the end sometimes break bindings!)
 map Q :q
@@ -824,3 +890,4 @@ map C &lf -remote "send $id echo \"compile $f\"" && ~/.local/bin/compile $f && l
 map <f-12> &lf -server && lf -remote "send $id echo \"server was successfully restarted\""
 map - :swap
 map R :bulk-rename
+map , :cd-terminal

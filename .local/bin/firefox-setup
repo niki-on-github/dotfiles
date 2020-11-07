@@ -1,0 +1,182 @@
+#!/bin/bash
+# Description: Script to deploy my firefox work environment
+# TODO how to set firefox theme to dark? (user.js do not work)
+
+FIREFOX_PROFILES_DIRECOTRY="$HOME/.mozilla/firefox"
+FIREFOX_CACHE_DIRECTORY="$HOME/.cache/mozilla/firefox"
+GHACKS_USERJS_DIRECTORY="$HOME/.config/firefox/ghacks-user.js"
+OVERRIDE_FILES_NORMAL="$HOME/.config/firefox/my-overrides/normal"
+OVERRIDE_FILES_HARDENED="$HOME/.config/firefox/my-overrides/hardened"
+PROFILES=( "Banking" "Private" "WebEx" )
+ENGINES="(Google|DuckDuckGo)"
+DEFAULT_ENGINE="DuckDuckGo"
+ADDONS=( "bitwarden-password-manager" "darkreader" "decentraleyes" "ublock-origin" )
+ADDONS_PRIVATE=( "canvasblocker" "clearurls" "cookie-autodelete" "i-dont-care-about-cookies" \
+    "multi-account-containers" "temporary-containers" "umatrix" )
+
+_mozlz4=$HOME/.local/bin/mozlz4
+
+
+error() {
+    echo "ERROR: $@"; exit 1
+}
+
+function clearCache() {
+    profileName=$1; shift
+    [ -z "$profileName" ] && error "profileName in clearCache() is empty"
+    rm -rf "$FIREFOX_CACHE_DIRECTORY/*.$profileName"
+}
+
+function updateConfigs() {
+    profileName=$1; shift
+    [ -z "$profileName" ] && error "profileName in updateConfigs() is empty"
+    rm -rf "$firefoxProfileCachePath"
+    while pidof firefox >/dev/null ; do sleep 1 ; done
+    firefox --headless -new-instance -P "$profileName" >/dev/null 2>&1 &
+    sleep 6 ; pidof firefox | tr ' ' '\n' | xargs -I{} kill {}
+    while pidof firefox >/dev/null ; do sleep 1 ; done
+    sleep 3
+    clearCache "$profileName"
+}
+
+function downloadAddon() {
+    firefoxProfilePath=$1; shift
+    downloadID=$1; shift
+    [ -z "$firefoxProfilePath" ] && error "firefoxProfilePath in downloadAddon() is empty"
+    [ -z "$downloadID" ] && error "downloadID in downloadAddon() is empty"
+
+    [ -d "$firefoxProfilePath" ] || return
+    [ ! -d "$firefoxProfilePath/extensions" ] && echo "[ERROR] Folder is not initialized: $firefoxProfilePath" && return
+
+    tmpAddonDirectory=$(mktemp -d)
+    echo "Download $downloadID"
+    wget --quiet -O "$tmpAddonDirectory/addon.xpi" \
+        "https://addons.mozilla.org/firefox/downloads/latest/$downloadID/latest.xpi"
+
+    unzip $tmpAddonDirectory/addon.xpi manifest.json -d $tmpAddonDirectory
+    [ "$?" -ne "0" ] && echo "FileNotFound: manifest.json" && return
+
+    addonID=$(jq '.applications.gecko.id' $tmpAddonDirectory/manifest.json)
+    if [ -z "$addonID" ] || [ "$addonID" = "null" ] || [ "$addonID" = "{}" ] ; then
+        echo "try .browser_specific_settings.gecko.id parser"
+        addonID=$(jq '.browser_specific_settings.gecko.id' $tmpAddonDirectory/manifest.json)
+    fi
+    if [ -z "$addonID" ] || [ "$addonID" = "null" ] || [ "$addonID" = "{}" ] ; then
+        echo "Addon ID entry not exist"
+        return
+    fi
+
+    addonID=$(echo $addonID | sed 's/"//g')
+    [ -f "$firefoxProfilePath/extensions/$addonID.xpi" ] && echo "Addon $addonID is already installed" && return
+    mv -fv "$tmpAddonDirectory/addon.xpi" "$firefoxProfilePath/extensions/$addonID.xpi"
+
+    ! grep -q "$addonID" $firefoxProfilePath/myaddon.list >/dev/null 2>&1 && \
+        echo "$addonID" >> $firefoxProfilePath/myaddon.list
+}
+
+function activateAddons() {
+    firefoxProfilePath=$1; shift
+    profileName=$1; shift
+    [ -z "$firefoxProfilePath" ] && error "firefoxProfilePath in activateAddons() is empty"
+    [ -z "$profileName" ] && error "profileName in activateAddons() is empty"
+
+    [ -d "$firefoxProfilePath" ] || return
+    [ -f "$firefoxProfilePath/myaddon.list" ] || return
+
+    updateConfigs "$profileName"
+    for addonID in $(cat $firefoxProfilePath/myaddon.list) ; do
+        echo "Activate Addon $addonID"
+        cat $firefoxProfilePath/extensions.json | \
+            jq '(.addons | .[] | select(.id=="'$addonID'") | .active) = true' | \
+            jq '(.addons | .[] | select(.id=="'$addonID'") | .userDisabled) = false' \
+            > $firefoxProfilePath/extensions.json
+    done
+
+    rm -f $firefoxProfilePath/addonStartup.json.lz4
+    rm -f $firefoxProfilePath/myaddon.list
+}
+
+function createProfile() {
+    profileName=$1; shift
+    [ -z "$profileName" ] && error "profileName in createProfile() is empty"
+    if ! grep -q "Name=$profileName" $FIREFOX_PROFILES_DIRECOTRY/profiles.ini ; then
+        echo "Create Profile: $profileName"
+        firefox -CreateProfile "$profileName"
+        updateConfigs "$profileName"
+    fi
+}
+
+function setupSearchengine() {
+    firefoxProfilePath=$1; shift
+    [ -z "$firefoxProfilePath" ] && error "firefoxProfilePath in setupSearchengine() is empty"
+    [ -f $_mozlz4 ] || error "File not Found: $_mozlz4"
+    [ -f $firefoxProfilePath/search.json.mozlz4 ] || error "FileNotFound: $firefoxProfilePath/search.json.mozlz4"
+
+    tmpSearchJsonFile=$(mktemp)
+    $_mozlz4 -x $firefoxProfilePath/search.json.mozlz4 $tmpSearchJsonFile
+    search_json=$(cat $tmpSearchJsonFile)
+    changeNumbers=$(jq '.engines | .[] | ._name' $tmpSearchJsonFile | grep -Env "$ENGINES" | cut -d ':' -f 1)
+    for num in $changeNumbers ; do
+        search_json=$(echo "$search_json" | jq '.engines['$(($num-1))']._metaData.hidden = "true"')
+    done
+
+    if [ "$(echo "$search_json" | jq '.metaData')" = "{}" ]; then
+        echo "Set default search engine to $DEFAULT_ENGINE"
+        echo "$search_json" | jq '. + {"metaData": {"current": "'$DEFAULT_ENGINE'"}}' > $tmpSearchJsonFile
+    else
+        echo "Default Search Engine was already set by user"
+        echo "$search_json" > $tmpSearchJsonFile
+    fi
+    $_mozlz4 -z $tmpSearchJsonFile $firefoxProfilePath/search.json.mozlz4
+}
+
+function updateNormalUserJs() {
+    firefoxProfilePath=$1; shift
+    [ -z "$firefoxProfilePath" ] && error "firefoxProfilePath in updateNormalUserJs() is empty"
+    cp -rfv $OVERRIDE_FILES_NORMAL/* $firefoxProfilePath/
+}
+
+function updateHardenUserJs() {
+    firefoxProfilePath=$1; shift
+    [ -z "$firefoxProfilePath" ] && error "firefoxProfilePath in updateHardenUserJs() is empty"
+    cp -rfv $OVERRIDE_FILES_HARDENED/* $firefoxProfilePath/
+    cd $GHACKS_USERJS_DIRECTORY && sh updater.sh -s -b -p "$firefoxProfilePath" && cd - >/dev/null
+}
+
+
+# MAIN
+
+command -v jq >/dev/null || error "script require jq"
+
+read -p "Press the [Enter] key to continue. This will close all instances of Firefox"
+pidof firefox >/dev/null && kill $(pidof firefox) && echo -n "close Firefox ." && sleep 1 && echo -n "." && sleep 1 && echo ". OK"
+
+for profile in ${PROFILES[@]}; do
+    createProfile "$profile"
+done
+
+profiles=$(cat $FIREFOX_PROFILES_DIRECOTRY/profiles.ini | tr '\n' ' ' | tr '[' '\n' | grep "Name" | \
+    grep -v "Name=default " | sed 's/.*Name=//g' | sed 's/ .*Path=/,/g' | sed 's/ .*$//g')
+
+for profile_data in $profiles ; do
+    profileName=$(echo $profile_data | cut -d ',' -f 1)
+    profilePath="$FIREFOX_PROFILES_DIRECOTRY/$(echo $profile_data| cut -d ',' -f 2)"
+    profileCachePath="$FIREFOX_CACHE_DIRECTORY/$(echo $profile_data| cut -d ',' -f 2)"
+    echo "Setup Firefox profile $profileName"
+
+    setupSearchengine "$profilePath"
+
+    for addon in ${ADDONS[@]}; do downloadAddon "$profilePath" "$addon"; done
+
+    if [ "$profileName" = "Private" ]; then
+        for addon in ${ADDONS_PRIVATE[@]}; do downloadAddon "$profilePath" "$addon"; done
+        updateHardenUserJs "$profilePath"
+    else
+        updateNormalUserJs "$profilePath"
+    fi
+
+    activateAddons "$profilePath" "$profileName"
+    clearCache "$profileName"
+done
+
+echo "NOTE: To activate the new addons firefox has to be launched and closed once to show the new addons in the toolbar."

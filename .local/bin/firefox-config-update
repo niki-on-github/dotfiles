@@ -7,7 +7,7 @@ error() {
 }
 
 GHACKS_USERJS_DIRECTORY="$HOME/.config/firefox/ghacks-user.js"
-OVERRIDES_FILES="$HOME/.config/firefox/my-overrides"
+OVERRIDES_FILES="$HOME/.config/firefox/my-overrides/hardened"
 FIREFOX_CONFIG_DIRECTORY="$HOME/.mozilla/firefox"
 FIREFOX_CACHE_DIRECTORY="$HOME/.cache/mozilla/firefox"
 

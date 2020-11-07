@@ -5,21 +5,25 @@ Config  {
 
     -- apperance
     font = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
-    , additionalFonts = ["xft:FontAwesome:pixelsize=16"]
+    , additionalFonts = ["xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"]  -- <fn=1>
     , border = BottomB
     , borderColor = "#1d99f3"
     , borderWidth = 3
-    , bgColor = "#171717"
     , fgColor = "#FFFFFF"
-    , alpha = 255
+    , bgColor = "#171717"
+    , alpha = 255  -- solid config
     , position = Top
     , textOffset = -1
     , iconOffset = -1
 
+    -- transparent config
+    -- , bgColor = "#272727"
+    -- , alpha = 180  -- transparent config
+
     -- layout
     , sepChar = "%"  -- delineator between plugin names and straight text
     , alignSep = "}{"  -- separator between left-right alignment
-    , template = "%UnsafeStdinReader% }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
+    , template = "<fn=1>%UnsafeStdinReader%</fn> }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
     -- , template = "%UnsafeStdinReader% }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%alsa:hw:1:Master%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
 
     -- general behavior

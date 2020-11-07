@@ -1,25 +1,26 @@
 #!/bin/sh
-# Detects the width of running systray window and creates an XPM icon 
+# Detects the width of running systray window and creates an XPM icon
 # of that width, 1px height, and transparent.
 # Outputs an <icon>-tag for use in xmobar to display the generated
-# XPM icon. 
+# XPM icon.
 #
 # Run script from xmobar:
 # `Run Com "/bin/sh" ["-c", "$HOME/.config/xmobar/systray-padding.sh"] "systray" 10`
 # and use `%systray%` in your template.
 
-if pgrep stalonetray >/dev/null; then
-    TRAY_NAME="stalonetray"
-else
-    TRAY_NAME="panel"  # trayer
-fi 
+TRAY_NAME="panel"  # trayer
+# if pgrep stalonetray >/dev/null; then
+#     TRAY_NAME="stalonetray"
+# else
+#     TRAY_NAME="panel"  # trayer
+# fi
 
 # Function to create a transparent Wx1 px XPM icon
 create_xpm_icon () {
-timestamp=$(date)
-pixels=$(for i in `seq $1`; do echo -n "."; done)
+    timestamp=$(date)
+    pixels=$(for i in `seq $1`; do echo -n "."; done)
 
-cat << EOF > "$2"
+    cat << EOF > "$2"
 /* XPM *
 static char * trayer_pad_xpm[] = {
 /* This XPM icon is used for padding in xmobar to */

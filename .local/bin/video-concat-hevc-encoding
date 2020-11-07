@@ -1,7 +1,7 @@
 #!/bin/bash
 # Description: Concatenating videos with different codecs
 
-mapfile -t selection < <(find . -maxdepth 1 -type f | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all)
+mapfile -t selection < <(find . -maxdepth 1 -type f | sort | fzf -e --multi --bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all)
 [ "${#selection[@]}" -le "1" ] && echo "[ERROR] Not enough video files were selected" && exit 1
 
 index=$((0))
@@ -13,13 +13,13 @@ while [ "$index" -lt "${#selection[@]}" ] ; do
 done
 filter="${filter}concat=n=${index}:v=1:a=1[outv][outa]"
 
-saveAs="concat"
+saveAs="${selection[0]%.*}" # first filename without file extension
 n=$((0))
-while [ -f "${saveAs}-${n}.mkv" ]; do
+while [ -f "${saveAs}-concat-${n}.mkv" ]; do
    n=$((n+1))
 done
-saveAs="${saveAs}-${n}.mkv"
+saveAs="${saveAs}-concat-${n}.mkv"
 
-echo "run: ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 16 $saveAs"
-eval "ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 16 $saveAs"
+echo "run: ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 15 \"$saveAs\""
+eval "ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 15 \"$saveAs\""
 

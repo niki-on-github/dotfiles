@@ -24,7 +24,7 @@ Usage:
 
 Parameter:
   -h                   Display this help menu
-  -p "[FILE_PATTERN]"  Set file name pattern, can contain the following keywords: %album, %artist, %title, %track
+  -p "[FILE_PATTERN]"  Set file name pattern, can contain the following keywords: %album, %artist, %title
 EOF
     exit $1
 }
@@ -75,7 +75,6 @@ trap recorderExitHook EXIT
 
 function recorderPostHook {
     local _title=$1; shift
-    local _track=$1; shift
 	local _artist=$1; shift
 	local _album=$1; shift
     local _file=$1; shift
@@ -85,7 +84,6 @@ function recorderPostHook {
     ffmpeg -i "$_file.record" -acodec copy "${_file}${_postfix}" >/dev/null 2>&1 && \
     eyeD3 --artist "$_artist" \
           --album "$_album" \
-          --track "$_track" \
           --title "$_title" \
           "${_file}" >/dev/null
 
@@ -130,15 +128,13 @@ while $record; do
         continue
     fi
 
-	title=$(spotify-info -i %title)
-	track=$(spotify-info -i %track)
-	artist=$(spotify-info -i %artist)
-	album=$(spotify-info -i %album)
+	title=$(spotify-info -i %title | sed 's/ - /, /g')
+	artist=$(spotify-info -i %artist | sed 's/ - /, /g')
+	album=$(spotify-info -i %album | sed 's/ - /, /g')
     length=$(spotify-info -i %length)
 
     file="$FILE_PATTERN"
     file="${file//"%title"/$title}"
-    file="${file//"%track"/$track}"
     file="${file//"%artist"/$artist}"
     file="${file//"%album"/$album}"
     file="$MUSIC_LIB/$file.mp3"
@@ -170,10 +166,10 @@ while $record; do
             length=`expr 9 \* $length / 10`  # mp3 has min 90% recording length
             if [ "$record_length" -ge "$length" ]; then
                 echo "save: $file"
-                recorderPostHook "$title" "$track" "$artist" "$album" "$file" false &
+                recorderPostHook "$title" "$artist" "$album" "$file" false &
             else
                 echo "corrupt: $file"
-                recorderPostHook "$title" "$track" "$artist" "$album" "$file" true &
+                recorderPostHook "$title" "$artist" "$album" "$file" true &
             fi
             break
         else

@@ -1,0 +1,18 @@
+#!/bin/sh
+# Description: send notifycation at specific time
+
+usage() {
+    echo "usage: ~$ `basename $0` [TIME] [MESSAGE]"
+    exit $1
+}
+
+! command -v at >/dev/null && echo "[ERROR] at is not installed (pacman -Sy at; systemctl enable --now atd)" && exit 1
+
+[ "$#" -lt "1" ] && usage 1
+[ "$1" = "-h" ] && usage 0
+[ "$#" -lt "2" ] && usage 1
+
+time=$1; shift
+echo "send notifycation \"$@\" at $time"
+echo "delete job with \"atrm \$jobnum\" use \"atq\" to get jobnum"
+echo "notify-send \"$@\"" | at $time

@@ -1,0 +1,13 @@
+#!/bin/env bash
+# Description: Git commit browser to export a commit into a zip archive
+
+git_export() {
+    git status >/dev/null 2>&1 || return
+    commitHash=$(git log --graph --color=always --format="%C(auto)%h%d %s %C(black)%C(bold)%cr" | \
+        fzf --ansi --no-sort --reverse --tiebreak=index --preview="f() { set -- \$(echo -- \$@ | grep -o '[a-f0-9]\{7\}'); [ \$# -eq 0 ] || git show --color=always \$1; }; f {}" | grep -o '[a-f0-9]\{7\}')
+    [ -z "$commitHash" ] && exit
+    echo "export to $commitHash.zip ..."
+    git archive --format zip --output "$commitHash.zip" $commitHash
+}
+
+git_export
