@@ -1,0 +1,25 @@
+rofi.modi: drun,run,window
+
+rofi.color-enabled: true
+rofi.color-window: argb:ee101010, #1793D1, #1793D1
+rofi.color-normal: argb:00000000, #ffffff, argb:00000000, argb:00000000, #1793D1
+rofi.color-active: argb:00000000, #ffffff, argb:00000000, argb:00000000, #00ff00
+rofi.color-urgent: argb:00000000, #ff0000, argb:00000000, argb:00000000, #ff0000
+
+rofi.width: 35
+rofi.padding: 20
+rofi.opacity: 92
+rofi.border: 2px
+rofi.line-margin: 9
+rofi.lines: 15
+rofi.separator-style: none
+rofi.columns: 2
+rofi.font: Coda Bold 11
+rofi.bw: 3
+rofi.eh: 1
+rofi.separator-style: solid
+rofi.hide-scrollbar: false
+rofi.auto-select: false
+rofi.fullscreen: false
+rofi.show-icons: true
+

@@ -81,8 +81,8 @@ instance LayoutClass ColMasterRight a where
             msum [fmap resize     (fromMessage m)
                  ,fmap incmastern (fromMessage m)]
 
-      where resize Shrink             = ColMasterRight nmaster delta (max 0 $ frac-delta)
-            resize Expand             = ColMasterRight nmaster delta (min 1 $ frac+delta)
+      where resize Shrink             = ColMasterRight nmaster delta (max 0 $ frac+delta)
+            resize Expand             = ColMasterRight nmaster delta (min 1 $ frac-delta)
             incmastern (IncMasterN d) = ColMasterRight (max 0 (nmaster+d)) delta frac
 
     description _ = "ColMasterRight"

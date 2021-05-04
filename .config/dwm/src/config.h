@@ -29,13 +29,13 @@ static char *colors[][3] = {
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 static const Rule rules[] = {
-	/* 
+	/*
      * First-Match Rule List
      *
      * xprop:
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING)  = title
-     * 
+     *
      * Setup swallow: add your terminal class marked with isterminal and noswallow
 	*/
 	/* class              instance           title          tags    center floating terminal nofocus noswallow monitor scratch-key*/
@@ -51,7 +51,7 @@ static const Rule rules[] = {
      { NULL,               "floating",        NULL,           0,         0,      1,      0,      1,      0,      -1,      0  },
      { NULL,               "ncmpcpp",         NULL,           0,         1,      1,      1,      0,      1,      -1,     'm' },
      { NULL,               "newsboat",        NULL,           0,         1,      1,      1,      0,      1,      -1,     'n' },
-     { NULL,               "pulsemixer",      NULL,           0,         1,      1,      1,      0,      1,      -1,     'a' }, 
+     { NULL,               "pulsemixer",      NULL,           0,         1,      1,      1,      0,      1,      -1,     'a' },
 	 { "Gimp",             NULL,              NULL,           0,         0,      1,      0,      0,      0,      -1,      0  },
 	 { "firefox",          NULL,              NULL,           0,         0,      0,      0,      1,      0,      -1,      0  },
 	 { "Alacritty",        NULL,              NULL,           0,         0,      0,      1,      0,      1,      -1,      0  },
@@ -79,7 +79,7 @@ static const Layout layouts[] = {
 };
 
 /* key definitions */
-#define MODKEY Mod1Mask
+#define MODKEY Mod4Mask
 #define TAGKEYS(KEY,TAG) \
 	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
@@ -108,7 +108,7 @@ static Key keys[] = {
     { MODKEY|ShiftMask,             XK_u,      spawn,          SHCMD("$HOME/.config/dmenu/scripts/dmenu_unicode.sh") },
     { MODKEY|ShiftMask,             XK_v,      spawn,          SHCMD("$HOME/.config/dmenu/scripts/dmenu_virtualbox.sh") },
     { MODKEY,                       XK_c,      spawn,          SHCMD("$HOME/.config/dmenu/scripts/dmenu_clipboard.sh") },
-    { MODKEY|ShiftMask,             XK_x,      spawn,          SHCMD("$HOME/.config/dmenu/scripts/dmenu_shutdown.sh") },
+    { MODKEY|ShiftMask,             XK_e,      spawn,          SHCMD("$HOME/.config/dmenu/scripts/dmenu_shutdown.sh") },
     { MODKEY|ShiftMask,             XK_o,      spawn,          SHCMD("$HOME/.config/dmenu/scripts/dmenu_scripts.sh") },
     { MODKEY,                       XK_plus,   spawn,          SHCMD("$HOME/.local/bin/volume-control up 1") },
     { MODKEY,                       XK_minus,  spawn,          SHCMD("$HOME/.local/bin/volume-control down 1") },
@@ -117,7 +117,7 @@ static Key keys[] = {
     { MODKEY,                       XK_p,      spawn,          SHCMD("$HOME/.local/bin/music-control toggle") },
     { MODKEY,                       XK_n,      spawn,          SHCMD("$HOME/.local/bin/music-control next") },
     { MODKEY|ShiftMask,             XK_p,      spawn,          SHCMD("$HOME/.local/bin/music-control prev") },
-    { MODKEY,                       XK_x,      spawn,          SHCMD("i3lock --nofork -B=100") },
+    { MODKEY,                       XK_x,      spawn,          SHCMD("$HOME/.local/bin/x11-lock --fast") },
     { 0,			                XK_Print,  spawn,          SHCMD("$HOME/.local/bin/screenshot") },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
@@ -129,7 +129,7 @@ static Key keys[] = {
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
     { MODKEY|ShiftMask,             XK_Return, zoom,           {0} },  // use selectet window as master
-	{ MODKEY,                       XK_Tab,    cyclelayout,    {.i = +1 } },  
+	{ MODKEY,                       XK_Tab,    cyclelayout,    {.i = +1 } },
     { MODKEY|ShiftMask,             XK_Tab,    cyclelayout,    {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
     { MODKEY,                       XK_q,      killclient,     {0} },

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: function to fix "unknown terminal type" error in ssh sessions
 
-[ -z "$1" ] && echo "usage: ssh-terminfo -p [PORT] [USER@HOST]" && return
+[ -z "$1" ] && echo "usage: ssh-terminfo -p [PORT] [USER@HOST]" && exit 1
 infocmp $TERM | eval "ssh $@ \"mkdir -p ~/.terminfo && cat >/tmp/ti && tic /tmp/ti\""
 # other solution: alias ssh="TERM=linux ssh" or use tmux

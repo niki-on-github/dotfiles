@@ -13,7 +13,10 @@ text/plain=org.kde.kwrite.desktop;
 text/html=firefox.desktop
 x-scheme-handler/https=firefox.desktop
 x-scheme-handler/http=firefox.desktop
+inode/directory=lf.desktop
+inode/mount-point=lf.desktop
+x-scheme-handler/msteams=teams.desktop
+text/x-arduino=arduino-arduinoide.desktop
 
 [Added Associations]
 application/x-bibtex=org.kde.kwrite.desktop;
-application/nbib=org.kde.kwrite.desktop;

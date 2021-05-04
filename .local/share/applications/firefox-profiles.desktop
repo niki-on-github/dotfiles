@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Firefox Profiles
+Exec=$HOME/.config/dmenu/scripts/dmenu_firefox.sh
+TryExec=firefox -P
+Comment=Launch Firefox Profiles with dmenu
+StartupWMClass=firefox

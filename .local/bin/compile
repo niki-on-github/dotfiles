@@ -30,6 +30,7 @@ cd "$dir" || exit 1
 compileTex() {
     echo "compile LaTeX ..."
 	command="pdflatex"
+    #command="xelatex"
     if [ -f "${dir}/main.tex" ]; then
         file="${dir}/main.tex"
         base="${dir}/main"
@@ -58,8 +59,15 @@ compileTex() {
 #         --metadata-file=$HOME/.local/share/pandoc/metadata/markdown.yml --pdf-engine=xelatex
 # }
 
+#  pandoc --pdf-engine=xelatex --highlight-style breezedark test.md -o out.pdf
+
+#NOTE: npm install --global mermaid-filter
 compileMarkdown() {
+    filter=()
+    # [ -f $HOME/.npm/bin/mermaid-filter ] && filter+=( "-F" "$HOME/.npm/bin/mermaid-filter" )
+
     pandoc "$file" -o "$base.pdf" \
+        ${filter[@]} \
         --metadata-file=$HOME/.local/share/pandoc/metadata/markdown.yml --pdf-engine=xelatex
 }
 

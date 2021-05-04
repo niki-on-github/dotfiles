@@ -1,0 +1,6 @@
+#!/bin/sh
+
+text=$@
+[ -z "$text" ] && echo "empty" && exit
+echo "Text: $text"
+curl --silent 'https://mentor.duden.de/api/grammarcheck?_format=json' -H 'content-type: application/json' --data-binary "{\"text\":\"$text\"}" --compressed | jq

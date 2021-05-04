@@ -1,4 +1,4 @@
-noremap <silent> <c-a> :Files<CR>
+noremap <silent> <c-p> :Files<CR>
 noremap <silent> <c-g> :GFiles<CR>
 noremap <silent> <c-f> :BLines<CR>
 

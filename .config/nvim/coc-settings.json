@@ -1,5 +1,7 @@
 {
+  "pairs.enableCharacters": ["(", "[", "{", "'", "\"", "`"],
   "suggest.noselect": false,
   "python.jediEnabled": false,
-  "coc.preferences.formatOnSaveFiletypes": ["markdown", "json", "xml"]
+  "coc.preferences.formatOnSaveFiletypes": ["json", "xml", "markdown"],
+  "tabnine.disable_filetypes": ["tex", "markdown"]
 }

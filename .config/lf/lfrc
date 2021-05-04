@@ -35,7 +35,7 @@ set nohidden
 set tabstop 4
 
 # auto reload
-set period 4
+#set period 4
 
 
 #################################################################
@@ -53,6 +53,38 @@ ${{
         fi
     fi
     [ -z "" ]  # return 0
+}}
+
+# The lf sever unfortunately crashes regularly. After a restart the functionality of still open lf clients is severely limited because
+# the id of the lf instance is no longer valid. Workaround is this reset function to continue working without manualy restart the lf client.
+cmd reset-lf ${{
+    [[ -v TMUX ]] || TMUX=""
+    if [ ! -n "$TMUX" ]; then return; fi
+
+    # first save current state
+    pane_id=$(tmux lsp -F "#{pane_active} #{pane_title} #{pane_id}" | grep "^1 " | grep "lf-pane" | cut -d ' ' -f 3-)
+    num_panes=$(tmux lsp | wc -l)
+    num_lf_panes=$(tmux lsp -F "#{pane_title}" | grep "lf-pane" | wc -l)
+
+    other_pane_path=$(tmux lsp -F "#{pane_active} #{pane_title} #{pane_current_path}" | grep "^0 " | grep "lf-pane" | cut -d ' ' -f 3-)
+    if [ -n "$other_pane_path" ]; then
+        other_pane_id=$(tmux lsp -F "#{pane_active} #{pane_title} #{pane_id}" | grep "^0 " | grep "lf-pane" | cut -d ' ' -f 3-)
+        tmux split-window -h "cd $other_pane_path && exec lf"
+        tmux kill-pane -t $other_pane_id
+    fi
+
+    tmux split-window -h 'exec lf'
+    tmux kill-pane -t $pane_id
+
+    if [ "$num_panes" = "3" ]; then
+        tmux select-layout tiled
+    elif [ "$num_panes" = "2" ]; then
+        if [ "$num_lf_panes" = "2" ]; then
+            tmux select-layout even-horizontal
+        else
+            tmux select-layout even-vertical
+        fi
+    fi
 }}
 
 # move selected/current file(s) to trash (requires trash-cli pkg)
@@ -88,8 +120,8 @@ cmd trash ${{
 
 # use `:q` to quit lf
 cmd q ${{
-    #[[ -v TMUX ]] || TMUX=""
-    #[ -n "$TMUX" ] && tmux kill-pane
+    [[ -v TMUX ]] || TMUX=""
+    [ -n "$TMUX" ] && tmux kill-pane
     lf -remote "send $id quit"
 }}
 cmd Q :q  # not case sensitive
@@ -135,6 +167,12 @@ cmd cp-name ${{
     name=$(basename "$f")
     echo -n "$name" | xclip -selection clipboard
     notify-send "Copy2Clipboard" "$name"
+}}
+
+# copy current path to clipboard
+cmd cp-path ${{
+    echo -n "$PWD" | xclip -selection clipboard
+    notify-send "Copy2Clipboard" "$PWD"
 }}
 
 cmd rename-by-clipboard ${{
@@ -192,13 +230,19 @@ cmd open ${{
         setsid sxiv -a "$f" &
     }
 
+    # open-image() {
+    #     pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
+    #     setsid sxiv -aobq -n $pos "$PWD" 2>/dev/null | lfSelect &
+    # }
+
     open-image() {
-        pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
-        setsid sxiv -aobq -n $pos "$PWD" 2>/dev/null | lfSelect &
+        base="$(basename "$f")"
+        ls -a "$PWD" | awk -v BASE="$base" 'BEGIN { lines = ""; m = 0; } { if ($0 == BASE) { m = 1; } } { if (!m) { if (lines) { lines = lines"\n"; } lines = lines""$0; } else { print $0; } } END { print lines; }' | \
+        grep -i "\.\(png\|jpg\|jpeg\|tiff\|webp\|tif\)\(_large\)*$" | setsid sxiv -aio 2>/dev/null | lfSelect &
     }
 
     open-audio() {
-        mpv --vo=null --speed=1.0 $f
+        mpv --vo=null --speed=1.0 $f 2>/dev/null
     }
 
     open-video() {
@@ -477,7 +521,7 @@ cmd ssh-add %{{
 # list files from selected bookmark servers and rsyncs selected files to the current directory
 cmd ssh-download ${{
     [ -f ~/.local/share/lf/ssh ] || return
-    choice="$(fzf --multi < ~/.local/share/lf/ssh)" || return
+    choice="$(sort ~/.local/share/lf/ssh | fzf --multi)" || return
     [ -z "$choice" ] && return
     choice=$(echo "$choice" | tr '\n' ' '| sed -e 's/[[:space:]]*$//')
     lf -remote "send $id ssh-get $choice"
@@ -494,7 +538,7 @@ cmd ssh-upload ${{
     choice="$(fzf < ~/.local/share/lf/ssh)" || return
     [ -z "$choice" ] && return
     choice=$(echo "$choice" | tr '\n' ' '| sed -e 's/[[:space:]]*$//')
-    if ! rsync --protect-args -auv --progress -e ssh $fx $choice ; then
+    if ! rsync --protect-args -auv --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r --progress -e ssh $fx $choice ; then
         echo "ssh-push failed!"
         notify-send --urgency critical "ssh-push failed" "files upload to $choice failed"
         lf -remote "send $id echo \"ssh-push failed!\""
@@ -707,16 +751,21 @@ cmd thumbnail-mode ${{
         done
     }
 
-    ls -p $PWD | grep -q / && lf -remote "send $id echo \"not an image directory!\"" && return
     lf -remote "send $id unselect"
-    pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
-    wid=$(xdo id)
-    xdo hide
-    select=$(sxiv -p -t -o -b -q -n $pos "$PWD")
-    xdo show "$wid"
-    sleep 0.3
-    echo "$select" | lfSelect
-}}
+    base="$(basename "$f")"
+    images=$(ls -a "$PWD" | awk -v BASE="$base" 'BEGIN { lines = ""; m = 0; } { if ($0 == BASE) { m = 1; } } { if (!m) { if (lines) { lines = lines"\n"; } lines = lines""$0; } else { print $0; } } END { print lines; }' | \
+        grep -i "\.\(png\|jpg\|jpeg\|webp\|tif\)\(_large\)*$")
+
+    if [ "$(echo "$images" | wc -l)" -gt "1" ]; then
+        wid=$(xdo id)
+        xdo hide
+        selection=$(echo "$images" | sxiv -aito 2>/dev/null)
+        xdo show "$wid"
+        echo "select images ..."
+        sleep 0.3
+        echo "$selection" | lfSelect
+    fi
+    }}
 
 # print msg when files are selected (TODO only notify if pwd != selected file path)
 cmd notify-selected-files %{{
@@ -858,14 +907,16 @@ map mr push :mkrar<space>
 map mn :set-default-permissions
 map gl $ git pull && lf -remote "send $id echo \"git pull ... done\""
 map gp $ git push && lf -remote "send $id echo \"git push ... done\""
-map i invert
-map I set preview!
-map O open-gui
+map A rename # renmae at the very end
+map i push r<a-b><a-b><a-f> # rename before extention
+map I push r<c-a> # rename at the very beginning
+map o open-gui
+map O $mimeopen --ask $f
 map p rpaste
 map P paste
 map <c-t> new-tab
 map <c-a> :select-all
-map A :select-all
+map a :select-all
 map <c-z> $ kill -STOP $PPID
 map <bs> set hidden!
 map B $lf -remote "send $id cd $(find . -maxdepth 3 -type d | fzf)"
@@ -880,6 +931,7 @@ map <f-7> quick-select
 map <f-8> set hidden!
 map <f-10> push %mkdir<space>
 map <f-11> set preview!
+map <f-12> :reset-lf
 map ~ cd
 map V :thumbnail-mode
 map <esc> unselect
@@ -887,7 +939,14 @@ map + :clpaste
 map \# :drag
 map . set hidden!
 map C &lf -remote "send $id echo \"compile $f\"" && ~/.local/bin/compile $f && lf -remote "send $id reload" || lf -remote "send $id echo \"compile failed\""
-map <f-12> &lf -server && lf -remote "send $id echo \"server was successfully restarted\""
 map - :swap
 map R :bulk-rename
 map , :cd-terminal
+map <backspace> set hidden!
+#map <f-6> $tmux select-layout main-vertical
+
+# move between tmux panes
+map H $tmux select-pane -L
+map L $tmux select-pane -R
+map K $tmux select-pane -U
+map J $tmux select-pane -D

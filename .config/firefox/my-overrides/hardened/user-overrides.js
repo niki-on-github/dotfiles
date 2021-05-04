@@ -49,7 +49,7 @@ user_pref("browser.formfill.enable", false);
 user_pref("privacy.sanitize.sanitizeOnShutdown", true);
 
 // Always send "Do Not Track" signal
-user_pref("privacy.donottrackheader.enable", true)
+user_pref("privacy.donottrackheader.enable", true);
 
 // Disable Firefox crash reports
 user_pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);

@@ -3,7 +3,6 @@
 alias zsh-vim="export ZSH_KEYMAP=\"vim\"; source ${ZDOTDIR:-$HOME}/.zshrc"
 alias zsh-emacs="export ZSH_KEYMAP=\"emacs\"; source ${ZDOTDIR:-$HOME}/.zshrc"
 alias vim="nvim" vimdiff="nvim -d" vi="nvim" v="nvim"
-alias ls="lsd" l="lsd -l" la="lsd -la" lt="lsd -Rl --depth 2" l.='ls -a | egrep "^\." | grep -vE "^(\.|\.\.)$"'
 alias dolphin="dolphin -stylesheet $HOME/.config/qt5ct/qss/dolphin.qss"
 alias tmux='tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf' t='tmux' fm='tmux new-session lf'
 alias mi="mediainfo"
@@ -15,16 +14,16 @@ alias yt-dl-audio="youtube-dl -x --audio-format mp3"
 alias watch-dir="inotifywait -e modify,create -r \$PWD -m"
 alias nmap="grc nmap"  # colorize nmap output
 alias pacman-unlock="sudo rm /var/lib/pacman/db.lck"
+alias pacman-fzf="pacman -Slq | fzf --multi --preview 'pacman -Si {1}' | xargs -ro sudo pacman -S"
 alias grep="grep --color=auto -I" egrep="egrep --color=auto -I" fgrep="fgrep --color=auto -I"
 alias df="df -h"
 alias free="free -m"
-alias pacman-fzf="pacman -Slq | fzf --multi --preview 'pacman -Si {1}' | xargs -ro sudo pacman -S"
 alias grep-todo='grep --color=auto -r --exclude-dir="\.git" -i -n "TODO" .'
 alias gw-ping-tcp="sudo nping --tcp --dest-mac \$(arp | grep "gateway" | sed 's/ * / /g' | cut -d ' ' -f 3) " # [IP] -p [Port]
 alias gw-ping-icmp="sudo nping --icmp --dest-mac \$(arp | grep "gateway" | sed 's/ * / /g' | cut -d ' ' -f 3) " # [IP]
 alias mpv-vr="mpv --script=~/.config/mpv/src/vr-reversal/360plugin.lua"
-alias video-concat-all="ffmpeg -safe 0 -f concat -i <(find . -maxdepth 1 -type f -name '*' -printf \"file '\$PWD/%p'\n\" | sort) -c copy concat.mkv"
-alias MP4Box-concat-all="eval \"MP4Box \$(find . -maxdepth 1 -type f -name '*' -printf \" -cat '\$PWD/%p'\") concat.mp4\""
+alias video-concat-all="ffmpeg -safe 0 -f concat -i <(find . -maxdepth 1 -type f -name '*' -printf \"file '\$PWD/%p'\n\" | sort) -c copy concat.mp4"
+alias MP4Box-concat-all="eval \"MP4Box \$(find . -maxdepth 1 -type f -name '*' -printf \" -cat '\$PWD/%p'\" | sort) concat.mp4\""
 alias :q="exit" :Q="exit"
 alias h="history -30" clh="[ -f \$HISTFILE ] && echo '' > \$HISTFILE && exec \$SHELL -l"
 alias ..="cd .." ...="cd ../.." ....="cd ../../.." .....="cd ../../../.." ......="cd ../../../../.."
@@ -38,6 +37,27 @@ alias cal="cal -m -3 --color=always"
 alias cl="clear"  #NOTE: use [Ctrl+l]
 alias mf="$EDITOR"
 alias journalctl-warn="journalctl -p 4"
+alias usage="ncdu --exclude /mnt --exclude /.snapshots"
+alias pip-save-requirements="pip freeze --local > requirements.txt"
+alias clock="date '+%a %b %d %R'"
+alias http-server="python -m http.server"
+alias ff="firefox & disown"
+alias diskinfo="sudo smartctl -A"
+alias package-size-list="pacman -Qi | egrep '^(Name|Installationsgröße)' | cut -f2 -d':' | paste - - | column -t | sort -nrk 2 | grep MiB | less"
+alias aur-packages="pacman -Qm"
+alias sudo='sudo '
+alias keyboard-setup='setxkbmap de; xset r rate 300 40'
+alias afk='~/.local/bin/x11-lock --fast'
+
+# this use cache
+#alias write-speed="openssl enc -aes-256-ctr -pass pass:\"\$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)\" < /dev/zero 2>/dev/null | pv -s 4g -S -r > write_speed_test.bin && rm write_speed_test.bin"
+
+# ls with icons
+if command -v lsd >/dev/null ; then
+    alias ls="lsd" l="lsd -l" la="lsd -la" lt="lsd -Rl --depth 2" l.='ls -a | egrep "^\." | grep -vE "^(\.|\.\.)$"'
+else
+    alias l="ls -lh" la="ls -lha"
+fi
 
 # web alias
 alias public-ip="curl http://ipecho.net/plain; echo"
@@ -49,15 +69,22 @@ alias coin-rate="curl rate.sx"
 alias conda-save-env="conda env export > environment.yml"
 alias jupyter-notebook="command -v jupyter >/dev/null || conda install jupyter; jupyter notebook"
 
+# docker, docker-compose
+alias dls 'docker container ls'
+alias dlog='docker logs -tf --tail="50"' # tail last 50 lines of docker log
+alias dprune='docker image prune' # remove unused images (useful after an update)
+alias dips=$'docker inspect -f \'{{.Name}}-{{range  $k, $v := .NetworkSettings.Networks}}{{$k}}-{{.IPAddress}} {{end}}-{{range $k, $v := .NetworkSettings.Ports}}{{ if not $v }}{{$k}} {{end}}{{end}} -{{range $k, $v := .NetworkSettings.Ports}}{{ if $v }}{{$k}} => {{range . }}{{ .HostIp}}:{{.HostPort}}{{end}}{{end}} {{end}}\' $(docker ps -aq) | column -t -s-' # prints the IP, network and listening ports for each container.
+
+
 # git alias
 # forgit zsh plugin (see: https://github.com/wfxr/forgit):
 # ga (git add selector), glo (git log viewer), gi (gitignore generator), gd (git diff viewer), grh (gir reset HEAD <file> selector), \
 # gcf (git checkout <file> selector), gss (git stash viewer), gclean (git clean selector)
-alias g="git" gs="git status" gb="git branch" gcmsg="git commit -m" gco="git checkout" gf="git fetch" gpl="git pull && git submodule update" \
-    gls="git ls-tree -r --name-only HEAD | sort" gm="git merge" gph="git push" gp="git pull && git push" greset="git reset --hard HEAD && git clean -f -d" \
+alias g="git" gs="git status" gb="git branch" gcmsg="git commit -m" gco="git checkout" gf="git fetch" \
+    gls="git ls-tree -r --name-only HEAD | sort" gm="git merge" greset="git reset --hard HEAD && git clean -f -d" \
     git-edit-last-commit-msg="git commit --amend" gcmsgfix="git commit --amend" git-get-submodules="git submodule update --init --recursive --remote"
 
-alias add="git add" branch="git branch" clone="git clone --recursive" commit="git commit -m" init="git init" pull="git pull && git submodule update" push="git push" status="git status"
+alias add="git add -v" branch="git branch" checkout='git checkout' clone="git clone --recursive --recurse-submodules" commit="git commit -m" config='git config -l | sort' init="git init" pull="git pull && git submodule update" push="git push && git lfs push origin \$(git branch | grep '^* ' | cut -c 3-) --all" status="git status -v"
 
 # btrfs
 alias btrfs="sudo btrfs"
@@ -74,14 +101,16 @@ if [ -f $HOME/.dotfiles/config ]; then
     alias dotfiles-ls='dotfiles ls-files --full-name | xargs -I{} echo "$HOME/{}" | sort'
     alias dotfiles-edit='dotfiles-ls | fzf --reverse | xargs -I{} $EDITOR "{}"'
     alias dotfiles-update='dotfiles pull && dotfiles submodule update --remote && echo "update completed"'
+    alias dotfiles-submodules-update='dotfiles submodule update --remote'
     alias dotfiles-reset='dotfiles reset --hard HEAD && dotfiles pull; dotfiles submodule update --remote'
     alias dotfiles-search='dotfiles-ls | xargs -I{} echo "\"{}\"" | xargs grep --color=auto -I -n -s -H -i'
     alias dotfiles-todo='dotfiles-search TODO'
     alias .aa="dotfiles add -u -v"
     alias .cmsg='dotfiles commit -m'
-    alias .p='dotfiles push'
+    alias .p='dotfiles push --all && dotfiles lfs push origin master --all'
     alias .s='dotfiles status -s'
     alias .ls="dotfiles-ls"
+    alias .diff="dotfiles diff"
 
     # dotfiles add-commit-push function
     function .acp() {
@@ -101,7 +130,8 @@ if [ -f $HOME/.dotfiles/config ]; then
         fi
         eval "$_dotfiles_command add -u -v"
         eval "$_dotfiles_command commit -m \"$msg\""
-        eval "$_dotfiles_command push"
+        eval "$_dotfiles_command push --all"
+        eval "$_dotfiles_command lfs push origin master --all"
     }
 fi
 

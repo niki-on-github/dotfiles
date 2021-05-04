@@ -15,7 +15,7 @@ let maplocalleader="-"
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" VIM Plugin Managing (Install new Plugins with `:PlugInstall`)
+" VIM Plugin Managing (Install new Plugins with `:PlugInstall`, Update with `:PlugUpdate`)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " Install vim plugin manager "
@@ -49,19 +49,29 @@ Plug 'tpope/vim-commentary'
 " provides support for LaTeX documents "
 Plug 'lervag/vimtex'
 " Go language support for Vim "
-Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+" Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 " vertical lines at each indentation level for code indented with spaces "
 Plug 'Yggdroot/indentLine'
 " terminal in floating popup window inside vim "
 Plug 'voldikss/vim-floaterm'
+" Highlights overused words "
+Plug 'dbmrq/vim-ditto'
 " color preview "
 Plug 'ap/vim-css-color'
+" synonym checkup "
+Plug 'ron89/thesaurus_query.vim'
 " much simpler vim motions "
 Plug 'easymotion/vim-easymotion'
 " Code Completion / Intellisense Engine "
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " My preferred vim theme "
 Plug 'dikiaap/minimalist'
+" Displays available keybindings in popup "
+Plug 'liuchengxu/vim-which-key'
+" a other vim theme "
+" Plug 'tomasiser/vim-code-dark'
+" coc pairs only at line ends, require yarn (sudo pacman -Sy yarn) for installation"
+" Plug 'niki-on-github/coc-pairs', {'do': 'yarn install --frozen-lockfile && yarn build'}
 call plug#end()
 
 
@@ -78,6 +88,8 @@ source $HOME/.config/nvim/plug-config/indentline.vim
 source $HOME/.config/nvim/plug-config/floaterm.vim
 source $HOME/.config/nvim/plug-config/easymotion.vim
 source $HOME/.config/nvim/plug-config/vimtex.vim
+source $HOME/.config/nvim/plug-config/thesaurusquery.vim
+source $HOME/.config/nvim/plug-config/whichkey.vim
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -100,6 +112,9 @@ set wildmode=longest,list,full
 autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
 " Splits open at the bottom and right "
 set splitbelow splitright
+" Word wrap
+set wrap
+set linebreak " only wrap at a character in the breakat option (default: ^I!@*-+;:,./?V) "
 " Shortcutting split navigation (saving a keypress) "
 map <C-h> <C-w>h
 map <C-j> <C-w>j
@@ -117,8 +132,8 @@ command WQ wq
 command Wq wq
 command W w
 command Q q
-map :Vs :vs
-map :Sp :sp
+map Vs vs
+map Sp sp
 " Do not show stupid q: window
 map q: :q
 " Use smart tabs "
@@ -133,6 +148,8 @@ let g:yankring_clipboard_monitor=0
 " show search results in center "
 nnoremap n nzzzv
 nnoremap N Nzzzv
+" jump to line and show in center"
+nnoremap G Gzzzv
 " make backspace key more powerful "
 set backspace=indent,eol,start
 " smart case insensitive search (case sensitive when search pattern contains upper case characters)"
@@ -141,16 +158,15 @@ set smartcase
 " keep indenting visual block
 vmap < <gv
 vmap > >gv
+map sh SH
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Helper
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" toggle Spell-check "
+" toggle Spell-check (use zg to mark word as good, use zw to mark word as wrong, use z= suggest a list of spell)"
 map <leader>s :setlocal spell! spelllang=de_de,en_us<CR>
-" Sugest a list of spell alternatives "
-map <leader>z z=
 " Open bibliography file in split "
 if filereadable(expand("./Literatur.bib"))
     map <leader>b :vsp<space>./Literatur.bib<CR>
@@ -171,6 +187,10 @@ map <leader>p :!$HOME/.config/nvim/scripts/previewer.sh <c-r>%<CR><CR>
 autocmd VimLeave *.tex !$HOME/.config/nvim/scripts/tex_clean_up.sh %
 " Run xrdb whenever Xdefaults or Xresources are updated "
 autocmd BufWritePost *Xresources,*Xdefaults !xrdb %
+" Filetype-specific indentation
+autocmd Filetype yaml setlocal tabstop=2 shiftwidth=2 expandtab
+" enable spell check for markdown and latex "
+autocmd Filetype markdown,tex setlocal spell spelllang=de_de,en_us
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -189,10 +209,16 @@ autocmd BufRead,BufNewFile *.md,*.MD set filetype=markdown
 " Bindings and Aliase
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+" Control-Backspace to remove last word
+inoremap <C-H> <C-W>
 " paste in a new line "
 nmap P :pu<CR>
 " replace all (:%s/Search/Replace/Flags)"
 nnoremap R :%s//g<Left><Left>
+" change all existing characters to match my vim tab settings "
+noremap <Leader>t :retab<CR>
+" select all "
+nnoremap <C-A> ggVG
 " remove trailing space and leave cursor at the last change location and clear output "
 nnoremap <Leader>w :let _save_pos=getpos(".") <Bar>
     \ :let _s=@/ <Bar>
@@ -214,3 +240,17 @@ nnoremap <Leader>e :let _save_pos=getpos(".") <Bar>
     \ :call setpos('.', _save_pos)<Bar>
     \ :unlet _save_pos<CR>
     \ :echo<CR>
+
+" Show if there is a tab or not
+set list listchars=nbsp:¬,tab:»·,trail:·,extends:>
+
+" Change Space indent of file to my default e.g. Code from Internet have 2-space indenting and I want 4-space indenting.
+command Fixtab :exe "normal \g\g\=\G"
+
+" Highlights beginnings of sentences "
+command HSentences /\. [^ ]*
+
+if ! filereadable(expand('~/.config/coc/extensions/coc-tabnine-data/binaries'))
+    silent !chmod +x ~/.config/coc/extensions/coc-tabnine-data/binaries/*/x86_64-unknown-linux-musl/*
+    " if not work use `:CocCommand tabnine.updateTabNine` + y  to force update TabNine
+endif

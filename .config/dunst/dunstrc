@@ -25,7 +25,7 @@
     # the top and down respectively.
     # The width can be negative.  In this case the actual width is the
     # screen width minus the width defined in within the geometry option.
-    geometry = "456x8-5-5"
+    geometry = "435x8-5-5"
 
     # Show how many messages are currently hidden (because of geometry).
     indicate_hidden = yes
@@ -34,7 +34,7 @@
     shrink = no
 
     # The transparency of the window.  Range: [0; 100].
-    transparency = 0
+    transparency = 2
 
     # The height of the entire notification.
     notification_height = 50
@@ -214,22 +214,22 @@
 
 [urgency_low]
     # IMPORTANT: colors have to be defined in quotation marks.
-    background = "#181818"
-    foreground = "#bbbbbb"
+    background = "#171717"
+    foreground = "#bcbcbc"
     timeout = 16
 
 
 [urgency_normal]
     # IMPORTANT: colors have to be defined in quotation marks.
-    background = "#000000"
+    background = "#171717"
     foreground = "#ffffff"
     timeout = 16
 
 
 [urgency_critical]
     # IMPORTANT: colors have to be defined in quotation marks.
-    background = "#900000"
-    foreground = "#ffffff"
+    background = "#171717"
+    foreground = "#ff0000"
     frame_color = "#ff0000"
     timeout = 0
 

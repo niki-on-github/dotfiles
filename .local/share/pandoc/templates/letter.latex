@@ -1,0 +1,99 @@
+% HEADER:
+% ---
+% author: Max Mustermann
+% phone: +49 1234 56789
+% email: max.mustermann@beispiel.de
+% place: Musterstadt
+% return-address:
+%  - Musterstraße
+%  - 12345 Berlin
+% address:
+%   - Musterfirma GmbH
+%   - Max Mustermann
+%   - Musterstraße
+%   - 12345 Musterstadt
+% subject: Titel vom Brief
+% opening: Sehr geehrte Damen und Herren,
+% closing: Mit freundlichen Grüßen
+% encludes: Muster A, Muster B, Muster C
+% ---
+
+\documentclass[
+    paper=A4,
+    foldmarks=true,
+    foldmarks=BTm,
+    fromalign=right,
+    firstfoot=false,
+	enlargefirstpage=true,
+    backaddress=false,
+    $if(phone)$fromphone,$endif$
+    $if(email)$fromemail,$endif$
+    pagenumber=botright,
+    version=last
+]{scrlttr2}
+
+\usepackage[ngerman]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{parskip}
+\usepackage{csquotes}
+\usepackage{graphics}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{lastpage}
+\usepackage[right]{eurosym}
+\DeclareUnicodeCharacter{20AC}{\euro}
+
+% unordered list
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}
+}
+
+\makeatletter
+    \setlength{\@tempskipa}{-1.2cm}%
+    \@addtoplength{toaddrheight}{\@tempskipa}
+\makeatother
+
+\setlength{\oddsidemargin}{\useplength{toaddrhpos}}
+\addtolength{\oddsidemargin}{-1in}
+\setlength{\textwidth}{\useplength{firstheadwidth}}
+
+\begin{document}
+    \renewcommand{\pagemark}{{\usekomafont{pagenumber}{\thepage /\pageref{LastPage}}}}
+    %$if(firsthead)$ $else$\firsthead{}$endif$
+    \setkomavar{fromname}{$author$}
+    \renewcommand*{\raggedsignature}{\raggedright}
+    \setkomavar{fromaddress}{
+        $for(return-address)$
+            $return-address$$sep$\\
+        $endfor$
+    }
+    \setkomavar{fromphone}{$phone$}
+    \setkomavar{fromemail}{$email$}
+    \setkomavar{signature}{$author$}
+
+    $if(date)$\setkomavar{date}{$date$}$endif$
+    $if(subject)$\setkomavar{subject}{$subject$}$endif$
+    \setkomavar{place}{$place$}
+
+    \begin{letter}{%
+        $for(address)$
+            $address$$sep$\\
+        $endfor$
+    }
+
+    $if(opening)$\opening{$opening$}
+    $else$\opening{Sehr geehrte Damen und Herren,}$endif$
+
+        $body$
+
+        \closing{$closing$}
+
+        \ps $postskriptum$
+
+        $if(encludes)$
+            \setkomavar*{enclseparator}{Anlage}
+            \encl{$encludes$}
+        $endif$
+    \end{letter}
+\end{document}

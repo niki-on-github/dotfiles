@@ -7,7 +7,8 @@ export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 export BROWSER="firefox"
 export COLORTERM="truecolor"
 export EDITOR="nvim"
-export EDITOR_GUI="kwrite"
+export EDITOR_GUI="code"
+export IMAGE_EDITOR="gimp"
 export OPENER="xdg-open"
 export PAGER="less"
 export READER="zathura"
@@ -17,6 +18,9 @@ export VISUAL="nvim"
 export XCURSOR_THEME="breeze_cursors"
 export WALLPAPER_PATH="$HOME/Nextcloud/Pictures/Backgrounds/21_9"
 export LESSHISTFILE=-
+
+# python
+export PYTHONDONTWRITEBYTECODE=1
 
 # clipboard
 export CM_SELECTIONS="clipboard"
@@ -41,7 +45,8 @@ fi
 export DEFAULT_USER=$(whoami)
 
 # Set dmenu style (this override the xresource defaults if used in your scripts)
-# [old] export DMENU_STYLE="-fn 'Hack-12' -h 25 -nf '#FFFFFF' -nb '#000000' -sf '#FFFFFF' -sb '#1D99F3'"
+#export DMENU_STYLE="--font 'Hack-12' --nf '#FFFFFF' --nb '#000000' --sf '#FFFFFF' --sb '#1D99F3' --render_minheight 25"  # demenu-rs (currently has problems in line mode)
+#export DMENU_STYLE="-fn 'Hack-12' -h 25 -nf '#FFFFFF' -nb '#000000' -sf '#FFFFFF' -sb '#1D99F3'"
 export DMENU_STYLE=""  # currently we set dmenu theme via .Xresources
 
 # Use dmenu for sudo/ssh password prompt (alternatively use 'ksshaskpass' on a KDE DE)
@@ -64,5 +69,10 @@ export XMONAD_CONFIG_DIR="$HOME/.config/xmonad"
 export XMONAD_CACHE_DIR="$HOME/.cache/xmonad"
 export XMONAD_DATA_DIR="$HOME/.local/share/xmonad"
 
+# Wayland
+export XKB_DEFAULT_LAYOUT=de
+# export XKB_DEFAULT_VARIANT=
+# export XKB_DEFAULT_OPTIONS= # remoap keys
+
 # lf icons (Require Nerd Font e.g. in ~/.fonts, use https://www.nerdfonts.com/cheat-sheet to find icons)
-export LF_ICONS="di=:fi=:ln=:or=:ex=:*.c=:*.cc=:*.clj=:*.coffee=:*.cpp=:*.css=:*.d=:*.dart=:*.erl=:*.exs=:*.fs=:*.go=:*.h=:*.hh=:*.hpp=:*.hs=:*.html=:*.java=:*.jl=:*.js=:*.json=:*.lua=:*.md=:*.php=:*.pl=:*.pro=:*.py=:*.rb=:*.rs=:*.scala=:*.ts=:*.vim=:*.cmd=:*.ps1=:*.sh=:*.bash=:*.zsh=:*.fish=:*.tar=:*.tgz=:*.arc=:*.arj=:*.taz=:*.lha=:*.lz4=:*.lzh=:*.lzma=:*.tlz=:*.txz=:*.tzo=:*.t7z=:*.zip=:*.z=:*.dz=:*.gz=:*.lrz=:*.lz=:*.lzo=:*.xz=:*.zst=:*.tzst=:*.bz2=:*.bz=:*.tbz=:*.tbz2=:*.tz=:*.deb=:*.rpm=:*.jar=:*.war=:*.ear=:*.sar=:*.rar=:*.alz=:*.ace=:*.zoo=:*.cpio=:*.7z=:*.rz=:*.cab=:*.wim=:*.swm=:*.dwm=:*.esd=:*.jpg=:*.jpeg=:*.mjpg=:*.mjpeg=:*.gif=:*.bmp=:*.pbm=:*.pgm=:*.ppm=:*.tga=:*.xbm=:*.xpm=:*.tif=:*.tiff=:*.png=:*.PNG=:*.svg=:*.svgz=:*.mov=:*.mpeg=:*.mkv=:*.m4v=:*.webm=:*.mp4=:*.wmv=:*.avi=:*.flv=:*.flac=:*.mp3=:.m4a=:*.wav=:*.pdf=:*.iso=:*.img="
+export LF_ICONS="di=:fi=:ln=:or=:*.c=:*.cc=:*.clj=:*.coffee=:*.cpp=:*.css=:*.d=:*.dart=:*.erl=:*.exs=:*.fs=:*.go=:*.h=:*.hh=:*.hpp=:*.hs=:*.html=:*.java=:*.jl=:*.js=:*.json=:*.lua=:*.md=:*.php=:*.pl=:*.pro=:*.py=:*.rb=:*.rs=:*.scala=:*.ts=:*.vim=:*.cmd=:*.ps1=:*.sh=:*.bash=:*.zsh=:*.fish=:*.tar=:*.tgz=:*.arc=:*.arj=:*.taz=:*.lha=:*.lz4=:*.lzh=:*.lzma=:*.tlz=:*.txz=:*.tzo=:*.t7z=:*.zip=:*.z=:*.dz=:*.gz=:*.lrz=:*.lz=:*.lzo=:*.xz=:*.zst=:*.tzst=:*.bz2=:*.bz=:*.tbz=:*.tbz2=:*.tz=:*.deb=:*.rpm=:*.jar=:*.war=:*.ear=:*.sar=:*.rar=:*.alz=:*.ace=:*.zoo=:*.cpio=:*.7z=:*.rz=:*.cab=:*.wim=:*.swm=:*.dwm=:*.esd=:*.jpg=:*.jpeg=:*.mjpg=:*.mjpeg=:*.gif=:*.bmp=:*.pbm=:*.pgm=:*.ppm=:*.tga=:*.xbm=:*.xpm=:*.tif=:*.tiff=:*.png=:*.PNG=:*.svg=:*.svgz=:*.mov=:*.mpeg=:*.mkv=:*.m4v=:*.webm=:*.mp4=:*.wmv=:*.avi=:*.flv=:*.flac=:*.mp3=:.m4a=:*.wav=:*.pdf=:*.iso=:*.img=:*.gitignore=:*.vimrc=:*.viminfo=:*.nix=:ex="

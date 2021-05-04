@@ -1,0 +1,41 @@
+#!/bin/sh
+# Description: Command line reddit meme downloader/viewer
+
+LIMIT=40
+SUBREDDITS=('linuxmemes' 'unixporn')
+IMG_CACHE_DIR="/tmp/reddit"
+DOWNLOAD_THREADS=4
+
+# Check if necessary programs are installed
+for prog in notify-send dmenu jq sxiv fzf; do
+	[ ! "$(which "$prog")" ] && notify-send "Please install $prog!" && exit 1
+done
+
+if [ -z "$1" ]; then
+	subreddit=$(printf '%s\n' "${SUBREDDITS[@]}" | fzf  --reverse --prompt='Select Subreddit > ' | cut -d\| -f1 | awk '{$1=$1;print}')
+	[ -z "$subreddit" ] && exit 0
+elif [ "$1" = "-d" ]; then
+	subreddit=$(printf '%s\n' "${SUBREDDITS[@]}" | dmenu -p "Select Subreddit >" -i -l 10 | cut -d\| -f1 | awk '{$1=$1;print}')
+	[ -z "$subreddit" ] && exit 0
+else
+	subreddit="$1"
+fi
+
+IMG_CACHE_DIR="$IMG_CACHE_DIR/$subreddit"
+[ ! -d "$IMG_CACHE_DIR" ] && mkdir -p "$IMG_CACHE_DIR"
+echo "Downloading your Images from r/$subreddit ..."
+notify-send "Reddit" "Downloading your Images from r/$subreddit ..."
+
+# Download the subreddit feed, containing only the first $LIMIT entries, and store it inside $IMG_CACHE_DIR/tmp.json
+curl -s -H "User-agent: 'bot'" "https://www.reddit.com/r/$subreddit/hot.json?limit=$LIMIT" > "$IMG_CACHE_DIR/tmp.json"
+
+# Create a list of image urls
+imgs=$(jq '.' < "$IMG_CACHE_DIR/tmp.json" | grep url_overridden_by_dest | grep -Eo "http(s|)://.*(jpg|png)\b" | sort -u)
+[ -z "$imgs" ] && notify-send "Reddit" "Sadly, there are no images for subreddit $subreddit, please try again later!" && exit 0
+
+echo "$imgs" | xargs -n 1 -P $DOWNLOAD_THREADS wget -q -o /dev/null -c -P "$IMG_CACHE_DIR"
+echo "Download Finished, Enjoy! 😊"
+notify-send "Reddit" "Download Finished, Enjoy! 😊"
+
+# Display the images
+sxiv -a "$IMG_CACHE_DIR"/*.png "$IMG_CACHE_DIR"/*.jpg & disown

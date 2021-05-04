@@ -25,6 +25,7 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
+import XMonad.Hooks.RefocusLast
 import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.XPropManage
 
@@ -51,7 +52,6 @@ import XMonad.Layout.ZoomRow
 
 import XMonad.Util.Cursor
 import XMonad.Util.NoTaskbar
-import XMonad.Util.NamedScratchpad
 import XMonad.Util.NamedWindows
 import XMonad.Util.Paste
 import XMonad.Util.Run
@@ -62,8 +62,6 @@ import XMonad.Prompt.ConfirmPrompt
 import XMonad.Prompt.FuzzyMatch
 import XMonad.Prompt.Pass
 import XMonad.Prompt.Window
-
-import Graphics.X11.ExtraTypes.XF86
 
 import qualified Data.Map as M
 import qualified XMonad.Actions.Search as S
@@ -76,6 +74,7 @@ import XMonad.Layout.HorizontalMaster
 import XMonad.Layout.MyPerScreen
 import XMonad.Layout.MySpacing
 import XMonad.Prompt.Tmux
+import XMonad.Util.MyNamedScratchpad
 
 
 ------------------------------------------------------------------------
@@ -125,6 +124,28 @@ xmobarToggleCommand = "dbus-send --session --dest=org.Xmobar.Control --type=meth
 
 
 ------------------------------------------------------------------------
+-- MEDIA KEYS
+
+xK_VolDown :: KeySym
+xK_VolDown = 0x1008FF11
+
+xK_VolUp :: KeySym
+xK_VolUp = 0x1008FF13
+
+xK_ToggleMute :: KeySym
+xK_ToggleMute = 0x1008FF12
+
+xK_MediaPrev :: KeySym
+xK_MediaPrev = 0x1008FF16
+
+xK_MediaTogglePlay :: KeySym
+xK_MediaTogglePlay = 0x1008FF14
+
+xK_MediaNext :: KeySym
+xK_MediaNext = 0x1008FF17
+
+
+------------------------------------------------------------------------
 -- THEME
 -- Description: my prompt and tab theme
 
@@ -168,7 +189,6 @@ myTabTheme = def
 ------------------------------------------------------------------------
 -- KEY BINDINGS
 -- Description: my keyboard bindings
--- Note: see /usr/include/X11/keysymdef.h
 
 ifFocusedWindowClass :: String -> X () -> X () -> X ()
 ifFocusedWindowClass cname thenX elseX = withFocused $ \windowId -> do
@@ -199,73 +219,74 @@ toggleSticky = do
 
 myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
-    [ ((modm,                   xK_Return   ), spawn $ XMonad.terminal conf )
-    , ((modm .|. shiftMask,     xK_Return   ), dwmpromote )  -- swap focused window like dwm
-    , ((modm,                   xK_d        ), spawn "$HOME/.config/dmenu/scripts/dmenu_apps.sh" )
-    , ((modm .|. shiftMask,     xK_d        ), spawn "sudo -A $HOME/.config/dmenu/scripts/dmenu_apps.sh" )
-    , ((modm .|. shiftMask,     xK_period   ), spawn "$HOME/.config/dmenu/scripts/dmenu_edit.sh" )
-    , ((modm .|. shiftMask,     xK_u        ), spawn "$HOME/.config/dmenu/scripts/dmenu_unicode.sh" )
-    , ((modm .|. shiftMask,     xK_v        ), spawn "$HOME/.config/dmenu/scripts/dmenu_virtualbox.sh" )
-    , ((modm .|. shiftMask,     xK_x        ), spawn "$HOME/.config/dmenu/scripts/dmenu_shutdown.sh" )
-    , ((modm .|. shiftMask,     xK_o        ), spawn "$HOME/.config/dmenu/scripts/dmenu_scripts.sh" )
-    , ((modm,                   xK_c        ), spawn "$HOME/.config/dmenu/scripts/dmenu_clipboard.sh" )
-    , ((modm .|. shiftMask,     xK_BackSpace), spawn "$HOME/.config/dmenu/scripts/dmenu_kill.sh" )
-    , ((modm .|. shiftMask,     xK_t        ), spawn "$HOME/.config/dmenu/scripts/dmenu_tmux.sh" )
-    , ((modm,                   xK_w        ), spawn "$HOME/.config/dmenu/scripts/dmenu_firefox.sh" )
-    , ((modm,                   xK_plus     ), spawn "$HOME/.local/bin/volume-control up 1" )
-    , ((modm,                   xK_minus    ), spawn "$HOME/.local/bin/volume-control down 1" )
-    , ((modm,                   xK_m        ), spawn "$HOME/.local/bin/volume-control toggle" )
-    , ((modm,                   xK_p        ), spawn "$HOME/.local/bin/music-control toggle" )
-    , ((modm,                   xK_n        ), spawn "$HOME/.local/bin/music-control next" )
-    , ((modm .|. shiftMask,     xK_p        ), spawn "$HOME/.local/bin/music-control prev" )
-    , ((modm .|. shiftMask,     xK_b        ), spawn "$HOME/.local/bin/x11-wallpaper choice" )
-    , ((0,                      xK_Print    ), spawn "$HOME/.local/bin/screenshot" )
-    , ((shiftMask,              xK_Print    ), spawn "flameshot gui" )
-    , ((modm,                   xK_x        ), spawn "$HOME/.local/bin/x11-lock --fast" )
-    , ((modm,                   xK_Tab      ), sendMessage NextLayout )
-    , ((modm .|. shiftMask,     xK_space    ), withFocused $ windows . W.sink )
-    , ((modm,                   xK_f        ), ifFocusedWindowClass "mpv" (ifFocusedWindowFloating (sendKey noModMask xK_f) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL)) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL) )
-    , ((modm .|. shiftMask,     xK_f        ), withFocused toggleFloatCenter )
-    , ((modm .|. shiftMask,     xK_F5       ), setLayout $ XMonad.layoutHook conf )  -- reset to layout default setting
-    , ((modm,                   xK_r        ), XMonad.Layout.MySpacing.triggerResizeEvent )
-    , ((modm .|. controlMask,   xK_f        ), gotoMenuArgs ["-l", "20"] )
-    , ((modm .|. shiftMask,     xK_w        ), bringMenuArgs ["-l", "20"] )
-    , ((modm,                   xK_j        ), sequence_[ windows W.focusDown, warpToWindow 0.5 1 ] )
-    , ((modm,                   xK_k        ), sequence_[ windows W.focusUp, warpToWindow 0.5 1 ] )
-    , ((modm,                   xK_a        ), windows W.focusMaster )
-    , ((modm,                   xK_b        ), if enableSystray then spawn (xmobarToggleCommand ++ " && pkill trayer || " ++ trayerCommand) else spawn (xmobarToggleCommand) ) -- toggle xmobar + trayer
-    , ((modm .|. shiftMask,     xK_j        ), windows W.swapDown )
-    , ((modm .|. shiftMask,     xK_k        ), windows W.swapUp )
-    , ((modm,                   xK_h        ), sendMessage Shrink )
-    , ((modm,                   xK_l        ), sendMessage Expand )
-    , ((modm .|. shiftMask,     xK_plus     ), sendMessage (IncMasterN 1) )
-    , ((modm .|. shiftMask,     xK_minus    ), sendMessage (IncMasterN (-1)) )
-    , ((modm,                   xK_g        ), XMonad.Layout.MySpacing.toggleAuto16x9SpacingEnabled )  -- toggle widscreen gaps
-    , ((modm,                   xK_s        ), toggleSticky )
-    , ((modm,                   xK_t        ), namedScratchpadAction myScratchPads "terminal" )
-    , ((modm .|. shiftMask,     xK_m        ), namedScratchpadAction myScratchPads "ncmpcpp" )
-    , ((modm .|. shiftMask,     xK_n        ), namedScratchpadAction myScratchPads "newsboat" )
-    , ((modm .|. shiftMask,     xK_a        ), namedScratchpadAction myScratchPads "pulsemixer" )
-    , ((modm .|. shiftMask,     xK_i        ), namedScratchpadAction myScratchPads "htop" )
-    , ((modm,                   xK_F1       ), sendMessage $ JumpToLayout "HL" )
-    , ((modm,                   xK_F2       ), sendMessage $ JumpToLayout "HR" )
-    , ((modm,                   xK_F3       ), sendMessage $ JumpToLayout "3ColMid" )
-    , ((modm,                   xK_F4       ), sendMessage $ JumpToLayout "3Col" )
-    , ((modm,                   xK_F5       ), sendMessage $ JumpToLayout "nCol" )
-    , ((modm,                   xK_F6       ), sendMessage $ JumpToLayout "zROW" )
-    , ((modm.|. shiftMask,      xK_F1       ), spawn "groff -mom ~/.local/share/dotfiles-readme.mom -tbl -Tpdf | zathura -" )
-    , ((modm,                   xK_Right    ), sequence_[ sendMessage $ Go R, warpToWindow 0.5 1 ])
-    , ((modm,                   xK_Left     ), sequence_[ sendMessage $ Go L, warpToWindow 0.5 1 ])
-    , ((modm,                   xK_Up       ), ifFocusedWindowClass "Code" (sendKey (modm) xK_Up) (sequence_[ sendMessage $ Go U, warpToWindow 0.5 1 ]))  -- allow swap lines in vs code
-    , ((modm,                   xK_Down     ), ifFocusedWindowClass "Code" (sendKey (modm) xK_Down) (sequence_[ sendMessage $ Go D, warpToWindow 0.5 1 ]))  -- allow swap line in vs code
-    , ((modm .|. controlMask,   xK_Right    ), sequence_[ sendMessage $ Swap R, warpToWindow 0.5 1 ])
-    , ((modm .|. controlMask,   xK_Left     ), sequence_[ sendMessage $ Swap L, warpToWindow 0.5 1 ])
-    , ((modm .|. controlMask,   xK_Up       ), sequence_[ sendMessage $ Swap U, warpToWindow 0.5 1 ])
-    , ((modm .|. controlMask,   xK_Down     ), sequence_[ sendMessage $ Swap D, warpToWindow 0.5 1 ])
-    , ((modm,                   xK_Page_Up  ), nextNonEmptyWS)
-    , ((modm,                   xK_Page_Down), prevNonEmptyWS)
-    , ((modm .|. shiftMask,     xK_Page_Up  ), shiftAndView Next)
-    , ((modm .|. shiftMask,     xK_Page_Down), shiftAndView Prev)
+    [ ((modm,                     xK_Return   ), spawn $ XMonad.terminal conf )
+    , ((modm .|. shiftMask,       xK_Return   ), dwmpromote )  -- swap focused window like dwm
+    , ((modm,                     xK_d        ), spawn "$HOME/.config/dmenu/scripts/dmenu_apps.sh" )
+    , ((modm .|. shiftMask,       xK_d        ), spawn "sudo -A $HOME/.config/dmenu/scripts/dmenu_apps.sh" )
+    , ((modm .|. shiftMask,       xK_period   ), spawn "$HOME/.config/dmenu/scripts/dmenu_edit.sh" )
+    , ((modm .|. shiftMask,       xK_u        ), spawn "$HOME/.config/dmenu/scripts/dmenu_unicode.sh" )
+    , ((modm .|. shiftMask,       xK_v        ), spawn "$HOME/.config/dmenu/scripts/dmenu_virtualbox.sh" )
+    , ((modm .|. shiftMask,       xK_e        ), spawn "$HOME/.config/dmenu/scripts/dmenu_shutdown.sh" )
+    , ((modm .|. shiftMask,       xK_o        ), spawn "$HOME/.config/dmenu/scripts/dmenu_scripts.sh" )
+    , ((modm,                     xK_c        ), spawn "$HOME/.config/dmenu/scripts/dmenu_clipboard.sh" )
+    , ((modm .|. shiftMask,       xK_BackSpace), spawn "$HOME/.config/dmenu/scripts/dmenu_kill.sh" )
+    , ((modm .|. shiftMask,       xK_t        ), spawn "$HOME/.config/dmenu/scripts/dmenu_tmux.sh" )
+    , ((modm,                     xK_w        ), spawn "$HOME/.config/dmenu/scripts/dmenu_firefox.sh" )
+    , ((modm,                     xK_s        ), spawn "$HOME/.config/dmenu/scripts/dmenu_websearch.sh" )
+    , ((modm,                     xK_plus     ), spawn "$HOME/.local/bin/volume-control up 1" )
+    , ((modm,                     xK_minus    ), spawn "$HOME/.local/bin/volume-control down 1" )
+    , ((modm,                     xK_m        ), spawn "$HOME/.local/bin/volume-control toggle" )
+    , ((modm,                     xK_p        ), spawn "$HOME/.local/bin/music-control toggle" )
+    , ((modm,                     xK_n        ), spawn "$HOME/.local/bin/music-control next" )
+    , ((modm .|. shiftMask,       xK_p        ), spawn "$HOME/.local/bin/music-control prev" )
+    , ((modm .|. shiftMask,       xK_b        ), spawn "$HOME/.local/bin/x11-wallpaper choice" )
+    , ((modm .|. shiftMask,       xK_l        ), spawn "$HOME/.local/bin/x11-lock --fast" )
+    , ((0,                        xK_Print    ), spawn "$HOME/.local/bin/screenshot" )
+    , ((shiftMask,                xK_Print    ), spawn "flameshot gui" )
+    , ((modm,                     xK_Tab      ), sendMessage NextLayout )
+    , ((modm .|. shiftMask,       xK_space    ), withFocused $ windows . W.sink )
+    , ((modm,                     xK_f        ), ifFocusedWindowClass "mpv" (ifFocusedWindowFloating (sendKey noModMask xK_f) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL)) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL) )
+    , ((modm .|. shiftMask,       xK_f        ), withFocused toggleFloatCenter )
+    , ((modm .|. shiftMask,       xK_F5       ), setLayout $ XMonad.layoutHook conf )  -- reset to layout default setting
+    , ((modm,                     xK_r        ), XMonad.Layout.MySpacing.triggerResizeEvent )
+    , ((modm .|. controlMask,     xK_f        ), gotoMenuArgs ["-l", "20"] )
+    , ((modm .|. shiftMask,       xK_w        ), bringMenuArgs ["-l", "20"] )
+    , ((modm,                     xK_j        ), sequence_[ windows W.focusDown, warpToWindow 0.5 1 ] )
+    , ((modm,                     xK_k        ), sequence_[ windows W.focusUp, warpToWindow 0.5 1 ] )
+    , ((modm,                     xK_a        ), windows W.focusMaster )
+    , ((modm,                     xK_b        ), if enableSystray then spawn (xmobarToggleCommand ++ " && pkill trayer || " ++ trayerCommand) else spawn (xmobarToggleCommand) ) -- toggle xmobar + trayer
+    , ((modm .|. shiftMask,       xK_j        ), windows W.swapDown )
+    , ((modm .|. shiftMask,       xK_k        ), windows W.swapUp )
+    , ((modm,                     xK_h        ), sendMessage Shrink )
+    , ((modm,                     xK_l        ), sendMessage Expand )
+    , ((modm .|. shiftMask,       xK_plus     ), sendMessage (IncMasterN 1) )
+    , ((modm .|. shiftMask,       xK_minus    ), sendMessage (IncMasterN (-1)) )
+    , ((modm,                     xK_g        ), XMonad.Layout.MySpacing.toggleAuto16x9SpacingEnabled )  -- toggle widscreen gaps
+    , ((modm .|. shiftMask,       xK_s        ), toggleSticky )
+    , ((modm,                     xK_t        ), namedScratchpadAction myScratchPads "todo-list" )
+    , ((modm .|. shiftMask,       xK_m        ), namedScratchpadAction myScratchPads "ncmpcpp" )
+    , ((modm .|. shiftMask,       xK_n        ), namedScratchpadAction myScratchPads "newsboat" )
+    , ((modm .|. shiftMask,       xK_a        ), namedScratchpadAction myScratchPads "pulsemixer" )
+    , ((modm .|. shiftMask,       xK_i        ), namedScratchpadAction myScratchPads "htop" )
+    , ((modm,                     xK_F1       ), sendMessage $ JumpToLayout "HL" )
+    , ((modm,                     xK_F2       ), sendMessage $ JumpToLayout "HR" )
+    , ((modm,                     xK_F3       ), sendMessage $ JumpToLayout "3ColMid" )
+    , ((modm,                     xK_F4       ), sendMessage $ JumpToLayout "3Col" )
+    , ((modm,                     xK_F5       ), sendMessage $ JumpToLayout "nCol" )
+    , ((modm,                     xK_F6       ), sendMessage $ JumpToLayout "zROW" )
+    , ((modm.|. shiftMask,        xK_F1       ), spawn "groff -mom ~/.local/share/dotfiles-readme.mom -tbl -Tpdf | zathura -" )
+    , ((modm,                     xK_Right    ), sequence_[ sendMessage $ Go R, warpToWindow 0.5 1 ])
+    , ((modm,                     xK_Left     ), sequence_[ sendMessage $ Go L, warpToWindow 0.5 1 ])
+    , ((modm,                     xK_Up       ), ifFocusedWindowClass "Code" (sendKey (modm) xK_Up) (sequence_[ sendMessage $ Go U, warpToWindow 0.5 1 ]))  -- allow swap lines in vs code
+    , ((modm,                     xK_Down     ), ifFocusedWindowClass "Code" (sendKey (modm) xK_Down) (sequence_[ sendMessage $ Go D, warpToWindow 0.5 1 ]))  -- allow swap line in vs code
+    , ((modm .|. controlMask,     xK_Right    ), sequence_[ sendMessage $ Swap R, warpToWindow 0.5 1 ])
+    , ((modm .|. controlMask,     xK_Left     ), sequence_[ sendMessage $ Swap L, warpToWindow 0.5 1 ])
+    , ((modm .|. controlMask,     xK_Up       ), sequence_[ sendMessage $ Swap U, warpToWindow 0.5 1 ])
+    , ((modm .|. controlMask,     xK_Down     ), sequence_[ sendMessage $ Swap D, warpToWindow 0.5 1 ])
+    , ((modm,                     xK_Page_Up  ), nextNonEmptyWS)
+    , ((modm,                     xK_Page_Down), prevNonEmptyWS)
+    , ((modm .|. shiftMask,       xK_Page_Up  ), shiftAndView Next)
+    , ((modm .|. shiftMask,       xK_Page_Down), shiftAndView Prev)
 
     -- fix
     , ((controlMask .|. shiftMask, xK_c), ifFocusedWindowClass "firefox" (sendKey (controlMask) xK_c) (sendKey (controlMask .|. shiftMask) xK_c) )
@@ -285,14 +306,22 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. controlMask,   xK_period   ), onGroup W.focusDown')
 
     -- Media Keys (Graphics.X11.ExtraTypes.XF86)
-    , ((0, xF86XK_AudioLowerVolume          ), spawn "$HOME/.local/bin/volume-control down 1" )
-    , ((0, xF86XK_AudioRaiseVolume          ), spawn "$HOME/.local/bin/volume-control up 1" )
-    , ((0, xF86XK_AudioMute                 ), spawn "$HOME/.local/bin/volume-control toggle" )
+    , ((0, xK_VolDown                       ), spawn "$HOME/.local/bin/volume-control down 1" )
+    , ((0, xK_VolUp                         ), spawn "$HOME/.local/bin/volume-control up 1" )
+    , ((0, xK_ToggleMute                    ), spawn "$HOME/.local/bin/volume-control toggle" )
+    , ((0, xK_MediaTogglePlay               ), spawn "$HOME/.local/bin/music-control toggle" )
+    , ((0, xK_MediaNext                     ), spawn "$HOME/.local/bin/music-control next" )
+    , ((0, xK_MediaPrev                     ), spawn "$HOME/.local/bin/music-control prev" )
 
     -- xmonad control
-    , ((modm .|. shiftMask,     xK_e        ), confirmPrompt warningPromptTheme "Quit XMonad" $ io (exitWith ExitSuccess) )
-    , ((modm,                   xK_q        ), XMonad.Actions.CopyWindow.kill1 ) --  Remove the focused window from this workspace. If it is last window copy, then kill it instead.
+    -- , ((modm .|. shiftMask,     xK_e        ), confirmPrompt warningPromptTheme "Quit XMonad" $ io (exitWith ExitSuccess) )
+
+    , ((modm,                   xK_q        ), XMonad.Actions.CopyWindow.kill1) --  Remove the focused window from this workspace. If it is last window copy, then kill it instead.
     , ((modm .|. shiftMask,     xK_q        ), confirmPrompt warningPromptTheme "kill all" $ XMonad.Actions.WithAll.killAll ) -- Kill all windows on current workspace
+
+    -- , ((modm,                   xK_q        ), ifFocusedWindowClass "Alacritty" (return()) (XMonad.Actions.CopyWindow.kill1))
+    -- , ((modm .|. shiftMask,     xK_q        ), XMonad.Actions.CopyWindow.kill1)
+
     , ((modm .|. shiftMask,     xK_r        ), spawn "xmonad --recompile && xmonad --restart" )
     ]
 
@@ -303,6 +332,14 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     ++ [((m .|. modm, k), windows $ f i)
         | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
         , (f, m) <- [(W.greedyView, 0), (copy, shiftMask .|. controlMask), (W.shift, shiftMask), (swapWithCurrent, controlMask) ]]
+
+
+    -- ++ if myModMask == mod1Mask then
+    -- [ -- ((mod4Mask,                 xK_l        ), spawn "$HOME/.local/bin/x11-lock --fast" )
+    -- -- , ((mod4Mask,                 xK_l        ), ifFocusedWindowClass "VirtualBox Machine" (sendKey (mod4Mask) xK_l) (spawn "$HOME/.local/bin/x11-lock --fast") )
+    -- ((mod4Mask .|. controlMask, xK_Right    ), nextNonEmptyWS)
+    -- , ((mod4Mask .|. controlMask, xK_Left     ), prevNonEmptyWS)
+    -- ] else []
 
 
 ------------------------------------------------------------------------
@@ -319,7 +356,17 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
       >> ifClick (snapMagicMove (Just 50) (Just 50) w)  -- double-left-click to snap
       >> windows W.shiftMaster) (sendMouseClickToWindow w button1)))
 
+    , ((modm .|. shiftMask, button1), (\w -> XMonad.focus w
+      >> ifFloating w (mouseMoveWindow w
+      >> ifClick (snapMagicMove (Just 50) (Just 50) w)  -- double-left-click to snap
+      >> windows W.shiftMaster) (sendMouseClickToWindow w button1)))
+
     , ((modm, button3), (\w -> XMonad.focus w
+      >> ifFloating w (mouseResizeWindow w
+      >> ifClick (snapMagicResize [R,D] (Just 50) (Just 50) w)  -- double-right-click to resize up to nearest border
+      >> windows W.shiftMaster) (sendMouseClickToWindow w button3)))
+
+    , ((modm .|. shiftMask, button3), (\w -> XMonad.focus w
       >> ifFloating w (mouseResizeWindow w
       >> ifClick (snapMagicResize [R,D] (Just 50) (Just 50) w)  -- double-right-click to resize up to nearest border
       >> windows W.shiftMaster) (sendMouseClickToWindow w button3)))
@@ -374,18 +421,19 @@ myLayout = prefixed "[" $ suffixed "]" $ navigation $ avoidStruts $ smartBorders
 ------------------------------------------------------------------------
 -- SCRATCHPADS
 -- Description: the definition of my scratchpad applications
+-- noTaskbar: hide windows from pagers and taskbars.
 -- Note: some terminal application does not resize if called direct, workaround add sleep
 
-myScratchPads = [ NS "terminal" spawnTerm findTerm manageTerm
+myScratchPads = [ NS "todo-list" spawnTodo findTodo manageTodo
                 , NS "ncmpcpp" spawnNcmpcpp findNcmpcpp manageNcmpcpp
                 , NS "newsboat" spawnNewsboat findNewsboat manageNewsboat
                 , NS "pulsemixer" spawnPulsemixer findPulsemixer managePulsemixer
                 , NS "htop" spawnHtop findHtop manageHtop
                 ]
     where
-        spawnTerm  = myTerminal ++ " --class scratchpad-terminal -t scratchpad-terminal"
-        findTerm   = resource =? "scratchpad-terminal"
-        manageTerm = ( noTaskbar <+> customFloating (W.RationalRect 0.25 0.1 0.5 0.8) )
+        spawnTodo  = myTerminal ++ " --class todo-list -t todo-list -e sh -c 'sleep 0.1; nvim ~/.local/share/TODO-list.md;'"
+        findTodo   = resource =? "todo-list"
+        manageTodo = ( noTaskbar <+> customFloating (W.RationalRect 0.25 0.1 0.5 0.8) )
 
         spawnNcmpcpp = myTerminal ++ " --class ncmpcpp -t ncmpcpp -e sh -c 'sleep 0.1; ncmpcpp;'"
         findNcmpcpp = resource =? "ncmpcpp"
@@ -522,7 +570,7 @@ instance UrgencyHook LibNotifyUrgencyHook where
 ------------------------------------------------------------------------
 -- FULLSCREEN EVENT HOOK
 -- Description: automatically leave the fullscreen mode when a fullscreen app has been closed
---              and automatically set fullscreen Layout for specified applications
+--              and automatically force fullscreen Layout for specified applications
 
 layoutName :: Query String
 layoutName = liftX $ gets (description . W.layout . W.workspace . W.current . windowset)
@@ -577,12 +625,12 @@ myFullscreenLayoutEventHook windowHashTable (DestroyWindowEvent {ev_event = even
 
     return $ All True
 
-myFullscreenLayoutEventHook windowHashTable _ = return $ All True
+myFullscreenLayoutEventHook windowHashTable evt = refocusLastWhen refocusingIsActive evt
 
 
 ------------------------------------------------------------------------
 -- REMOVE BORDER
--- Description: remove the border from floating mpv
+-- Description: remove the border from (floating) mpv
 
 removeBorderQuery :: Query Bool
 removeBorderQuery = className =? "mpv"
@@ -590,6 +638,7 @@ removeBorderQuery = className =? "mpv"
 removeBorder :: Window -> X ()
 removeBorder ws = withDisplay $ \d -> mapM_ (\w -> io $ setWindowBorderWidth d w 0) [ws]
 
+-- NOTE: Does not work if second window is floating!
 addSmartBorder :: Window -> X ()
 addSmartBorder ws = do
     winCount <- length . W.index . windowset <$> get
@@ -600,7 +649,8 @@ addSmartBorder ws = do
 myBorderEventHook :: Event -> X All
 
 myBorderEventHook (ConfigureEvent {ev_window = window, ev_above = above}) = do
-    whenX (runQuery removeBorderQuery window) (ifFloating window (removeBorder window) (addSmartBorder window))
+    --whenX (runQuery removeBorderQuery window) (ifFloating window (removeBorder window) (addSmartBorder window))
+    whenX (runQuery removeBorderQuery window) (ifFloating window (removeBorder window) (return()))
     -- refresh required to get correct mpv position
     whenX (runQuery removeBorderQuery window) (refresh)
     return $ All True
@@ -632,7 +682,7 @@ main = do
     xmonad $ docks $ withUrgencyHook LibNotifyUrgencyHook $ ewmh desktopConfig {
         manageHook         = myManageHook,
         XMonad.workspaces  = myWorkspaces,
-        logHook            = myLogHook xmproc,
+        logHook            = refocusLastLogHook <+> myLogHook xmproc,
         terminal           = myTerminal,
         focusFollowsMouse  = myFocusFollowsMouse,
         clickJustFocuses   = myClickJustFocuses,
@@ -646,6 +696,7 @@ main = do
         layoutHook         = myLayout,
         startupHook        = myStartupHook,
         handleEventHook    = fullscreenEventHook  -- EwmhDesktops
+                                <+> refocusLastWhen (refocusingIsActive <||> isFloat)
                                 <+> myBorderEventHook
                                 <+> myRoundCornerEventHook
                                 <+> myFullscreenLayoutEventHook fullscrenWindowHashTable

@@ -30,7 +30,7 @@ smb_mount() {
     SMB_PW=$(echo $result | cut -d "/" -f2)
 
     if ! sudo -A mount -t cifs -o uid=$(id -u),gid=$(id -g),user=$SMB_USR,password=$SMB_PW "$SMB_PATH" "$MOUNT_PATH" ; then
-        notify-send "Network Mount" "Samba mount failed"
+        notify-send "Network Mount" "Samba mount FAILED"
     else
         notify-send "Network Mount" "Samba mount to $MOUNT_PATH"
     fi
@@ -46,8 +46,9 @@ smb_umount() {
     if sudo -A umount ${MOUNT_PATH} ; then
         # del folder if empty
         sudo -A rm -f -d ${MOUNT_PATH}
+        notify-send "Network Mount" "Samba drive umounted"
     else
-        notify-send "Network Mount" "Samba umount failed"
+        notify-send "Network Mount" "Samba umount FAILED"
     fi
 
     clear && exit

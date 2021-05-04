@@ -1,0 +1,11 @@
+#!/bin/env bash
+
+narg=$#
+
+if [[ $narg -ge 1 ]]; then
+  doival="$1"
+else
+  read doival
+fi
+
+curl -LH "Accept: application/x-bibtex" http://dx.doi.org/$doival

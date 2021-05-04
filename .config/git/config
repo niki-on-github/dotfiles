@@ -1,0 +1,20 @@
+[credential]
+	helper = cache --timeout=3600
+[user]
+	email = arch@local
+	name = arch
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+[merge]
+    tool = vim_mergetool
+    conflictstyle = diff3
+[mergetool "vim_mergetool"]
+    cmd = nvim -f -c "MergetoolStart" "$MERGED" "$BASE" "$LOCAL" "$REMOTE"
+    trustExitCode = true
+[pull]
+	rebase = false
+[core]
+	pager = diff-so-fancy | less --tabs=4 -RFX

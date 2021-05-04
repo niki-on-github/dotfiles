@@ -126,6 +126,7 @@ function sudo-command-line() {
     else
         LBUFFER="sudo $LBUFFER"
     fi
+    zle end-of-line
 }
 zle -N sudo-command-line
 
@@ -195,7 +196,7 @@ bindkey '^[OS' close                                # [F4] - close if terminal r
 bindkey -r '^V'; bindkey "^V" paste-clip            # [Ctrl+v] - paste from system clipboard (vi-quoted-insert conflict with Paste)
 bindkey -r '^Y'                                     # [Ctrl+y] - conflict with Copy (alacritty)
 bindkey '^P' fuzzy-search-and-edit                  # seletskiy/zsh-fuzzy-search-and-edit plugin
-bindkey "\e\e" sudo-command-line                    # [ESC][ESC] toggles "sudo/sudoedit" before the current/previous command
+# bindkey "\e\e" sudo-command-line                    # [ESC][ESC] toggles "sudo/sudoedit" before the current/previous command
 
 # fix tmux pos1 and ende key
 bindkey "\E[1~" beginning-of-line

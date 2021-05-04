@@ -1,0 +1,20 @@
+#!/bin/env python3
+
+import argparse
+import json
+
+ap = argparse.ArgumentParser()
+ap.add_argument("-f", "--file_path", required=True, help="Path to json file")
+args = vars(ap.parse_args())
+
+file_path = args['file_path']
+
+if not str(file_path).endswith('.json'):
+    print('only json files are supported!')
+    exit()
+
+with open(file_path, 'r') as json_file:
+    data = json.loads(json_file.read())
+
+with open(file_path, 'w') as json_file:
+    json.dump(data, json_file, indent=4)

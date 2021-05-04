@@ -74,7 +74,7 @@ set $right l
 
 
 #################################################################################################################
-# DMENU, CURSOR, INPUT, ... 
+# DMENU, CURSOR, INPUT, ...
 #################################################################################################################
 
 # dmenu
@@ -95,7 +95,7 @@ input "*" {
 #NOTE: Get the names of your inputs by running: `swaymsg -t get_inputs`
 
 # Output configuration (workaround for amd gpu memory clock bug - set refreshrate != 60 HZ)
-output DP-3 res 3440x1440@49.987000Hz
+# output DP-3 res 3440x1440@49.987000Hz
 #NOTE: Get the name of your outputs by running: `swaymsg -t get_outputs`
 
 
@@ -255,9 +255,9 @@ bar {
 #################################################################################################################
 
 # colors (border, background, text, indicator, child_border)
-# NOTE: The color around the child window is the "child_border", "border" color is only the two thin lines around 
+# NOTE: The color around the child window is the "child_border", "border" color is only the two thin lines around
 # the titlebar.
-# NOTE: The indicator color is used for indicating where a new window will be opened. horizontal split = right 
+# NOTE: The indicator color is used for indicating where a new window will be opened. horizontal split = right
 # border color, vertical split = bottom border color.
 client.focused          #1793D1FF #1793D1FF #FFFFFFFF #1793D1FF #1793D1FF
 client.focused_inactive #FFFFFF99 #FFFFFF99 #FFFFFFFF #FFFFFF99 #FFFFFF99
@@ -343,7 +343,7 @@ bindsym XF86MonBrightnessDown   exec light -U 5
 #################################################################################################################
 # SCRATCHPAD
 #################################################################################################################
-# A scratchpad is a workspace that cannot be accessed like a regular one but if activated the application 
+# A scratchpad is a workspace that cannot be accessed like a regular one but if activated the application
 # will be shown in the center of the screen in floating mode and can be hidden again.
 
 # focus request from active windows (smart [default], urgent, focus, none)
@@ -363,7 +363,7 @@ for_window [class="Slack"] floating enable, border pixel 0, move to scratchpad
 bindsym $mod+Shift+s exec ~/.config/sway/scripts/scratchpad_app.sh "class" "Slack" "slack"
 
 # spotify
-for_window [class="Spotify"] floating enable, resize set 1280 900, border pixel 0, move position center, move to scratchpad 
+for_window [class="Spotify"] floating enable, resize set 1280 900, border pixel 0, move position center, move to scratchpad
 bindsym $mod+s exec ~/.config/sway/scripts/scratchpad_app.sh "class" "Spotify" \
     "env LD_PRELOAD=/usr/lib/spotify-adblock.so spotify"
 

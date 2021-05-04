@@ -1,0 +1,37 @@
+* {
+    background-color:      Black;
+    border-color:          White;
+    text-color:            White;
+    font:    "Noto Sans Mono 12";
+}
+
+#window {
+    anchor:     north;
+    location:   north;
+    width:      100%;
+    padding:    4px;
+    children:   [ horibox ];
+}
+
+#horibox {
+    orientation: horizontal;
+    children:   [ prompt, entry, listview ];
+}
+
+#listview {
+    layout:     vertical;
+    spacing:    5px;
+    lines:      20;
+}
+
+#entry {
+    expand:     false;
+    width:      10em;
+}
+
+#element {
+    padding: 0px 2px;
+}
+#element selected {
+    background-color: #1793D1;
+}

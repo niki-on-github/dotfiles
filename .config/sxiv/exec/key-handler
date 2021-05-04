@@ -21,7 +21,7 @@ while read file ; do
             notify-send "$(readlink -f "$file") copied to clipboard" ;;
         "d")
             [ "$(printf "No\\nYes" | dmenu -i -p "Really delete $file?")" = "Yes" ] && rm "$file" && notify-send "$file deleted" ;;
-        "g") 
+        "g")
             [ ! -z "$(command -v gimp)" ] && gimp "$file" & ;;
     esac
 done

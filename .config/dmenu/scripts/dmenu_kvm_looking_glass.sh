@@ -34,4 +34,6 @@ fi
 
 notify-send "KVM" "Host Key set to: R-CTRL"
 sleep 2
+
+# NOTE: press Host Key to enable mouse capture (in xmonad this only work without Fullscreen option -F)
 looking-glass-client -S -m 228

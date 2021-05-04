@@ -69,7 +69,8 @@ recorderExitHook() {
     while [ "$(pidof ffmpeg | wc -l)" != "0" ]; do
         sleep 0.2
     done
-    find $MUSIC_LIB -name "*.record" -exec rm "{}" \;
+    find $MUSIC_LIB -name "*.record" -type 'f' -exec rm "{}" \;
+    find $MUSIC_LIB -name "*.corrupt" -type 'f' -size -500k -delete
 }
 trap recorderExitHook EXIT
 
@@ -157,7 +158,7 @@ while $record; do
 
     # recording loop
     while $record; do
-        if [ "$title" != "$(spotify-info -i %title)" ]; then
+        if [ "$title" != "$(spotify-info -i %title | sed 's/ - /, /g')" ]; then
             killall parec >/dev/null 2>&1
             sleep 0.1
             killall lame >/dev/null 2>&1

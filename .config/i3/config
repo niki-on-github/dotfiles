@@ -1,0 +1,370 @@
+# i3 config
+
+#  Key    $mod                $mod + Shift
+# --------------------------------------------------------
+#  q      quit                kvm_dmenu (qemu)
+#  w      [tabbed]            web_dmenu
+#  e      toggle split        [exit]
+#  r      resize              restart
+#  t      tabbed              telegram
+#  u      -                   unicode_dmenu
+#  i      -                   -
+#  o      all dmenu scripts   -
+#  p      pause/play music    prev song
+#  a      focus parent        audio control (pulsemixer)
+#  s      spotify             slack
+#  d      dmenu               dmenu (root)
+#  f      fullscreen          find window (dmenu)
+#  g      smart gaps normal   smart gaps 21:9 mode
+#  h      focus left          move left
+#  j      focus down          move down
+#  k      focus up            move up
+#  l      focus right         move right
+#  y      -                   yt_dmenu
+#  x      lock                [shutdown]
+#  c      clipboard           [close]
+#  v      split vertical      vbox_dmenu
+#  b      split horizontal    switch wallpaper (background)
+#  n      next song           news (newsboat)
+#  m      toggle mute         music player (ncmpcpp)
+#  +      volume up           -
+#  -      volume down         -
+#  .      -                   dotfiles_dmenu
+#  F1     dotfiles help       -
+#  F2     webbrowser          -
+#  F3     file manager        -
+#  F4     password manager    -
+#  Tab    cycle scratchpad    move to scratchpad
+
+
+#  Key    Function
+# --------------------------------------------------------
+#  Print  screenshot
+
+
+# NOTE: The square brackets show the deactivated standard functions
+
+
+#################################################################################################################
+# VARIABLES
+#################################################################################################################
+
+# ModKey (we use alt key -> win key for vms)
+set $mod Mod1
+set $win Mod4
+
+# set window title font
+font pango:Hack 11
+
+# NOTE: Some terminal parameters in this configuration are specific to the alacritty terminal!
+set $terminal alacritty
+
+# dmenu (use env var)
+set $dmenuStyle $DMENU_STYLE
+
+# row direction keys, like vim
+set $up k
+set $down j
+set $left h
+set $right l
+
+
+#################################################################################################################
+# NAVIGATION AND CONTROLING
+#################################################################################################################
+# Key example: a-z, F1-F12, equals, tilde, Tab, capital, comma, space, minus, period, slash, ...
+
+# drag floating windows to their wanted position
+floating_modifier $mod
+
+# start a terminal
+bindsym $mod+Return exec --no-startup-id $terminal
+
+# kill focused window
+bindsym $mod+q kill
+
+# dmenu
+bindsym $mod+d exec --no-startup-id ~/.config/dmenu/scripts/dmenu_apps.sh
+bindsym $mod+Shift+d exec --no-startup-id sudo -A ~/.config/dmenu/scripts/dmenu_apps.sh
+
+# change focus
+bindsym $mod+$left focus left
+bindsym $mod+$down focus down
+bindsym $mod+$up focus up
+bindsym $mod+$right focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# move focused window
+bindsym $mod+Shift+$left move left
+bindsym $mod+Shift+$down move down
+bindsym $mod+Shift+$up move up
+bindsym $mod+Shift+$right move right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# split orientation
+bindsym $mod+b split h
+bindsym $mod+v split v
+
+# enter fullscreen mode for the focused container
+bindsym $mod+f fullscreen toggle
+
+# change container layout (tabbed, toggle split)
+bindsym $mod+t layout tabbed
+bindsym $mod+e layout toggle split
+
+# toggle tiling / floating
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+
+# focus the parent container
+bindsym $mod+a focus parent
+
+# scratchpad
+bindsym $mod+Shift+Tab move scratchpad
+bindsym $mod+Tab scratchpad show
+
+# restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
+bindsym $mod+Shift+r restart
+
+
+#################################################################################################################
+# WORKSPACE
+#################################################################################################################
+
+# Define names for default workspaces for which we configure key bindings later on.
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+
+# switch to workspace
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
+
+# move focused container to workspace
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9
+
+# make pop-up windows floating
+for_window [window_role="pop-up"] floating enable
+for_window [class="pop-up"] floating enable
+for_window [window_role="bubble"] floating enable
+for_window [class="bubble"] floating enable
+for_window [window_role="dialog"] floating enable
+for_window [class="dialog"] floating enable
+for_window [window_role="menu"] floating enable
+for_window [class="menu"] floating enable
+for_window [class="Catfish"] floating enable
+
+
+#################################################################################################################
+# RESIZE
+#################################################################################################################
+
+# resize window (you can also use the mouse for that)
+mode "resize" {
+        # These bindings trigger as soon as you enter the resize mode
+        bindsym $left       resize shrink width 5 px or 5 ppt
+        bindsym $down       resize grow height 5 px or 5 ppt
+        bindsym $up         resize shrink height 5 px or 5 ppt
+        bindsym $right      resize grow width 5 px or 5 ppt
+        bindsym Left        resize shrink width 5 px or 5 ppt
+        bindsym Down        resize grow height 5 px or 5 ppt
+        bindsym Up          resize shrink height 5 px or 5 ppt
+        bindsym Right       resize grow width 5 px or 5 ppt
+
+        # back to normal: Enter or Escape or $mod+r
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+        bindsym $mod+r mode "default"
+}
+bindsym $mod+r mode "resize"
+
+
+#################################################################################################################
+# COLORS
+#################################################################################################################
+
+# colors (border, background, text, indicator, child_border)
+# NOTE: The color around the child window is the "child_border", "border" color is only the two thin lines around 
+# the titlebar.
+# NOTE: The indicator color is used for indicating where a new window will be opened. horizontal split = right 
+# border color, vertical split = bottom border color.
+client.focused          #1793D1FF #1793D1FF #FFFFFFFF #1793D1FF #1793D1FF
+client.focused_inactive #FFFFFF99 #FFFFFF99 #FFFFFFFF #FFFFFF99 #FFFFFF99
+client.unfocused        #FFFFFF99 #FFFFFF99 #FFFFFFFF #FFFFFF99 #FFFFFF99
+client.urgent           #FFFFFFFF #FF0000FF #FFFFFFFF #FF0000FF #FF0000FF
+
+# Background and text color are used to draw placeholder window contents (when restoring layouts)
+client.placeholder #FFFFFF #000000 #FFFFFF #FFFFFF90 #FFFFFF90
+
+# Paint the background of the client window on top of which the client will be rendered.
+client.background #FFFFFF44
+
+
+#################################################################################################################
+# GAPS (This currently only work with patched i3-gaps issue 262)
+#################################################################################################################
+
+# local variables
+set $gaps 6
+set $gaps_horizontal 460
+
+# only enable outer gaps when there is exactly one container
+smart_gaps inverse_outer
+
+# smart borders will draw borders on windows only if there is more than one window in a workspace
+smart_borders on
+
+# border size
+for_window [class="^.*"] border pixel 3
+
+# gaps size
+gaps inner $gaps
+gaps outer -$gaps
+
+# override/set outer gaps on specific sides (on my 21:9 monitor)
+exec_always --no-startup-id xrandr | grep -F "3440x1440" >/dev/null && i3-msg "gaps horizontal all set $gaps_horizontal"
+
+bindsym $mod+g gaps outer current set -$gaps
+bindsym $mod+Shift+g gaps outer current set -$gaps, gaps horizontal current set $gaps_horizontal
+
+
+#################################################################################################################
+# PROGRAM SHORTCUTS
+#################################################################################################################
+
+# Main Program Shortcuts
+bindsym $mod+F1                 exec --no-startup-id groff -mom ~/.local/share/dotfiles-readme.mom -tbl -Tpdf | zathura -
+bindsym $mod+F2                 exec --no-startup-id firefox
+bindsym $mod+F3                 exec --no-startup-id $terminal -e tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf new-session lf
+bindsym $mod+F4                 exec --no-startup-id eval "passmenu -p \"pass2clip:\" $dmenuStyle"
+
+# Clipboard history
+bindsym $mod+c                  exec --no-startup-id eval "clipmenu $dmenuStyle"
+
+# dmenu scripts
+bindsym $mod+Shift+period       exec --no-startup-id ~/.config/dmenu/scripts/dmenu_edit.sh
+bindsym $mod+Shift+q            exec --no-startup-id ~/.config/dmenu/scripts/dmenu_kvm.sh
+bindsym $mod+Shift+u            exec --no-startup-id ~/.config/dmenu/scripts/dmenu_unicode.sh
+bindsym $mod+Shift+v            exec --no-startup-id ~/.config/dmenu/scripts/dmenu_virtualbox.sh
+bindsym $mod+Shift+w            exec --no-startup-id ~/.config/dmenu/scripts/dmenu_websearch.sh
+bindsym $mod+Shift+f            exec --no-startup-id ~/.config/dmenu/scripts/dmenu_window.sh
+bindsym $mod+Shift+y            exec --no-startup-id ~/.config/dmenu/scripts/dmenu_youtube.sh
+bindsym $mod+o                  exec --no-startup-id ~/.config/dmenu/scripts/dmenu_scripts.sh
+
+# Wallpaper ('b' for background)
+bindsym $mod+Shift+b            exec --no-startup-id ~/.local/bin/x11-wallpaper choice
+
+# Audio controls
+bindsym XF86AudioRaiseVolume    exec --no-startup-id ~/.local/bin/volume-control up 1
+bindsym XF86AudioLowerVolume    exec --no-startup-id ~/.local/bin/volume-control down 1
+bindsym XF86AudioMute           exec --no-startup-id ~/.local/bin/volume-control toggle
+bindsym $mod+plus               exec --no-startup-id ~/.local/bin/volume-control up 1
+bindsym $mod+minus              exec --no-startup-id ~/.local/bin/volume-control down 1
+bindsym $mod+m                  exec --no-startup-id ~/.local/bin/volume-control toggle
+
+# Music controls
+bindsym XF86AudioPrev           exec --no-startup-id ~/.local/bin/music-control prev
+bindsym XF86AudioNext           exec --no-startup-id ~/.local/bin/music-control next
+bindsym XF86AudioPlay           exec --no-startup-id ~/.local/bin/music-control toggle
+bindsym $mod+Shift+p            exec --no-startup-id ~/.local/bin/music-control prev
+bindsym $mod+n                  exec --no-startup-id ~/.local/bin/music-control next
+bindsym $mod+p                  exec --no-startup-id ~/.local/bin/music-control toggle
+
+# Screenshot
+bindsym Print                   exec --no-startup-id spectacle
+
+# Lockscreen
+bindsym $mod+x                  exec --no-startup-id i3lock --nofork -B=100
+
+# Screen Brightness
+bindsym XF86MonBrightnessUp     exec --no-startup-id light -A 5
+bindsym XF86MonBrightnessDown   exec --no-startup-id light -U 5
+
+
+#################################################################################################################
+# SCRATCHPAD
+#################################################################################################################
+# A scratchpad is a workspace that cannot be accessed like a regular one but if activated the application 
+# will be shown in the center of the screen in floating mode and can be hidden again.
+
+# focus request from active windows (smart [default], urgent, focus, none)
+focus_on_window_activation smart
+
+# disable focus on app startup
+no_focus [instance="no-focus"]
+no_focus [class="no-focus"]
+
+# telegram
+for_window [class="TelegramDesktop"] floating enable, border pixel 0, move to scratchpad
+bindsym $mod+Shift+t exec --no-startup-id ~/.config/i3/scripts/scratchpad_app.sh "TelegramDesktop" "telegram-desktop"
+
+# slack
+for_window [class="Slack"] floating enable, border pixel 0, move to scratchpad
+bindsym $mod+Shift+s exec --no-startup-id ~/.config/i3/scripts/scratchpad_app.sh "Slack" "slack"
+
+# spotify
+for_window [class="Spotify"] floating enable, resize set 1280 900, border pixel 0, move position center, move to scratchpad 
+bindsym $mod+s exec --no-startup-id ~/.config/i3/scripts/scratchpad_app.sh "Spotify" \
+    "env LD_PRELOAD=/usr/lib/spotify-adblock.so spotify"
+
+# music player (autostart)
+exec --no-startup-id $terminal --class "ncmpcpp" -t "ncmpcpp" -d 150 50 -e "ncmpcpp"
+for_window [instance="ncmpcpp"] floating enable, border pixel 0, move to scratchpad
+bindsym $mod+Shift+m exec --no-startup-id ~/.config/i3/scripts/scratchpad_terminal.sh "ncmpcpp" "ncmpcpp"
+
+# newsboat (autostart)
+exec --no-startup-id $terminal --class "newsboat" -t "newsboat" -d 150 50 -e "newsboat"
+for_window [instance="newsboat"] floating enable, border pixel 0, move to scratchpad
+bindsym $mod+Shift+n exec --no-startup-id ~/.config/i3/scripts/scratchpad_terminal.sh "newsboat" "newsboat"
+
+# pulsemixer (autostart)
+exec --no-startup-id $terminal --class "pulsemixer" -t "pulsemixer" -d 150 50 -e "pulsemixer"
+for_window [instance="pulsemixer"] floating enable, border pixel 0, move to scratchpad
+bindsym $mod+Shift+a exec --no-startup-id ~/.config/i3/scripts/scratchpad_terminal.sh "pulsemixer" "pulsemixer"
+
+# NOTE: use 'xprop' to get window criteria:
+# - class: The second part of WM_CLASS
+# - instance: The first part of WM_CLASS
+# - window_role: WM_WINDOW_ROLE
+# - window_type: _NET_WM_WINDOW_TYPE (normal,dialog,utility,toolbar,splash,menu,popup_menu,tooltip,notification)
+# - id: Compares the X11 window ID, which you can get via 'xwininfo' or 'wmctrl -l'
+# - title: _NET_WM_NAME or WM_NAME as fallback
+
+
+#################################################################################################################
+# AUTOSTART
+#################################################################################################################
+
+# polybar
+exec_always --no-startup-id ~/.config/i3/scripts/polybar.sh
+
+# xorg compositor (for transparent windows)
+exec_always --no-startup-id picom -c -b || (pkill picom && sleep 1 && picom -c -b)
+

@@ -19,6 +19,6 @@ current_item_inactive_column_suffix = "$/r$(end)"
 
 alternative_ui_separator_color = "blue"
 
-song_columns_list_format = "(20)[white]{a} (40)[white]{t} (7f)[white]{l}"
+song_columns_list_format = "(22)[white]{a} (38)[white]{t} (7f)[white]{l}"
 
 execute_on_song_change = ~/.config/ncmpcpp/notify.sh

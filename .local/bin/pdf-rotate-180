@@ -1,0 +1,3 @@
+#!/bin/env bash
+
+pdftk $1 rotate 1-endsouth output $1-rotated.pdf

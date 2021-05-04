@@ -23,7 +23,7 @@ Config  {
     -- layout
     , sepChar = "%"  -- delineator between plugin names and straight text
     , alignSep = "}{"  -- separator between left-right alignment
-    , template = "<fn=1>%UnsafeStdinReader%</fn> }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
+    , template = "<fn=1>%UnsafeStdinReader%</fn> }{ <action=`~/.local/bin/volume-control -t` button=1><action=`~/.local/bin/volume-control -i 1` button=4><action=`~/.local/bin/volume-control -d 1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
     -- , template = "%UnsafeStdinReader% }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%alsa:hw:1:Master%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
 
     -- general behavior
@@ -72,7 +72,7 @@ Config  {
         , Run Com "/bin/sh" [ "-c", "printf \"VOL%4s\" $(pamixer --get-volume-human | sed 's/muted/MUT/g') | sed 's/MUT/<fc=#FF0000>MUT<\\/fc>/g'" ] "vol" 3
 
         -- weather monitor
-        , Run Com "/bin/sh" [ "-c", "curl 'wttr.in/Waiblingen?format=%t' | sed 's/+//g' | xargs -I{} echo ' -  WTR {} ' | grep -v 'Unknown location' || echo ''" ] "weather" 36000
+        , Run Com "/bin/sh" [ "-c", "curl 'wttr.in/Waiblingen?format=%t' | sed 's/+//g' | xargs -I{} echo ' -  WTR {} ' | head -n 1 | grep -v 'Unknown location' | grep -v 'Sorry' || echo ''" ] "weather" 36000
 
         -- systray padding (trailing spaces for the systray)
         , Run Com "/bin/sh" [ "-c", "$HOME/.config/xmobar/systray-padding.sh" ] "systray" 10

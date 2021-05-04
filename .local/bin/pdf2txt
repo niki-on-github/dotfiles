@@ -1,0 +1,14 @@
+#!/bin/env bash
+
+usage() {
+    echo "`basename $0` [SRC] [DEST]"
+    exit $1
+}
+
+[ -z "$1" ] && usage 1
+[ -n "$2" ] && dest=$2 || dest="$1.txt"
+[ "$1" = "-h" ] && usage 0
+
+pdftotext $1 $dest
+sed -i 's/^.$//g' $dest
+sed -i '/^$/d' $dest

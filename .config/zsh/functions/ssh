@@ -9,7 +9,7 @@ if [[ ! -v TMUX ]] ; then
     trap restoreTitle SIGHUP SIGINT SIGTERM EXIT
 
     echo -ne '\e[22t' # store current title on the stack
-    [ -z "$@" ] || echo -n -e "\033]0;$@\007"
+    [ -z "$1" ] || echo -n -e "\033]0;$(echo $@ | sed 's/ //g')\007"
 fi
 
 /usr/bin/ssh "$@"

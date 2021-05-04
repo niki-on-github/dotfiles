@@ -1,5 +1,7 @@
 # User PAM Environment Variables
 
+MPD_HOST=/tmp/mpd.socket
+
 # XDG Base Directories
 XDG_CONFIG_HOME DEFAULT=@{HOME}/.config
 XDG_CACHE_HOME DEFAULT=@{HOME}/.cache

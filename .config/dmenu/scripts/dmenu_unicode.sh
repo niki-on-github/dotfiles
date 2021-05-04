@@ -6,7 +6,11 @@
 command -v xclip >/dev/null || ( notify-send "ERROR" "xclip not available" && exit )
 [ ! -f ~/.local/share/emoji ] && notify-send "ERROR" "FileNotFound: ~/.local/share/emoji" && exit
 
-chosen=$(grep -v "#" ~/.local/share/emoji | eval "dmenu -i -l 20 -p \"emoji2clip >\" $DMENU_STYLE") || exit
+if command -v rofi >/dev/null ; then
+    chosen=$(grep -v "#" ~/.local/share/emoji | eval "rofi -dmenu -columns 1 -p \"emoji2clip > \" -theme ~/.config/rofi/dmenu_list.rasi") || exit
+else
+    chosen=$(grep -v "#" ~/.local/share/emoji | eval "dmenu -i -l 20 -p \"emoji2clip > \" $DMENU_STYLE") || exit
+fi
 
 c=$(echo "$chosen" | sed "s/ .*//")
 echo "$c" | tr -d '\n' | xclip -selection clipboard

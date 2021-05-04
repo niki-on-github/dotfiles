@@ -15,6 +15,8 @@ FIREFOX_CACHE_DIRECTORY="$HOME/.cache/mozilla/firefox"
 [ -d $OVERRIDES_FILES ] || error "Directory not Found: $OVERRIDES_FILES"
 [ -d $FIREFOX_CONFIG_DIRECTORY ] || error "Directory not Found: $FIREFOX_CONFIG_DIRECTORY (make sure you run firefox once on the system)"
 
+[ -d $HOME/.dotfiles ] && echo "Update ghacks-user.js" && git --git-dir=$HOME/.dotfiles --work-tree=$HOME submodule update $GHACKS_USERJS_DIRECTORY
+
 read -p "Press the [Enter] key to continue. This will close all instances of Firefox"
 pidof firefox >/dev/null && kill $(pidof firefox) && echo -n "close Firefox ." && sleep 1 && echo -n "." && sleep 1 && echo ". OK"
 

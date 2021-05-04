@@ -1,14 +1,20 @@
 # zathura config
 
-# default bindings:
-# toggle fulscreen: F5
+# statusbar font
+set font "Hack Nerd Font 10"
+
+# hide the statusbar by defaul
+set guioptions ""
 
 # enable text to clipboard
 set selection-clipboard clipboard
 
-# bindings (default bindings see: https://git.pwmt.org/pwmt/zathura/-/blob/develop/doc/man/_bindings.txt)
+# additional bindings (default bindings see: https://git.pwmt.org/pwmt/zathura/-/blob/develop/doc/man/_bindings.txt)
 map r reload
 map R rotate
 map p print
-map b toggle_statusbar 
+map b toggle_statusbar
 map i recolor
+
+# useful default bindings:
+# - toggle fulscreen: F5

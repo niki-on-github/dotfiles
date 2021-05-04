@@ -10,6 +10,8 @@ Dependecies: - pulsemixer
 Usage: `basename $0` toggle|--toggle|-t
        `basename $0` mute|--mute|-m
        `basename $0` unmute|--unmute|-u
+       `basename $0` volume|--volume|-v
+       `basename $0` limit|--limit|-l [NUM]
        `basename $0` up|--up|-i [NUM]
        `basename $0` down|--down|-d [NUM]
        `basename $0` set|--set|-s [NUM]
@@ -20,26 +22,49 @@ The following specific options are supported:
   -t, --toggle        Toggle Mute/Unmute
   -m, --mute          Mute Audio
   -u, --unmute        Unmute Audio
+  -v, --volume        Get current volume
+  -l, --limit         Limit Audio Volume to [NUM] (default 50)
   -i, --up [NUM]      Increase Audio Volume by [NUM] (default 5)
   -d, --down [NUM]    Decrease Audio Volume by [NUM] (default 5)
   -s, --set [NUM]     Set Audio Volume to [NUM] (default 25)
   -h, --help          Display this help
 
 EOF
+    trap - EXIT
     exit $1
 }
 
-toggle() { pulsemixer --toggle-mute; }
-mute() { pulsemixer --max-volume 50; pulsemixer --mute; }
-unmmute() { pulsemixer --unmute; }
-up() { pulsemixer --unmute; pulsemixer --change-volume +"${1-5}"; }
-down() { pulsemixer --unmute; pulsemixer --change-volume -"${1-5}"; }
-setVol() { pulsemixer --unmute; pulsemixer --set-volume "${1:-25}"; }
+close_hook() {
+    exit 0
+}
+trap close_hook EXIT
+
+if command -v pulsemixer >/dev/null ; then
+    toggle() { pulsemixer --max-volume 50; pulsemixer --toggle-mute; }
+    mute() { pulsemixer --max-volume 50; pulsemixer --mute; }
+    unmmute() { pulsemixer --max-volume 50; pulsemixer --unmute; }
+    limit() { pulsemixer --max-volume ${1:-50}; }
+    up() { pulsemixer --unmute; pulsemixer --change-volume +"${1-5}"; [ -p /tmp/xobpipe ] && echo $(volume) >> /tmp/xobpipe; }
+    down() { pulsemixer --unmute; pulsemixer --change-volume -"${1-5}"; [ -p /tmp/xobpipe ] && echo $(volume) >> /tmp/xobpipe; }
+    setVol() { pulsemixer --unmute; pulsemixer --set-volume "${1:-25}"; [ -p /tmp/xobpipe ] && echo $(volume) >> /tmp/xobpipe; }
+    volume() { pulsemixer --get-volume | awk '{print $1}'; }
+else
+    toggle() { amixer --quie set Master toggle; }
+    mute() { amixer --quie set Master mute; }
+    unmmute() { amixer --quie set Master unmute; }
+    limit() { echo "not implemented"; }
+    up() { amixer --quie set Master "${1-5}%+"; }
+    down() { amixer --quie set Master "${1-5}%-"; }
+    setVol() { amixer --quie set Master "${1:-25}%"; }
+    volume() { amixer get Master | awk '$0~/%/{print $5}' | tr -d '[]%' | head -n1; }
+fi
 
 case "$1" in
     toggle|--toogle|-t)     shift; toggle ;;
     mute|--mute|-m)         shift; mute ;;
     unmute|--unmute|-u)     shift; unmute ;;
+    limit|--limit|-l)       shift; limit "$@" ;;
+    volume|--volume|-v)     shift; volume ;;
     up|--up|-i)             shift; up "$@" ;;
     down|--down|-d)         shift; down "$@" ;;
     set|--set|-s)           shift; setVol "$@" ;;

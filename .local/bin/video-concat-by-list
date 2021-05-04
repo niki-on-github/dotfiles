@@ -1,0 +1,61 @@
+#!/bin/env bash
+
+usage() {
+    cat <<EOF
+'`basename $0`' script to concat videos with file list
+
+
+File List Structure:
+    filename1,starttime1,playtime1
+    filename2,starttime2,playtime2
+    ...
+
+Notes:
+    - playtime = stoptime - starttime
+    - starttime and playtime is optional
+    - times in int (sec) and xx:xx (min:sec) possible
+
+Dependecies: - ffmpeg
+
+
+Usage: `basename $0` [FILE_LIST]
+       `basename $0` -h
+
+
+The following specific options are supported:
+
+  -h        display this help
+
+EOF
+    exit 1
+}
+
+[ -z "$1" ] && usage 1
+[ "$1" = "-h" ] && usage 0
+[ ! -f $1 ] && usage 1
+
+index=$((0))
+input=""; filter=""
+while IFS=, read -r filename starttime playtime; do
+    [ -z "$filename" ] && continue
+    if [ -z "$starttime" ] && [ -z "$playtime" ]; then
+        input="$input -i \"$filename\""
+    elif [ -z "$starttime" ] && [ -n "$playtime" ] ; then
+        input="$input -t $playtime -i \"$filename\""
+    elif [ -n "$starttime" ] && [ -z "$playtime" ] ; then
+        input="$input -ss $starttime -i \"$filename\""
+    elif [ -n "$starttime" ] && [ -n "$playtime" ] ; then
+        input="$input -ss $starttime -t $playtime -i \"$filename\""
+    else
+        echo "NotImplemented"
+    fi
+    filter="$filter[$index:v:0][$index:a:0]"
+    index=$(($index+1))
+done < $1
+unset IFS
+filter="${filter}concat=n=${index}:v=1:a=1[outv][outa]"
+
+saveAs="out.mp4"
+
+echo "run: ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 15 \"$saveAs\""
+eval "ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 15 \"$saveAs\""

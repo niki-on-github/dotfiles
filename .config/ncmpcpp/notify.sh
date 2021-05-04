@@ -21,6 +21,7 @@ fi
 
 # This function send notificaation without cover
 fallback() {
+    [ "$(mpc current | wc -c)" -gt "128" ] && exit  # avoid usless notify messages
     notify-send -i "$HOME/.config/ncmpcpp/music-icon.png" "Now Playing" "$(mpc current)" && exit
 }
 

@@ -1,5 +1,0 @@
-# vim:ft=zsh:et:sts=4:sw=4:wrap
-# Description: neural image enhance
-
-[ ! -f $PWD/$@ ] && echo "FileNotFound: $PWD/$@,  Usage: ~\$ enhance-img [IMAGE]" && return
-docker run --rm -v $PWD:/ne/input -it alexjc/neural-enhance input/$@ --zoom=2

@@ -3,7 +3,8 @@
 
 if tmux list-sessions >/dev/null 2>&1; then
     # select a session
-    list=$(tmux list-sessions | dmenu -l 16)
+    list=$(tmux list-sessions | dmenu -l 16) || exit
+    [ -z "$list" ] && exit
     sess=$(awk -F: '{print $1}' <<< "$list")
 
     # launch an xterm loading the tmux session

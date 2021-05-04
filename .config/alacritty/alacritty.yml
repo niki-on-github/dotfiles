@@ -4,8 +4,8 @@ window:
 
   # Set padding
   padding:
-    x: 6
-    y: 6
+    x: 8
+    y: 8
 
   # Spread additional padding evenly around the terminal content.
   dynamic_padding: false
@@ -51,17 +51,19 @@ font:
     style: Bold Italic
 
   # Point size
-  size: 11.5
+  size: 10
+
+  # Scale the font size based on the monitors DPI
+  scale_with_dpi: true
 
 
-# If `true`, bold text is drawn using the bright color variants.
+# If `true`, bold text is drawn using the bright color variants
 draw_bold_text_with_bright_colors: true
-
 
 colors:
   # Default colors
   primary:
-    background: '0x232627'
+    background: '0x161616'
     foreground: '0xffffff'
     dim_foreground: '0xfcfcfc'
     bright_foreground: '0xffffff'
@@ -73,8 +75,8 @@ colors:
 
   # Selection colors
   selection:
-    text: '0xeaeaea'
-    background: '0x404040'
+    text: '0xffffff'
+    background: '0x1793d1'
 
   # Normal colors
   normal:
@@ -111,7 +113,7 @@ colors:
 
 
 # Background opacity
-background_opacity: 0.93
+background_opacity: 0.63
 
 
 selection:
@@ -119,10 +121,6 @@ selection:
 
   # When set to `true`, selected text will be copied to the primary clipboard.
   save_to_clipboard: true
-
-
-# Allow terminal applications to change Alacritty's window title.
-dynamic_title: true
 
 
 cursor:
@@ -215,17 +213,18 @@ mouse_bindings:
 # a no-op if you do not wish to receive input characters for that binding.
 key_bindings:
   - { key: V,        mods: Control|Shift, action: Paste            }
-  - { key: P,        mods: Control      , action: Paste            }
+  - { key: P,        mods: Control|Shift, action: Paste            }
   - { key: C,        mods: Control|Shift, action: Copy             }
+  - { key: Y,        mods: Control,       action: Copy             }
+  - { key: F,        mods: Control|Shift, action: SearchForward    }
   - { key: Insert,   mods: Shift,         action: PasteSelection   }
   - { key: Key0,     mods: Control,       action: ResetFontSize    }
   - { key: Equals,   mods: Control,       action: IncreaseFontSize }
-  - { key: Add,      mods: Control,       action: IncreaseFontSize }
-  - { key: Subtract, mods: Control,       action: DecreaseFontSize }
+  - { key: Plus,     mods: Control,       action: IncreaseFontSize }
   - { key: Minus,    mods: Control,       action: DecreaseFontSize }
-  - { key: PageUp,   mods: Control,       action: ScrollPageUp   }
-  - { key: PageDown, mods: Control,       action: ScrollPageDown }
-  - { key: End,      mods: Control,       action: ScrollToBottom }
+  - { key: PageUp,   mods: Control,       action: ScrollPageUp     }
+  - { key: PageDown, mods: Control,       action: ScrollPageDown   }
+  - { key: End,      mods: Control,       action: ScrollToBottom   }
 
 # Fix Window Manager
   - { key: Up,       mods: Alt,           action: None }
@@ -237,7 +236,7 @@ key_bindings:
   - { key: K,        mods: Alt,           action: None }
   - { key: L,        mods: Alt,           action: None }
 
-# Fix TMUX
+# Fix TMUX (old)
 #  - { key: Up,       mods: Control,       action: None }
 #  - { key: Down,     mods: Control,       action: None }
 #  - { key: Right,    mods: Control,       action: None }

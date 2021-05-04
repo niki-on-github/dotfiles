@@ -18,5 +18,6 @@ VDISPWIDTH=`expr $DISPWIDTH - $DISPWIDTH / 9`
 VDISPHEIGHT=`expr $DISPHEIGHT - $DISPHEIGHT / 9`
 
 echo "Create Display $DISPNUM"
+echo "Make sure 'X11Forwarding yes' is set inside /etc/ssh/sshd_config"
 Xephyr $DISPNUM -br +extension randr -nolisten tcp -resizeable -once -screen ${VDISPWIDTH}x${VDISPHEIGHT} &
-DISPLAY="$DISPNUM" ssh -o ForwardX11Timeout=2147423s -X $@
+DISPLAY="$DISPNUM" ssh -o ForwardX11Timeout=2147423s -X $@ startxfce4 || startplasma

@@ -80,6 +80,7 @@ m4v_mime='video/x-m4v'
 # defaults for variables if not defined
 end_default=$(ffprobe -v error -sexagesimal -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$infile" | cut -d\. -f1)
 outfile_default="${infile_name}-gif-$(date +"%Y-%m-%d-%H-%M-%S").gif"
+outfile_small="${infile_name}-gif-$(date +"%Y-%m-%d-%H-%M-%S")-small.gif"
 
 # create gif function
 create_gif () {
@@ -91,6 +92,8 @@ create_gif () {
     -t "${end:=${end_default}}" \
     -filter_complex "[0:v] fps=${framerate:=${framerate_default}},scale=${width:=${width_default}}:-1:flags=lanczos,split [a][b];[a] palettegen [p];[b][p] paletteuse" \
     "${outfile:=${outfile_default}}"
+
+    if command -v gifsicle >/dev/null; then gifsicle -O3 --scale 0.5 -i "$outfile_default" -o "$outfile_small"; fi;
 }
 
 # check the files mime type

@@ -10,7 +10,11 @@ BAT=$(ls /sys/class/power_supply | grep "^BAT")
 
 
 vol() {
-    VOL=$(pamixer --get-volume-human | tr -d '%')
+    if command -v pamixer >/dev/null ; then
+        VOL=$(pamixer --get-volume-human | tr -d '%')
+    else
+        VOL=$(amixer get Master | grep -o "[0-9]*%" | head -n 1 | tr -d '%')
+    fi
     if [ "$VOL" = "muted" ] || [ "$VOL" -eq 0 ]; then
         printf " MUTE "
     else
@@ -18,7 +22,7 @@ vol() {
     fi
 }
 
-mem() { 
+mem() {
     printf "MEM%3d%%" "$(free -m | head -n2 | tail -n1 | awk '{print int(($2 - $7) * 100 / $2)}')"
 }
 
@@ -35,7 +39,7 @@ cpu() {
     printf "CPU%3d%%" "$CPU"
 }
 
-clock() { 
+clock() {
     date +"%b %d, %Y${SEP}%H:%M:%S"
 }
 
@@ -85,7 +89,7 @@ while true; do
     # call every second to update values
     calc_cpu
     calc_netspeed
-   
+
     # bar elements with 1 sec update intervall
     bar=()
     bar+=("$(cpu)" "$SEP")

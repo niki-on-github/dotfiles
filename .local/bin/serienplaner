@@ -1,0 +1,50 @@
+#!/bin/env python3
+
+import requests
+import locale
+
+from bs4 import BeautifulSoup  # pip install beautifulsoup4
+from datetime import datetime, timedelta
+
+
+URL = "https://www.serienjunkies.de/docs/serienplaner.html"
+
+
+locale.setlocale(locale.LC_TIME, "de_DE.utf8")
+html_text = soup = BeautifulSoup(requests.get(URL).text, 'html.parser')
+
+database = {}
+tablerows = html_text.findAll('div', {'class':'tablerow'})
+for tablerow in tablerows:
+    try:
+        tablecels = tablerow.findAll('div', {'class':'tdva'})
+        if len(tablecels) != 2:
+            continue
+        title = tablecels[0].findAll('div')[0].text.strip().split("Staffel")
+        season = title[1].strip() if len(title) > 1 else "0"
+        title = title[0].strip()
+        date = tablecels[0].findAll('div')[1].text.strip()
+        if date == "Morgen":
+            date = (datetime.now() + timedelta(1)).date()
+        else:
+            date = datetime.strptime(date, '%A, %d.%B %Y').date()
+        try:
+            sender = tablecels[1].img['title'].strip()
+        except:
+            sender = tablecels[1].a['title'].strip()
+
+        database[title] = {
+                'season': season,
+                'date': date,
+                'sender': sender
+                }
+    except:
+        pass
+
+
+for k in database.keys():
+    print("Serie:", k)
+    print("Season:", database[k]['season'])
+    print("Premiere:", database[k]['date'])
+    print("="*80)
+

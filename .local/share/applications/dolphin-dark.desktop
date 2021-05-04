@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Dolphin Dark
+Exec=dolphin -stylesheet $HOME/.config/qt5ct/qss/dolphin.qss
+TryExec=dolphin
+Comment=Dolphin is a free and open source file manager included in the KDE Applications bundle
+StartupWMClass=dolphin

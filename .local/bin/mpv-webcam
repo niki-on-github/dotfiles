@@ -1,0 +1,18 @@
+#!/bin/bash
+# Description: preview webcam video in mpv
+
+
+camera=$(v4l2-ctl --list-devices | \
+ sed -e 's/\t//g' -e 's/ (.*$//g' | \
+ tr -d '\n' | \
+ sed -e 's|\(/dev/video.\)| (\1)\n|g' | \
+ dmenu | \
+ grep -o '/dev/video.')
+
+if echo $camera | grep -q .; then
+	mpv --profile=low-latency \
+		--untimed \
+		--vf=hflip \
+		"av://v4l2:$camera" || \
+	notify-send "Cannot play webcam" "$camera"
+fi

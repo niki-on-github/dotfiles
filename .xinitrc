@@ -15,3 +15,4 @@ export DESKTOP_SESSION="dwm"
 
 # start the graphical environment
 exec dwm
+# exec xmonad

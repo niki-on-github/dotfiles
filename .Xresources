@@ -46,8 +46,10 @@ dwm.selbordercolor:  #ffffff
 dwm.selbgcolor:      #1d99f3
 dwm.selfgcolor:      #ffffff
 
-
-/* uncomment to fast override:
-dmenu.selbackground: #AA00FF
-dwm.selbgcolor:      #AA00FF
-*/
+/* Xft.dpi: 110 */
+Xft.antialias: true
+Xft.hinting: true
+Xft.rgba: rgb
+Xft.autohint: false
+Xft.hintstyle: hintslight
+Xft.lcdfilter: lcddefault

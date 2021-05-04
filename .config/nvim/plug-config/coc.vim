@@ -1,19 +1,30 @@
+" COC config "
+" NOTE: use :CocCommand "
 
 let g:coc_global_extensions = [
     \ 'coc-clangd',
+    \ 'coc-cmake',
     \ 'coc-css',
+    \ 'coc-emoji',
+    \ 'coc-go',
     \ 'coc-html',
     \ 'coc-json',
-    \ 'coc-pairs',
     \ 'coc-prettier',
     \ 'coc-python',
+    \ 'coc-rls',
+    \ 'coc-sh',
     \ 'coc-snippets',
+    \ 'coc-solargraph',
+    \ 'coc-tabnine',
     \ 'coc-tsserver',
     \ 'coc-vimlsp',
     \ 'coc-vimtex',
     \ 'coc-xml',
     \ 'coc-yaml'
     \ ]
+
+"disable word suggestions on latex"
+autocmd FileType tex call coc#config('coc.source.around', {'enable': 0 })
 
 " TextEdit might fail if hidden is not set.
 set hidden
@@ -22,8 +33,8 @@ set hidden
 set nobackup
 set nowritebackup
 
-" Give more space for displaying messages.
-set cmdheight=2
+" Give more space for displaying messages. (broken @ Aprl 2021)
+" set cmdheight=2
 
 " Having longer updatetime leads to noticeable delays and poor user experience.
 set updatetime=500
@@ -88,7 +99,7 @@ endfunction
 " Highlight the symbol and its references when holding the cursor.
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
-" Symbol renaming.
+" Symbol renaming (refactoring).
 nmap <leader>rn <Plug>(coc-rename)
 
 " Formatting selected code.
