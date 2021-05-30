@@ -34,7 +34,7 @@ set nobackup
 set nowritebackup
 
 " Give more space for displaying messages. (broken @ Aprl 2021)
-" set cmdheight=2
+set cmdheight=2
 
 " Having longer updatetime leads to noticeable delays and poor user experience.
 set updatetime=500

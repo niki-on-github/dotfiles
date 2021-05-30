@@ -12,4 +12,6 @@ path+=$HOME/.local/bin
 path+=$HOME/.npm/bin
 path+=./node_modules/.bin
 
+path+=$HOME/.cargo/bin
+
 [ "path" ]  # set exit code to 0

@@ -4,7 +4,7 @@ alias zsh-vim="export ZSH_KEYMAP=\"vim\"; source ${ZDOTDIR:-$HOME}/.zshrc"
 alias zsh-emacs="export ZSH_KEYMAP=\"emacs\"; source ${ZDOTDIR:-$HOME}/.zshrc"
 alias vim="nvim" vimdiff="nvim -d" vi="nvim" v="nvim"
 alias dolphin="dolphin -stylesheet $HOME/.config/qt5ct/qss/dolphin.qss"
-alias tmux='tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf' t='tmux' fm='tmux new-session lf'
+alias tmux='tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf' t='tmux' fm='tmux new-session lf' lf='tmux new-session lf'
 alias mi="mediainfo"
 alias netstat="netstat --wide"
 alias yay="yay --sudoloop"

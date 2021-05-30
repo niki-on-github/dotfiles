@@ -1,0 +1,2 @@
+.icons/WhiteSur.tar.xz filter=lfs diff=lfs merge=lfs -text
+.themes/WhiteSur-dark-solid.tar.xz filter=lfs diff=lfs merge=lfs -text

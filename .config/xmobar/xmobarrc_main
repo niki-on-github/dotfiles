@@ -1,0 +1,83 @@
+-- xmobar config
+-- see https://xmobar.org/
+
+Config  {
+
+    -- apperance
+    font = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
+    , additionalFonts = ["xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"]  -- <fn=1>
+    , border = BottomB
+    , borderColor = "#1d99f3"
+    , borderWidth = 3
+    , fgColor = "#FFFFFF"
+    , bgColor = "#171717"
+    , alpha = 255  -- solid config
+    , position = Top
+    , textOffset = -1
+    , iconOffset = -1
+
+    -- transparent config
+    -- , bgColor = "#272727"
+    -- , alpha = 180  -- transparent config
+
+    -- layout
+    , sepChar = "%"  -- delineator between plugin names and straight text
+    , alignSep = "}{"  -- separator between left-right alignment
+    , template = "<fn=1>%UnsafeStdinReader%</fn> }{ <action=`~/.local/bin/volume-control -t` button=1><action=`~/.local/bin/volume-control -i 1` button=4><action=`~/.local/bin/volume-control -d 1` button=5>%vol%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
+    -- , template = "%UnsafeStdinReader% }{ <action=`pulsemixer --toggle-mute` button=1><action=`pulsemixer --change-volume +1` button=4><action=`pulsemixer --change-volume -1` button=5>%alsa:hw:1:Master%</action></action></action>  -  %cpu%  -  %memory% %weather% -  %dynnetwork%  -  %date% %systray%"
+
+    -- general behavior
+    , lowerOnStart = True      -- send to bottom of window stack on start
+    , pickBroadest = True      -- choose widest display (multi-monitor)
+    , persistent = False       -- disable hiding
+    , hideOnStart = False      -- start with window unmapped (hidden)
+    , allDesktops = False      -- show on all desktops
+    , overrideRedirect = False -- set the Override Redirect flag (Xlib)
+
+    -- plugins
+    , commands = [
+
+        -- network activity monitor
+        Run DynNetwork [ "--template", "<tx> <rx>"
+                       , "--suffix", "True"
+                       , "--minwidth", "7"
+                       ] 10
+
+        -- cpu activity monitor
+        , Run Cpu [ "--template", "CPU<total>%"
+                  , "--minwidth", "3"
+                  , "--High", "90"
+                  , "--high", "red"
+                  ] 10
+
+        -- memory usage monitor
+        , Run Memory [ "--template","MEM<usedratio>%"
+                     , "--minwidth", "3"
+                     , "--High", "90"
+                     , "--high", "red"
+                     ] 10
+
+        -- event-based volume indicator (require alsactl)
+        -- , Run Alsa "hw:1" "Master" [ "--template", "VOL <volumestatus>"
+        --                , "--minwidth", "3"
+        --                , "--"
+        --                , "--on", ""
+        --                , "--off", "<fc=#FF0000>MUT</fc>"
+        --                ]
+
+        -- time and date indicator
+        , Run Date "%b %d, %Y  -  %H:%M:%S" "date" 10
+
+        -- pulse audio volume indicator
+        , Run Com "/bin/sh" [ "-c", "printf \"VOL%4s\" $(pamixer --get-volume-human | sed 's/muted/MUT/g') | sed 's/MUT/<fc=#FF0000>MUT<\\/fc>/g'" ] "vol" 3
+
+        -- weather monitor
+        , Run Com "/bin/sh" [ "-c", "curl 'wttr.in/Waiblingen?format=%t' | sed 's/+//g' | xargs -I{} echo ' -  WTR {} ' | head -n 1 | grep -v 'Unknown location' | grep -v 'Sorry' || echo ''" ] "weather" 36000
+
+        -- systray padding (trailing spaces for the systray)
+        , Run Com "/bin/sh" [ "-c", "$HOME/.config/xmobar/systray-padding.sh" ] "systray" 10
+
+        -- clickable workspaces
+        , Run UnsafeStdinReader
+    ]
+}

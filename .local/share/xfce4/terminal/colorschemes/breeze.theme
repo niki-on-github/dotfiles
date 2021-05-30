@@ -1,0 +1,9 @@
+[Scheme]
+Name=breeze
+ColorForeground=#ffffff
+ColorBackground=#161616
+ColorCursor=#ffffff
+TabActivityColor=#dc322f
+ColorPalette=#232627;#ed1515;#11d116;#f67400;#1d99f3;#9b59b6;#1abc9c;#fcfcfc;#7f8c8d;#c0392b;#1cdc9a;#fdbc4b;#3daee9;#8e44ad;#16a085;#0xffffff
+ColorBold=#ffffff
+ColorBoldUseDefault=FALSE

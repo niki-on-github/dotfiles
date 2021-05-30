@@ -1,0 +1,392 @@
+.TITLE "Dotfiles"
+.AUTHOR ""
+.DOCTYPE DEFAULT
+.COPYSTYLE FINAL
+.PRINTSTYLE TYPESET
+.PT_SIZE 11
+.START
+.HEADING 1 "Welcome"
+Use vim keys (\f(CWh/j/k/l\fP) to navigate this document.
+Pressing \f(CWs\fP will fit it to window width (\f(CWa\fP to revert).
+\f(CW+\fP and \f(CW-\fP zoom in and out.
+\f(CWf\fP will highlight links to follow which are selectable by typing the number that appears plus \f(CWEnter\fP.
+\f(CWq\fP to quit. (These are general shortcuts of \f(CWzathura\fP, the pdf reader)
+\f(CWMod+F1\fP will show this document at any time. By \f(CWMod\fP I mean the Super Key, usually known as the "Windows Key" or the "Alt Key" (depend on the configuration). This document shows only the most important shortcuts. For a more detailed view i recommend to have a look at the linked documentation.
+For the documentation syntax see
+.PDF_WWW_LINK "https://www.gnu.org/software/groff/" "gnu groff."
+
+.HEADING 1 "firefox"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CW/\fP; Quick-Find
+\f(CWCtrl + g\fP; Find Again
+\f(CWCtrl + Shift + g\fP; Find Previous
+\f(CWCtrl + k\fP; Focus Search bar
+\f(CWCtrl + w\fP; Close Tab
+\f(CWCtrl + Page Up\fP; Go one Tab to the Left
+\f(CWCtrl + Page Down\fP; Go one Tab to the Right
+\f(CWCtrl + t\fP; New Tab
+\f(CWCtrl + Shift + t\fP; Undo Close Tab
+\f(CWCtrl + n\fP; New Window
+\f(CWCtrl + d\fP; Bookmark current Page
+\f(CWCtrl + Shift + a\fP; Add-ons Settings
+.TE
+
+.NEWPAGE
+.PRINTSTYLE TYPESET
+.HEADING 1 "duckduckbang"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CW!github\fP; GitHub
+\f(CW!gitlab\fP; GitLab
+\f(CW!edbc\fP; exploit-db.com
+\f(CW!sreddit\fP; subreddit
+\f(CW!g\fP; Google
+\f(CW!gp\fP; Google Books
+\f(CW!gimg\fP; Google Images
+\f(CW!img\fP; DuckDuckGo Images
+\f(CW!yt\fP; YouTube
+\f(CW!fsfd\fP; Free Software Directory
+\f(CW!arch\fP; Arch Linux Wiki
+\f(CW!alp\fP; Arch Linux Packages
+\f(CW!aurp\fP; AUR Packages
+\f(CW!ffa\fP; Firfox Add-ons
+\f(CW!xfce-look\fP; Xfce-Look
+\f(CW!deepl\fP; DeepL Translator
+.TE
+
+.NEWPAGE
+.PRINTSTYLE TYPESET
+.HEADING 1 "zathura"
+See:
+.PDF_WWW_LINK "https://git.pwmt.org/pwmt/zathura/-/blob/develop/doc/man/_bindings.txt" "bindings.txt"
+or manpage
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWs\fP; fit to window width
+\f(CWa\fP; fit to window height
+\f(CWq\fP; quit
+\f(CWF5\fP; toggle presentation mode
+\f(CWp\fP; print menu
+\f(CWr\fP; reload
+\f(CWb\fP; toggle status bar
+\f(CW+\fP; zoom in
+\f(CW-\fP; zoom out
+\f(CW=\fP; zoom 100%
+\f(CWf\fP; link selection menu
+\f(CWgg\fP; jump to first page
+\f(CWG\fP; jump to last page
+\f(CWJ, PgDn, space\fP; next page
+\f(CWK, PgUp\fP; previous page
+\f(CWnG\fP; jump to the page n (n = number)
+\f(CW/, ?\fP; search for text
+\f(CWd\fP; toggle dual page view
+.TE
+.PP
+
+.NEWPAGE
+.PRINTSTYLE TYPESET
+.HEADING 1 "sxiv"
+See:
+.PDF_WWW_LINK "https://github.com/muennich/sxiv/blob/master/config.def.h" "config.h"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWENTER\fP; Toggle mode
+\f(CWb\fP; Toggle statusbar
+\f(CWq\fP; Quit
+\f(CWf\fP; Toggle Fullscren
+\f(CWg\fP; Jump to firt Image
+\f(CWG\fP; Jump to last Image
+\f(CW+\fP; Zoom in
+\f(CW-\fP; Zoom out
+\f(CW=\fP; Set zoom 100
+\f(CWm\fP; Toggle image mark
+\f(CWu\fP; Unmark all
+\f(CWn\fP; Preview next image (or \f(CWSpace\fP)
+\f(CWp\fP; Show previous image (or \f(CWBackSpace\fP)
+\f(CWw\fP; Fit image to window
+.TE
+Activate special \f(CW$HOME/.config/sxiv/exec/key-handler\fP functions by pressing first \f(CWCtrl+x\fP
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWr\fP; rotate image 90 CW
+\f(CWR\fP; rotate image 90 CCW
+\f(CWf\fP; flop image
+\f(CWy\fP; copy image-file to clipboard
+\f(CWY\fP; copy image link to clipboard
+\f(CWd\fP; delete image
+\f(CWg\fP; open image in gimp
+.TE
+.PP
+
+.NEWPAGE
+.PRINTSTYLE TYPESET
+.HEADING 1 "tmux"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CW<leader> + s\fP; tmux session selection menu
+\f(CW<leader> + v\fP; tmux new pane split vertical
+\f(CW<leader> + b\fP; tmux new pane split horizontal
+.TE
+.PP
+
+.NEWPAGE
+.PRINTSTYLE TYPESET
+.HEADING 1 "newsboat"
+See:
+.PDF_WWW_LINK "https://newsboat.org/releases/2.18/docs/newsboat.html" "Documentation"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CW?\fP; Run the help screen (help)
+\f(CWENTER\fP; Open the currently selected feed or article (open)
+\f(CWq\fP; Quit the program (quit)
+\f(CWR\fP; Reload all feeds (reload-all)
+\f(CWn\fP; Jump to the next unread article (next-unread)
+\f(CWp\fP; Jump to the previous unread article (prev-unread)
+\f(CWo\fP; Open the URL associated with the current article (open-in-browser)
+\f(CWu\fP; Show all URLs in the article in a list (show-urls)
+\f(CW/\fP; Open the search dialog (open-search)
+\f(CWE\fP; Edit the list of subscribed URLs (edit-urls)
+\f(CWD\fP; Delete the currently selected article (delete-article)
+.TE
+.PP
+
+.NEWPAGE
+.PRINTSTYLE TYPESET
+.HEADING 1 "neovim"
+Leader Keys:
+.LIST
+.ITEM
+Leader: \f(CW,\fP
+.ITEM
+Local Leader: \f(CW-\fP
+.LIST OFF
+.HEADING 2 "Mode"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWa\fP; enter insert mode after current character
+\f(CWA\fP; enter insert mode at line end
+\f(CWi\fP; enter insert mode before current character
+\f(CWI\fP; enter insert mode in start of line
+\f(CWo\fP; add line below and open insert mode
+\f(CWO\fP; add line above and open insert mode
+\f(CWv\fP; enter visual mode
+\f(CWESC\fP; exit current mode (enter execute mode)
+\f(CWCtrl + v\fP; enter vertical select visual mode
+.TE
+.NEWPAGE
+.HEADING 2 "Cursor Movement"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWb\fP; jump to previous word
+\f(CWe\fP; jump to end of next word
+\f(CWf#\fP(#: char); jump to next character #
+\f(CWF#\fP(#: char); jump to previous character #
+\f(CWgg\fP; jump to the top of file
+\f(CWG\fP; jump to the bottom of file
+\f(CW#G\fP (#: line); jump to line #
+\f(CWw\fP; jump to start of next word
+\f(CW0\fP (zero); jump to start of line
+\f(CW^\fP; jump to first non-blank character in line
+\f(CW$\fP; jump to end of line
+\f(CW(\fP; jump to the previous sentence
+\f(CW)\fP; jump to the next sentence
+\f(CW{\fP; jump to the previous paragaph
+\f(CW}\fP; jump to the next paragraph
+\f(CW[[\fP; jump to the previous section
+\f(CW]]\fP; jump to the next section
+\f(CW[]\fP; jump to the end of the previous section
+\f(CW][\fP; jump to the end of the next section
+.TE
+.NEWPAGE
+.HEADING 2 "Editing"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWciw\fP; replace word
+\f(CWJ\fP; join current line with next line
+\f(CWp\fP; put (paste) the clipboard after cursor
+\f(CWP\fP; put (paste) the clipboard into a new line
+\f(CWr\fP; replace single character
+\f(CWs\fP; replace single character with new text
+\f(CWS\fP; delete current line and enter inser mode
+\f(CWu\fP; undo the last operation
+\f(CWyy\fP; yank (copy) current line
+\f(CWY\fP; yank (copy) current line
+\f(CW#yy\fP (#: lines); yank (copy) next # lines
+\f(CWCtrl + r\fP; redo the last undo
+.TE
+.HEADING 2 "Delete Text"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWd0\fP; delete to the beginning of the line
+\f(CWD\fP or \f(CWd$\fP; delete to the end of the line
+\f(CWd)\fP; delete to the end of the sentence
+\f(CWdd\fP; delete line
+\f(CWdf#\fP; delete up to next char #
+\f(CWdw\fP; delete word
+\f(CWx\fP; delete next character
+\f(CWX\fP; delete previous character
+.TE
+.HEADING 2 "Search"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CW/xxx\fP; search for string xxx
+\f(CWn\fP; jump to next search result
+\f(CWN\fP; jump to previous search result
+.TE
+.HEADING 2 "Visual (Mode) Commands"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CW>\fP; shift selection rigth (add one tab)
+\f(CW<\fP; shift selection left (remove one tab)
+\f(CW.\fP; repeat last action e.g. shift selection
+\f(CWc\fP; cut selection
+\f(CWd\fP; delete marked text
+\f(CWy\fP; yank (copy) marked text
+.TE
+.HEADING 2 "Command Mode - Execute Commands"
+.TS
+tab(;) allbox;
+l,al.
+COMMAND; DESCRIPTION
+\f(CW:<cmd>\fP; execut vim command \f(CW<cmd>\fP
+\f(CW:set number\fP; enable line numbers
+\f(CW:q\fP; close vim
+\f(CW:w\fP; save file
+\f(CW:wq\fP; save file and close vim
+\f(CW:q!\fP; force close vim and not save changes!
+\f(CW:vs [FILE]\fP; split vertical (new pane on the right side)
+\f(CW:sp [FILE]\fP; split horizontal (new pane below)
+\f(CW:bn\fP; switch to next vim buffer (buffer next)
+\f(CW:bp\fP; switch to previous vim buffer (buffer previous)
+\f(CW:bd\fP; close current vim buffer (buffer delete)
+\f(CW:b <number>\fP; open vim buffer <number>
+\f(CW:ls\fP; show buffer list
+\f(CW:ju\fP; show jump list
+.TE
+.HEADING 2 "Spell-Checking"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CW<leader> + s\fP; toggle german spell-checking
+\f(CWz=\fP; suggest correct spelled word
+\f(CWzg\fP; add word under the cursor to the dictionary
+\f(CW]s\fP; move to next misspelled word
+\f(CW[s\fP; move to previous misspelled word
+.TE
+.HEADING 2 "Plugin: vim-commentary"
+.TS::
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWgcc\fP; comment out current line or remove comment from line (toggle)
+\f(CW#gcc\fP (#: lines); comment out the next # lines (or remove comment from these lines)
+\f(CWgc\fP; comment out selection in visual mode (or remove comment from selection)
+.TE
+.HEADING 2 "Plugin: conquer of completion (coc)"
+.TS
+tab(;) allbox;
+l,al.
+KEY; DESCRIPTION
+\f(CWgd\fP; goto definition
+\f(CWgr\fP; show all references
+\f(CWK\fP; show code documentation
+\f(CW<leader> + f\fP; format selected code
+\f(CW<leader> + rn\fP; refactor rename
+.TE
+.HEADING 2 "Plugin: fzf.vim"
+.TS
+tab(;) allbox;
+l,al.
+COMMAND; DESCRIPTION
+\f(CW:Files\fP; browse Files
+\f(CW:GFiles\fP; git files
+\f(CW:GFiles?\fP; git staging files
+\f(CW:BLines\fP; fzf search in current vim buffer file
+\f(CWEnter\fP; open selected file in new vim buffer
+\f(CWCtrl + v\fP; open selected file in vertical split
+\f(CWCtrl + x\fP; open selected file in horizontal split
+.TE
+.HEADING 2 "Mapping"
+Syntax:
+.CODE
+  map-command map-argument shortcut execute
+.CODE OFF
+Arguments:
+.LIST
+.ITEM
+\f(CWmap-command\fP: Mode in which the mapping should be assigned to (Recursive/Non-Recursive)
+.ITEM
+\f(CWmap-argument\fP: One ore more optional mapping options (e.g <silent>)
+.ITEM
+\f(CWshortcut\fP: Key or sequence of keys to map
+.ITEM
+\f(CWexecute\fP: Define what the shortcut execute (call functions, replace keys, ...)
+.LIST OFF
+.TS
+tab(;) allbox;
+l,al.
+MAP-COMMAND; DESCRIPTION
+\f(CWmap\fP; Recursive mapping in Normal, Visual Mode
+\f(CWnoremap\fP; Non-Recursive mapping in Normal, Visual Mode
+\f(CWmap!\fP; Recursive mapping in Insert Mode, Command line
+\f(CWnmap\fP; Recursive mapping in Normal Mode
+\f(CWnnoremap\fP; Non-Recursive mapping in Normal Mode
+\f(CWvmap\fP; Recusive mapping in Visual Mode
+\f(CWvnoremap\fP; Non-Recusive mapping in Visual Mode
+\f(CWimap\fP; Recursive mapping in Insert Mode
+\f(CWinoremap\fP; Non-Recursive mapping in Insert Mode
+.TE
+.TS
+tab(;) allbox;
+l,al.
+MAP-ARGUMENTS; DESCRIPTION
+\f(CW<silent>\fP; no output in konsole
+\f(CW<unique>\fP; avoid overwriting a existring mapping
+.TE
+.PP
+.HEADING 2 "Nic to Know"
+.TS
+tab(;) allbox;
+l,al.
+COMMAND; DESCRIPTION
+\f(CW=i{\fP; format code indented by { ... } e.g. C, C++, ...
+\f(CW]s\fP; move cursor to next misspelled word
+\f(CW[s\fP; move cursor to previous misspelled word
+\f(CWCtrl + o\fP; jump back in jumplist (usefull with coc and goto definition)
+\f(CWCtrl + i\fP; jump forwared in jumplist
+\f(CW<localleader>ll\fP; compile latex with lervag/vimtex (localleader = "-"-Key)
+.TE
+Insert Text in multi line selection:
+1. Press \f(CWESC\fP to enter command mode,
+2. Use \f(CWCtrl + v\fP to enter visual block mode,
+3. Move \f(CWUo/Down\fP to select columns of text,
+4. Then hit \f(CWShift + i\fP and type the text ypu want to insert,
+5. Then hit \f(CWESC\fP and the inserted text will appear on every line

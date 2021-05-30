@@ -14,7 +14,7 @@ hi CursorLineNr     ctermfg=7     ctermbg=NONE   cterm=NONE
 hi WarningMsg       ctermfg=255   ctermbg=1      cterm=NONE
 hi ErrorMsg         ctermfg=255   ctermbg=1      cterm=NONE
 hi Search           ctermfg=None  ctermbg=4      cterm=NONE
-hi SignColumn       ctermfg=NONE  ctermbg=None   cterm=NONE 
+hi SignColumn       ctermfg=NONE  ctermbg=None   cterm=NONE
 
 " auto completion window colors "
 hi Pmenu            ctermfg=NONE    ctermbg=233  cterm=NONE

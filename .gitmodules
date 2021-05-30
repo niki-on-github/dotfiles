@@ -1,0 +1,16 @@
+[submodule ".config/mpv/src/mpv-mpris"]
+	path = .config/mpv/src/mpv-mpris
+	url = https://github.com/hoyon/mpv-mpris.git
+	branch = master
+[submodule ".config/firefox/ghacks-user.js"]
+	path = .config/firefox/ghacks-user.js
+	url = https://github.com/ghacksuserjs/ghacks-user.js.git
+	branch = master
+[submodule ".config/mpv/src/mpv-video-splice"]
+	path = .config/mpv/src/mpv-video-splice
+	url = https://github.com/pvpscript/mpv-video-splice.git
+	branch = master
+[submodule ".config/mpv/src/vr-reversal"]
+	path = .config/mpv/src/vr-reversal
+	url = https://github.com/dfaker/VR-reversal.git
+	branch = master

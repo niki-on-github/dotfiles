@@ -1,0 +1,42 @@
+-- xmobar config
+-- see https://xmobar.org/
+
+Config  {
+
+    -- apperance
+    font = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
+    , additionalFonts = ["xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"]  -- <fn=1>
+    , border = BottomB
+    , borderColor = "#1d99f3"
+    , borderWidth = 3
+    , fgColor = "#FFFFFF"
+    , bgColor = "#171717"
+    , alpha = 255  -- solid config
+    , position = Top
+    , textOffset = -1
+    , iconOffset = -1
+
+    -- transparent config
+    -- , bgColor = "#272727"
+    -- , alpha = 180  -- transparent config
+
+    -- layout
+    , sepChar = "%"  -- delineator between plugin names and straight text
+    , alignSep = "}{"  -- separator between left-right alignment
+    , template = "<fn=1>%UnsafeStdinReader%</fn> }{ "
+
+    -- general behavior
+    , lowerOnStart = True      -- send to bottom of window stack on start
+    , pickBroadest = False     -- choose widest display (multi-monitor)
+    , persistent = False       -- disable hiding
+    , hideOnStart = False      -- start with window unmapped (hidden)
+    , allDesktops = False       -- show on all desktops
+    , overrideRedirect = False -- set the Override Redirect flag (Xlib)
+
+    -- plugins
+    , commands = [
+
+        -- clickable workspaces
+        Run UnsafeStdinReader
+    ]
+}

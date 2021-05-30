@@ -42,49 +42,25 @@ set tabstop 4
 # Functions
 #################################################################
 
-# if lf run inside tmux set pane title
+# if lf run inside tmux set pane title and global bindings
 ${{
-    [[ -v TMUX ]] || TMUX=""
-    if [ -n "$TMUX" ]; then
+    if [[ -v TMUX ]]; then
         if tmux lsp -F '#{pane_title}' | fgrep "lf-pane-1" >/dev/null; then
             printf "\033]2;%s\033\\" "lf-pane-2"
         else
             printf "\033]2;%s\033\\" "lf-pane-1"
         fi
+
+        tmux bind-key -n F3 run-shell "$HOME/.config/lf/scripts/tmux_helper.sh --split"
+        tmux bind-key -n F4 run-shell "$HOME/.config/lf/scripts/tmux_helper.sh --terminal"
     fi
-    [ -z "" ]  # return 0
+    [ -z "" ]  # always return 0
 }}
 
 # The lf sever unfortunately crashes regularly. After a restart the functionality of still open lf clients is severely limited because
 # the id of the lf instance is no longer valid. Workaround is this reset function to continue working without manualy restart the lf client.
 cmd reset-lf ${{
-    [[ -v TMUX ]] || TMUX=""
-    if [ ! -n "$TMUX" ]; then return; fi
-
-    # first save current state
-    pane_id=$(tmux lsp -F "#{pane_active} #{pane_title} #{pane_id}" | grep "^1 " | grep "lf-pane" | cut -d ' ' -f 3-)
-    num_panes=$(tmux lsp | wc -l)
-    num_lf_panes=$(tmux lsp -F "#{pane_title}" | grep "lf-pane" | wc -l)
-
-    other_pane_path=$(tmux lsp -F "#{pane_active} #{pane_title} #{pane_current_path}" | grep "^0 " | grep "lf-pane" | cut -d ' ' -f 3-)
-    if [ -n "$other_pane_path" ]; then
-        other_pane_id=$(tmux lsp -F "#{pane_active} #{pane_title} #{pane_id}" | grep "^0 " | grep "lf-pane" | cut -d ' ' -f 3-)
-        tmux split-window -h "cd $other_pane_path && exec lf"
-        tmux kill-pane -t $other_pane_id
-    fi
-
-    tmux split-window -h 'exec lf'
-    tmux kill-pane -t $pane_id
-
-    if [ "$num_panes" = "3" ]; then
-        tmux select-layout tiled
-    elif [ "$num_panes" = "2" ]; then
-        if [ "$num_lf_panes" = "2" ]; then
-            tmux select-layout even-horizontal
-        else
-            tmux select-layout even-vertical
-        fi
-    fi
+    bash $HOME/.config/lf/scripts/tmux_helper.sh --reset-lf
 }}
 
 # move selected/current file(s) to trash (requires trash-cli pkg)
@@ -105,13 +81,11 @@ cmd trash ${{
         if echo "$fx" | head -n1 | grep "$PWD" >/dev/null && grep "ramdisk" <<< "$PWD" >/dev/null; then
             echo "Delete $countItems item(s) ..."
             rm -rf $fx
-            # [old] for f in $fx; do eval "rm -rf \"$f\""; done
             notify-send "Delete" "$countItems item(s) were deleted"
             lf -remote "send $id echo \"$countItems item(s) were deleted\""
         else
             echo "Trash $countItems item(s) ..."
             trash-put $fx
-            # [old] for f in $fx; do eval "trash-put \"$f\""; done
             notify-send "Trash" "$countItems item(s) were moved to trash"
             lf -remote "send $id echo \"$countItems item(s) were moved to trash\""
         fi
@@ -120,46 +94,26 @@ cmd trash ${{
 
 # use `:q` to quit lf
 cmd q ${{
-    [[ -v TMUX ]] || TMUX=""
-    [ -n "$TMUX" ] && tmux kill-pane
+    bash $HOME/.config/lf/scripts/tmux_helper.sh --quit
     lf -remote "send $id quit"
 }}
 cmd Q :q  # not case sensitive
 
 # use `:q!` to quit all lf panes
 cmd q! ${{
-    [[ -v TMUX ]] || TMUX=""
-    [ -n "$TMUX" ] && tmux kill-window
+    bash $HOME/.config/lf/scripts/tmux_helper.sh --quit-all
     lf -remote "send $id quit"
 }}
 cmd Q! :q!  # not case sensitive
 
 # toggle terminal
 cmd terminal ${{
-    [[ -v TMUX ]] || TMUX=""
-    if [ -n "$TMUX" ]; then
-        if tmux lsp -F "#{pane_title}" | grep "^lf-terminal$" >/dev/null ; then
-            tmux killp -t $(tmux lsp -F "#{pane_id} #{pane_title}" | grep " lf-terminal$" | awk '{print $1}')
-        else
-            tmux split-window -v -p 30 -f 'printf "\033]2;%s\033\\" "lf-terminal" && exec zsh'
-        fi
-    else
-        # use window manager to manage new windows
-        setsid $TERMINAL >/dev/null 2>&1 &
-    fi
+    bash $HOME/.config/lf/scripts/tmux_helper.sh --terminal
 }}
 
 # change directory of lf-terminal to $PWD
 cmd cd-terminal ${{
-    [[ -v TMUX ]] || TMUX=""
-    if [ -n "$TMUX" ]; then
-        if tmux lsp -F "#{pane_title}" | grep -q "^lf-terminal$" ; then
-            lfTerminalPaneNumber=$(tmux lsp -F "#{pane_id} #{pane_title}" | grep " lf-terminal$" | awk '{print $1}')
-            tmux send-keys -t $lfTerminalPaneNumber C-l  # clear terminal
-            tmux send-keys -t $lfTerminalPaneNumber C-u  # clear current line
-            tmux send-keys -t $lfTerminalPaneNumber " cd \"$PWD\"" C-m
-        fi
-    fi
+    bash $HOME/.config/lf/scripts/tmux_helper.sh --cd-terminal
 }}
 
 # copy selected file or folder name to clipboard
@@ -230,11 +184,6 @@ cmd open ${{
         setsid sxiv -a "$f" &
     }
 
-    # open-image() {
-    #     pos=$(find "$PWD" -maxdepth 1 -type f | sort | grep -Fn "$(basename "$f")" | cut -d':' -f1 | head -n1) || pos=1
-    #     setsid sxiv -aobq -n $pos "$PWD" 2>/dev/null | lfSelect &
-    # }
-
     open-image() {
         base="$(basename "$f")"
         ls -a "$PWD" | awk -v BASE="$base" 'BEGIN { lines = ""; m = 0; } { if ($0 == BASE) { m = 1; } } { if (!m) { if (lines) { lines = lines"\n"; } lines = lines""$0; } else { print $0; } } END { print lines; }' | \
@@ -254,7 +203,8 @@ cmd open ${{
     }
 
     open-editor() {
-        eval "$EDITOR \"$f\""
+        # workaround #6802
+        eval "TERM='' $EDITOR \"$f\""
     }
 
     open-browser() {
@@ -271,7 +221,7 @@ cmd open ${{
         *.txt|*.md|*.MD|*.tex|*.html|*.css) open-editor ;;
         *)  # fallback is mime-type
             case $(file --mime-type $f -b) in
-                text/*) eval "$EDITOR \"$f\"" ;;
+                text/*) open-editor ;;
                 image/*) open-image ;;
                 audio/*) open-audio ;;
                 video/*|application/octet-stream) open-video ;;
@@ -283,41 +233,17 @@ cmd open ${{
 
 # toggle a second lf file manager pane
 cmd split ${{
-    [[ -v TMUX ]] || TMUX=""
-    if [ -n "$TMUX" ]; then
-        if [ "$(tmux lsp -F "#{pane_title}" | grep "^lf-pane-" | wc -l)" -ge "2" ] ; then
-            tmux killp -t 2
-        else
-            tmux split-window -h 'exec lf'
-        fi
-    else
-        # use window manager to manage windows
-        setsid $TERMINAL -e lf $PWD >/dev/null 2>&1 &
-    fi
+    bash $HOME/.config/lf/scripts/tmux_helper.sh --split
 }}
 
 # swap first and second lf file manager pane
 cmd swap ${{
-    [[ -v TMUX ]] || TMUX=""
-    if [ -n "$TMUX" ]; then
-        if tmux lsp -F "#{pane_title}" | grep "^lf-pane-1$" >/dev/null ; then
-            if tmux lsp -F "#{pane_title}" | grep "^lf-pane-2$" >/dev/null ; then
-                tmux swap-pane -s 1 -t 2
-            fi
-        fi
-    fi
+    bash $HOME/.config/lf/scripts/tmux_helper.sh --swap
 }}
 
 # open a new lf file manager (in new tab)
 cmd new-tab ${{
-    [[ -v TMUX ]] || TMUX=""
-    if [ -n "$TMUX" ]; then
-        tmux set-option -g status on
-        tmux new-window lf
-    else
-        # use window manager to manage tabs
-        setsid $TERMINAL -e lf $PWD >/dev/null 2>&1 &
-    fi
+   bash $HOME/.config/lf/scripts/tmux_helper.sh --new-tab
 }}
 
 # extract the current archive file with the right command
@@ -767,43 +693,6 @@ cmd thumbnail-mode ${{
     fi
     }}
 
-# print msg when files are selected (TODO only notify if pwd != selected file path)
-cmd notify-selected-files %{{
-    if [ -n "$fs" ]; then
-        if [ "$(echo "$fs" | wc -l)" -le "1" ]; then
-            echo -e "\033[0;31m 1 file selected! \033[0m"
-        else
-            echo -e "\033[0;31m $(echo "$fs" | wc -l) files selected! \033[0m"
-        fi
-    else
-        lf -remote "send $id reload"
-    fi
-}}
-
-# up + print msg when files are selected
-cmd up-notify-selected %{{
-    lf -remote "send $id up"
-    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
-}}
-
-# down + print msg when files are selected
-cmd down-notify-selected %{{
-    lf -remote "send $id down"
-    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
-}}
-
-# updir + print msg when files are selected
-cmd updir-notify-selected %{{
-    lf -remote "send $id updir"
-    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
-}}
-
-# open + print msg when files are selected
-cmd open-notify-selected %{{
-    lf -remote "send $id open"
-    [ -z "$fs" ] || lf -remote "send $id :notify-selected-files"
-}}
-
 # unselect + reload
 cmd unselect-reload ${{
     lf -remote "send $id unselect"
@@ -863,17 +752,6 @@ map '"'     # mark-remove
 map "'"     # mark-load
 map p       # paste (we use rpaste)
 
-# Remap navigation to navigation + notify selected files
-# map <up> :up-notify-selected
-# map <down> :down-notify-selected
-# map <left> :updir-notify-selected
-# map <right> :open-notify-selected
-# map k :up-notify-selected
-# map j :down-notify-selected
-# map h :updir-notify-selected
-# map l :open-notify-selected
-# map u :unselect-reload
-
 # Add custom functions (space at the end sometimes break bindings!)
 map Q :q
 map D :trash
@@ -923,8 +801,8 @@ map B $lf -remote "send $id cd $(find . -maxdepth 3 -type d | fzf)"
 map x $$f
 map X !$f
 map <f-2> rename
-map <f-3> split
-map <f-4> terminal
+# map <f-3> split  # we set this binding in tmux at lf startup
+# map <f-4> terminal  # we set this binding in tmux at lf startup
 map <f-5> reload
 map <f-6> $lf -remote "send $id cd $(find . -maxdepth 3 -type d | fzf)"
 map <f-7> quick-select

@@ -76,13 +76,6 @@ function lf-cd {
 }
 zle -N lf-cd
 
-# close if terminal run inside tmux as lf-termina
-function close {
-    [[ -v TMUX ]] || TMUX=""
-    [ -n "$TMUX" ] && tmux lsp -F "#{pane_title}" | grep "^lf-terminal$" >/dev/null && exit
-}
-zle -N close
-
 # retrieves and runs last command
 function run-again {
     zle up-history # get previous history item
@@ -192,7 +185,6 @@ bindkey '^r' history-incremental-search-backward    # [Ctrl+r] - Search backward
 bindkey '^ ' autosuggest-execute                    # [Ctrl+Space] - auto complete command and incrementaly execute command
 bindkey '^x' toggle-zsh-keymap                      # [Ctrl+x] - toggle vim, emacs zsh keymap
 bindkey '^o' lf-cd                                  # [Ctrl+o] - use lf to switch directory
-bindkey '^[OS' close                                # [F4] - close if terminal run inside tmux
 bindkey -r '^V'; bindkey "^V" paste-clip            # [Ctrl+v] - paste from system clipboard (vi-quoted-insert conflict with Paste)
 bindkey -r '^Y'                                     # [Ctrl+y] - conflict with Copy (alacritty)
 bindkey '^P' fuzzy-search-and-edit                  # seletskiy/zsh-fuzzy-search-and-edit plugin

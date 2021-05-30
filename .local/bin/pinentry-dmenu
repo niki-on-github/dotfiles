@@ -1,0 +1,14 @@
+#!/bin/sh
+# Description: simple shell script that wraps dmenu as an alternative pinentry prompt (can be used with rbw).
+# NOTE: You will need a dmenu build with the password patch applied, otherwise dmenu will not show up when used as the pinentry program.
+
+echo 'OK Pleased to meet you'
+
+while read stdin; do
+	case $stdin in
+		*BYE*) break ;;
+		*SETDESC*) KEYNAME=${stdin#*:%0A%22}; KEYNAME=${KEYNAME%\%22\%0A*}; KEYID=${stdin#*ID }; KEYID=${KEYID%,*}; echo OK ;;
+		*GETPIN*) echo -e "D `dmenu -P -p "$KEYNAME"`\nOK" ;;
+		*) echo OK
+	esac
+done

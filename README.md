@@ -1,5 +1,22 @@
 # .dotfiles
 
-A Repository to make a subset of my dotfiles public. Feel free to look around. Be aware that I have configured my environment to fit my workflow.
+A Repository to backup, restore and sync my configurations and scripts (which gives me my super powers). Feel free to look around. Be aware that I have configured my environment to fit my workflow.
 
-**NOTE**: I use a local git server for my dotfiles and only a part of it is uploaded to github. Also, some (a lot of) configuration files and scripts are not up to date, so the interfaces do not always match.
+## Getting Started
+
+1. Set zsh:
+
+```bash
+sudo pacman -Sy zsh
+sudo usermod -s /usr/bin/zsh $USER
+```
+
+2. Install dotfiles:
+
+```bash
+git clone --recursive --recurse-submodules --remote --bare [URL] ~/.dotfiles
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME checkout -f master
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME config --local status.showUntrackedFiles no
+reboot
+dotfiles-update
+```

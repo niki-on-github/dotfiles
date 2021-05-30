@@ -1,0 +1,27 @@
+#!/bin/bash
+# Description: fzf wrapper for the unofficial bitwarden cli rbw.
+# Dependencies: [rbw](https://github.com/doy/rbw)
+
+if ! command -v rbw >/dev/null ; then
+    echo -e "ERROR: rbw is not installed!"
+    exit 1
+fi
+
+choice=$(rbw list --fields name,user,folder \
+    | perl -plE'/^([^\t]*)\t([^\t]*)\t([^\t]*)$/; $_ = join("/", grep { length } ($3, $1, $2)) . "\t$_"' \
+    | sort \
+    | fzf --with-nth=1 \
+    | perl -ple'/^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$/; $_ = "$2\t$3"')
+
+[ -z "$choice" ] && exit 0
+
+name=$(echo "$choice" | tr '\t' '\n' | head -1)
+usr=$(echo "$choice" | tr '\t' '\n' | tail -1)
+pw=$(rbw get $choice | sed 's/ Passwort-Generator //g')
+totp=$(rbw code $choice 2>/dev/null)
+[ -z "$totp" ] && totp="null"
+
+echo -e "name: \t $name"
+echo -e "user: \t $usr"
+echo -e "passwd:\t $pw"
+echo -e "totp: \t $totp"

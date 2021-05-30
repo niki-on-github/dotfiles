@@ -254,3 +254,5 @@ if ! filereadable(expand('~/.config/coc/extensions/coc-tabnine-data/binaries'))
     silent !chmod +x ~/.config/coc/extensions/coc-tabnine-data/binaries/*/x86_64-unknown-linux-musl/*
     " if not work use `:CocCommand tabnine.updateTabNine` + y  to force update TabNine
 endif
+
+map <F5> :redraw!<CR>

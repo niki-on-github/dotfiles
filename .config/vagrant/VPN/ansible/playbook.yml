@@ -1,0 +1,25 @@
+---
+  - hosts: all
+    become: yes
+    tasks:
+      - name: install packages
+        pacman:
+          name:
+          - curl
+          - fzf
+          - git
+          - htop
+          - nano
+          - net-tools
+          - neovim
+          - npm
+          - python-pynvim
+          - wget
+          - xdg-user-dirs
+      - name: install gui packages
+        pacman:
+          name:
+           - firefox
+           - nextcloud-client
+      - name: reboot to complete setup
+        reboot:

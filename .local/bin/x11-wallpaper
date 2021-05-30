@@ -43,6 +43,11 @@ choice() {
 ! command -v feh >/dev/null && echo "feh is not installed" && exit 1
 ! command -v sxiv >/dev/null && echo "sxiv is not installed" && exit 1
 
+if [ -z "$1" ]; then
+    choice
+    exit
+fi
+
 # MAIN
 case "$1" in
     choice|--choice|-c)     choice ;;
