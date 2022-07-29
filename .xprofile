@@ -21,10 +21,14 @@ if command -v mpd ; then
     pgrep mpd || mpd &
 fi
 
-# start nextcloud client if installed
-if command -v nextcloud ; then
-    pgrep nextcloud || nextcloud --background &
+if command -v easyeffects; then
+    easyeffects --gapplication-service &
 fi
+
+# start nextcloud client if installed
+# if command -v nextcloud ; then
+#     pgrep nextcloud || nextcloud --background &
+# fi
 
 # limit audio volume at start
 $HOME/.local/bin/volume-control --limit 50 &
@@ -34,7 +38,8 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
 
         # Notification service
         if command -v dunst ; then
-            pgrep dunst || dunst -icon_path "$HOME/.config/dunst/icons/" &
+            # pgrep dunst || dunst -icon_path "$HOME/.config/dunst/icons/" &
+            pgrep dunst || dunst &
         fi
 
         # Network service
@@ -56,16 +61,20 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
             fi
         fi
 
+        if command -v aa-notify ; then
+            aa-notify -p -s 1 -w 60 -f /var/log/audit/audit.log &
+        fi
+
         # start usb mount helper if installed
         if command -v udiskie ; then
             pgrep udiskie || udiskie -A -n -s --file-manager="$TERMINAL --working-directory " &
         fi
 
         # auto lock screen
-        if command -v xidlehook ; then
-            pgrep xidlehook || xidlehook --not-when-fullscreen --not-when-audio --timer 300 \
-                'pgrep i3lock || notify-send -t 10000 -- "LOCKING screen in 30 seconds"' '' --timer 30 '~/.local/bin/x11-lock' '' &
-        fi
+        # if command -v xidlehook ; then
+        #     pgrep xidlehook || xidlehook --not-when-fullscreen --not-when-audio --timer 300 \
+        #         'pgrep i3lock || notify-send -t 10000 -- "LOCKING screen in 30 seconds"' '' --timer 30 '~/.local/bin/x11-lock' '' &
+        # fi
 
         # disable dpms
         if command -v xset ; then
@@ -90,7 +99,8 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
 
         # set key repeat rate
         if command -v xset ; then
-            xset r rate 300 40
+            # delay speed
+            xset r rate 225 40
         fi
 
         # Map the caps lock key to Shift_L, but when it is pressed only once, treat it as escape.
@@ -104,17 +114,17 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
             xsetroot -cursor_name left_ptr
         fi
 
-        if command -v notify-send ; then
-            if grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
-                [ -f /etc/pacman.d/hooks/recompile-xmonad.hook ] || notify-send "Xmonad" "Pacman hook for Xmonad is not installed (see ~/.config/pacman/hooks)"
-            fi
-        fi
+#         if command -v notify-send ; then
+#             if grep "xmonad$" <<< "$DESKTOP_SESSION" >/dev/null; then
+#                 [ -f /etc/pacman.d/hooks/recompile-xmonad.hook ] || notify-send "Xmonad" "Pacman hook for Xmonad is not installed (see ~/.config/pacman/hooks)"
+#             fi
+#         fi
 
         # create a .xrandr file in your directory to set a custom resolution e.g. with content: 'xrandr -s 3440x1440 -r 120'
-        [[ -f ~/.xrandr ]] && sh ~/.xrandr
+        [[ -f ~/.xrandr ]] && bash ~/.xrandr
 
         # set wallpaper
-        $HOME/.local/bin/x11-wallpaper random
+        $HOME/.local/bin/x11-wallpaper random &
     fi
 elif [[ "$XDG_SESSION_TYPE" = "wayland" ]]; then
     if [[ "$XDG_SESSION_DESKTOP" != "KDE" ]]; then

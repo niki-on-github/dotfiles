@@ -19,17 +19,30 @@ module XMonad.Actions.NoSPCycleWS ( shiftAndView, nextNonEmptyWS, prevNonEmptyWS
 
 import XMonad
 import XMonad.Actions.CycleWS
+import XMonad.Actions.OnScreen
+import XMonad.Layout.IndependentScreens
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.WorkspaceCompare
 import qualified XMonad.StackSet as W
 
 
 -- XMonad.Actions.CycleWS functions which ignore Scratchpad
-shiftAndView dir = findWorkspace getSortByIndexNoSP dir EmptyWS 1
+shiftAndView dir = findWorkspace getSortByIndexNoSP dir (hiddenWS :&: emptyWS :&: currentScreenWS) 1
         >>= \t -> (windows . W.shift $ t) >> (windows . W.greedyView $ t)
-nextNonEmptyWS = findWorkspace getSortByIndexNoSP Next HiddenNonEmptyWS 1
+nextNonEmptyWS = findWorkspace getSortByIndexNoSP Next (hiddenWS :&: Not emptyWS :&: currentScreenWS) 1
         >>= \t -> (windows . W.view $ t)
-prevNonEmptyWS = findWorkspace getSortByIndexNoSP Prev HiddenNonEmptyWS 1
+prevNonEmptyWS = findWorkspace getSortByIndexNoSP Prev (hiddenWS :&: Not emptyWS :&: currentScreenWS) 1
         >>= \t -> (windows . W.view $ t)
 getSortByIndexNoSP =
-        fmap (.namedScratchpadFilterOutWorkspace) getSortByIndex
+        fmap (.filterOutWs [scratchpadWorkspaceTag]) getSortByIndex
+
+isOnScreen :: ScreenId -> WindowSpace -> Bool
+isOnScreen s ws = s == unmarshallS (W.tag ws)
+
+currentScreen :: X ScreenId
+currentScreen = gets (W.screen . W.current . windowset)
+
+currentScreenWS :: WSType
+currentScreenWS = WSIs $ do
+     s <- currentScreen
+     return $ \x -> W.tag x /= "NSP" && isOnScreen s x

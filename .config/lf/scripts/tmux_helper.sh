@@ -1,6 +1,14 @@
 #!/bin/bash
 
-TERMINAL_POSITION='left'
+CURRENT_PANE_WIDTH=$(echo "$(tmux lsp -F "#{pane_active} #{window_width}" | grep "^1 " | head -n1 | awk '{print $2}') * 1" | bc)
+CURRENT_PANE_HEIGHT=$(echo "$(tmux lsp -F "#{pane_active} #{window_height}" | grep "^1 " | head -n1 | awk '{print $2}') * 2" | bc)
+IS_WIDESCREEN=$(echo "2 * $CURRENT_PANE_HEIGHT < $CURRENT_PANE_WIDTH" | bc)
+
+if [ "$IS_WIDESCREEN" = "1" ]; then
+    TERMINAL_POSITION='right'
+else
+    TERMINAL_POSITION='bottom'
+fi
 
 current_path() {
     current_path=$(tmux lsp -F "#{pane_active} #{pane_current_path}" | grep "^1 " | head -n1)
@@ -40,14 +48,16 @@ cd_terminal() {
 
 split() {
     if [ "$(tmux lsp -F "#{pane_title}" | grep "^lf-pane-" | wc -l)" -ge "2" ] ; then
-        tmux killp -t 2
-        if [ "$TERMINAL_POSITION" = 'left' ] || [ "TERMINAL_POSITION" = 'right' ]; then
+        active_lf_pane_index=$(tmux lsp -F "#{pane_active} #{pane_index} #{pane_title}" | grep "lf-pane-" | grep "^1 " | awk '{print $2}')
+        [ -z "$active_lf_pane_index" ] && return
+        eval "tmux killp -t $active_lf_pane_index"
+        if [ "$TERMINAL_POSITION" = 'left' ] || [ "$TERMINAL_POSITION" = 'right' ]; then
             tmux select-layout even-horizontal
         fi
     else
         cd "$(current_path)"
         tmux split-window -h "exec lf"
-        if [ "$TERMINAL_POSITION" = 'left' ] || [ "TERMINAL_POSITION" = 'right' ]; then
+        if [ "$TERMINAL_POSITION" = 'left' ] || [ "$TERMINAL_POSITION" = 'right' ]; then
             tmux select-layout even-horizontal
         fi
     fi

@@ -1,15 +1,13 @@
 # newsboat url list
 # see: https://newsboat.org/releases/2.18/docs/newsboat.html
 # NOTE: use 't' shortcut to group rss feeds by tags
-# Remove '#' from seperator lines to add empty rss entries to newsboat
+# Youtube search in html inspector for "https://www.youtube.com/feeds/videos.xml?channel_id="
 
 # show group of unreaded article at top
+Filter
 "query:Unread Entries:unread = \"yes\"" "All"
 
-
-#------------------------------
-#------------Linux-------------
-#------------------------------
+Linux
 https://www.youtube.com/feeds/videos.xml?channel_id=UC2eYFnH61tmytImy1mTYvhA "~Luke Smith (YouTube)" "YouTube" "Linux" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCVls1GmFKf6WlTraIb_IaJg "~Distro Tube (YouTube)" "YouTube" "Linux" "All"
 https://www.youtube.com/feeds/videos.xml?user=OmegaDungeon "~Brodie Robertson (YouTube)" "YouTube" "Linux" "All"
@@ -25,7 +23,6 @@ https://www.youtube.com/feeds/videos.xml?channel_id=UClcE-kVhqyiHCcjYwcpfj9w "~L
 https://www.youtube.com/feeds/videos.xml?channel_id=UC_76XFUys5fTO7u_HqrD7aA "~Raspberry Pi Cloud (YouTube)" "YouTube" "Server" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCv7UOhZ2XuPwm9SN5oJsCjA "~Intermit.Tech (YouTube)" "YouTube" "Server" "All"
 https://www.youtube.com/feeds/videos.xml?user=renerebe "~Bits inside by René Rebe (YouTube)" "YouTube" "Linux" "All"
-# https://www.youtube.com/feeds/videos.xml?channel_id=UC4w1YQAJMWOz4qtxinq55LQ "~Level1Techs (YouTube)" "YouTube" "Server" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCX_WM2O-X96URC5n66G-hvw "~EF - Tech Made Simple (YouTube)" "YouTube" "Linux" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCfa7jJFYnn3P5LdJXsFkrjw "~STRG_F (YouTube)" "YouTube" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCxQKHvKbmSzGMvUrVtJYnUA "~LearnLinuxTV" "YouTube" "Linux"
@@ -33,18 +30,30 @@ https://www.youtube.com/feeds/videos.xml?channel_id=UCrjKdwxaQMSV_NDywgKXVmw "~N
 https://www.youtube.com/feeds/videos.xml?channel_id=UCoW_WzQNJVAjxo4osNAxd_g "~Venelin Valkov" "YouTube" "Deep Learning"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCFWYwf9rNEnL3mmNSNXSL3Q "~The Geek Freaks" "YouTube" "PC"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCYUjYU5FveRAscQ8V21w81A "~Murtaza's Workshop - Robotics and AI" "YouTube" "Python"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCHnyfMqiRRG1u-2MsSQLbXA "~Vertasium" "YouTube" "Science"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCfktJrwOB6C44HbRd4cPrBw "~AGTech" "YouTube" "Server"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCMiyV_Ib77XLpzHPQH_q0qQ "~Veronica Explains" "YouTube" "Linux"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCNwGa76xVVwdEVToRZBIUIg "~Denshi" "YouTube" "Linux" "Server"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCV0qA-eDDICsRR9rPcnG7tw "~Joma Tech" "YouTube" "Coding"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCnBQ7GosWO57aTpm2wR7Q7Q "~Teqqyde" "YouTube" "Server"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCmyGZ0689ODyReHw3rsKLtQ "~Michael Tunnell - TuxDigital" "YouTube" "Linux"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCZNhwA1B5YqiY1nLzmM0ZRg "~The Digital Life" "YouTube" "Network"
+https://www.youtube.com/feeds/videos.xml?channel_id=UC1szFCBUWXY3ESff8dJjjzw "~Loi Liang Yang" "YouTube" "Network Security"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCVy16RS5eEDh8anP8j94G2A "~DB Tech" "YouTube" "Network"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCJJcYMolz1VdDFrL6hYdDcQ "~ElectronicsWizardry" "YouTube" "Server"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCE2hJ9CYR57BYhk3TjGVG6w "~Breaking Lab" "YouTube" "News"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCi1Rgm2ulItUOagasB3B8sg "~Jan Lunge" "YouTube" "Linux"
+https://www.youtube.com/feeds/videos.xml?channel_id=UChIZGfcnjHI0DG4nweWEduw "~Tech Source" "YouTube" "PC"
+https://www.youtube.com/feeds/videos.xml?channel_id=UCk5cNWK8X37UOB3nbOd6P5g "~Norio" "YouTube" "Science"
+https://www.youtube.com/feeds/videos.xml?channel_id=UC3S8vxwRfqLBdIhgRlDRVzw "~stacksmashing" "YouTube" "Security"
+https://www.youtube.com/feeds/videos.xml?channel_id=UC1yNl2E66ZzKApQdRuTQ4tw "~Sabine Hossenfelder" "YouTube" "Science"
 
-#------------------------------
-#------------Reddit------------
-#------------------------------
-https://www.reddit.com/r/xmonad.rss "~xmonad (Reddit)" "Reddit" "Linux" "All"
-#https://www.reddit.com/r/unixporn.rss "~UnixPorn (Reddit)" "Reddit" "Linux" "All"
-#https://www.reddit.com/r/homelab/search.rss?q=flair:'LabPorn'&sort=new&restrict_sr=on&feature=legacy_search "~LabPorn (Reddit)" "Reddit" "Hardware" "All"
+Reddit
+https://www.reddit.com/r/xmonad.rss "~Xmonad (Reddit)" "Reddit" "Linux" "All"
+https://www.reddit.com/r/qtile.rss "~Qtile (Reddit)" "Reddit" "Linux" "All"
+https://www.reddit.com/r/homelab/search.rss?q=flair:'LabPorn'&sort=new&restrict_sr=on&feature=legacy_search "~LabPorn (Reddit)" "Reddit" "Hardware" "All"
 
-
-#------------------------------
-#-------------Tech-------------
-#------------------------------
+Tech
 https://www.youtube.com/feeds/videos.xml?user=LinusTechTips "~Linus Tech Tips (YouTube)" "YouTube" "Tech" "All"
 https://www.youtube.com/feeds/videos.xml?user=randomfrankp "~RandomFrankP (YouTube)" "YouTube" "Tech" "All"
 https://www.youtube.com/feeds/videos.xml?user=homergfunk "~Chris Titus Tech (YouTube)" "YouTube" "Tech" "All"
@@ -55,37 +64,24 @@ https://www.youtube.com/feeds/videos.xml?channel_id=UCgTNupxATBfWmfehv21ym-g "~N
 https://www.youtube.com/feeds/videos.xml?channel_id=UCKGMHVipEvuZudhHD05FOYA "~Simplicissimus" "YouTube"
 
 
-#------------------------------
-#------------Science-----------
-#------------------------------
+Science
 https://www.youtube.com/feeds/videos.xml?channel_id=UC5E9-r42JlymhLPnDv2wHuA "~Terra X Lesch (YouTube)" "YouTube" "Science" "All"
 
 
-#------------------------------
-#--------VritualReality--------
-#------------------------------
+VritualReality
 https://www.youtube.com/feeds/videos.xml?channel_id=UC3ok91FKp_SAtxhz63Ti3KQ "~VoodooDE VR (YouTube)" "YouTube" "VirtualReality" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCiJu5YJd6z3EhWs_iT-6Sfw "~MRTV Deutsch (YouTube)" "YouTube" "VirtualReality" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UC08ETVtkwdYwGxtfSCVl88w "~MRTV Business (YouTube)" "YouTube" "VirtualReality" "All"
 https://mixed.de/feed/ "~MIXED" "News" "VirtualReality" "All"
 
-
-#------------------------------
-#------------Comedy------------
-#------------------------------
+Comedy
 https://www.youtube.com/feeds/videos.xml?channel_id=UCw81xLtFkpks4D8_hYUP9VA "~Varion (YouTube)" "YouTube" "Comedy" "All"
 https://www.youtube.com/feeds/videos.xml?channel_id=UCFqcNI0NaAA21NS9W3ExCRg "~ZDF heute-show (YouTube)" "YouTube" "Comedy" "All"
 
-
-#------------------------------
-#------------Biking------------
-#------------------------------
+Biking
 https://www.youtube.com/feeds/videos.xml?user=fabwibmer "~Fabio Wibmer (YouTube)" "YouTube" "Biking" "All"
 
-
-#------------------------------
-#--------------News------------
-#------------------------------
+News
 https://www.archlinux.org/feeds/news/ "~Arch Linux News" "News" "All"
 https://www.heise.de/rss/heise-atom.xml "~Heise Online News" "News" "All"
 https://rss.golem.de/rss.php?feed=RSS2.0 "~Golem" "News" "All"

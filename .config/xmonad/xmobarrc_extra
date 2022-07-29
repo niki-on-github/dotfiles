@@ -4,8 +4,8 @@
 Config  {
 
     -- apperance
-    font = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
-    , additionalFonts = ["xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"]  -- <fn=1>
+    font = "xft:Noto Sans Mono:pixelsize=24:antialias=true:hinting=true"
+    , additionalFonts = ["xft:Noto Sans Mono:pixelsize=24:antialias=true:hinting=true"]  -- <fn=1>
     , border = BottomB
     , borderColor = "#1d99f3"
     , borderWidth = 3
@@ -23,7 +23,7 @@ Config  {
     -- layout
     , sepChar = "%"  -- delineator between plugin names and straight text
     , alignSep = "}{"  -- separator between left-right alignment
-    , template = "<fn=1>%UnsafeStdinReader%</fn> }{ "
+    , template = "<fn=1>%UnsafeStdinReader%</fn> }{ %date% "
 
     -- general behavior
     , lowerOnStart = True      -- send to bottom of window stack on start
@@ -36,7 +36,10 @@ Config  {
     -- plugins
     , commands = [
 
+        -- time and date indicator
+        Run Date "%H:%M:%S" "date" 10
+
         -- clickable workspaces
-        Run UnsafeStdinReader
+        , Run UnsafeStdinReader
     ]
 }

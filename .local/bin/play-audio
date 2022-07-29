@@ -1,5 +1,6 @@
 #!/bin/sh
 # Description: play local audio file with mpd
+# TODO: if music is inside the library and was added after an database update this do method fails
 
 usage() {
 [ -z "${1}" ] || echo -e "\033[0;31mERROR: ${1}\033[0m\n"
@@ -24,14 +25,14 @@ play () {
     if [ -z "$(mpc current)" ]; then # nothing playing
         if [ -z "$(mpc playlist)" ]; then # playlist empty
             mpc add "file://${link}"
-            mpc play 
+            mpc play
         else # playlist not empty so clear add file and play
             mpc clear
 	        mpc add "file://${link}"
-            mpc play 
+            mpc play
 	    fi
     else # audio playing insert file and play it
-        mpc insert "file://${link}" 
+        mpc insert "file://${link}"
 	    mpc next
     fi
 }

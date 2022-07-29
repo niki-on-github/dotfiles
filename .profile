@@ -3,6 +3,8 @@
 # set zsh config directory
 export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 
+export PATH="$HOME/.local/bin:${PATH}"
+
 # base environment variables
 export BROWSER="firefox"
 export COLORTERM="truecolor"
@@ -16,8 +18,15 @@ export READER_GUI="firefox"
 export TERMINAL="alacritty"
 export VISUAL="nvim"
 export XCURSOR_THEME="breeze_cursors"
-export WALLPAPER_PATH="$HOME/Nextcloud/Pictures/Backgrounds/21_9"
+export WALLPAPER_PATH="$HOME/Bilder/Wallpaper"
 export LESSHISTFILE=-
+
+# set make threads
+export MAKEFLAGS="-j$(expr $(nproc) \+ 1)"
+
+# HDPI config
+export GDK_DPI_SCALE=1.4
+export QT_SCALE_FACTOR=1.4
 
 # python
 export PYTHONDONTWRITEBYTECODE=1

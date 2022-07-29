@@ -13,6 +13,7 @@ import System.IO (Handle)
 import XMonad.Actions.CopyWindow
 import XMonad.Actions.DwmPromote
 import XMonad.Actions.FloatSnap
+import XMonad.Actions.Promote
 import XMonad.Actions.Submap
 import XMonad.Actions.SwapWorkspaces
 import XMonad.Actions.TagWindows
@@ -20,20 +21,24 @@ import XMonad.Actions.Warp
 import XMonad.Actions.WindowBringer
 import XMonad.Actions.WithAll
 import XMonad.Actions.WorkspaceNames (getWorkspaceNames', renameWorkspace)
+import XMonad.Actions.PhysicalScreens
 
 import XMonad.Config.Desktop
 
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.DynamicBars
+import XMonad.Hooks.StatusBar
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.RefocusLast
 import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.XPropManage
+import XMonad.Hooks.SetWMName
 
 import XMonad.Layout.BoringWindows
 import XMonad.Layout.Column
+import XMonad.Layout.Decoration
 import XMonad.Layout.Gaps
 import XMonad.Layout.Groups
 import XMonad.Layout.Hidden
@@ -61,6 +66,8 @@ import XMonad.Util.Paste
 import XMonad.Util.Run
 import XMonad.Util.SpawnOnce
 import XMonad.Util.WorkspaceCompare
+import XMonad.Util.WindowProperties
+import XMonad.Util.XUtils(stringToPixel)
 
 import XMonad.Prompt
 import XMonad.Prompt.ConfirmPrompt
@@ -70,15 +77,14 @@ import XMonad.Prompt.Window
 
 import qualified Data.Map as M
 import qualified XMonad.StackSet as W
-import qualified Data.HashTable.IO as H
 
 -- ./lib
 import XMonad.Actions.NoSPCycleWS
 import XMonad.Layout.HorizontalMaster
 import XMonad.Layout.MyPerScreen
 import XMonad.Layout.MySpacing
-import XMonad.Prompt.Tmux
 import XMonad.Util.MyNamedScratchpad
+import XMonad.Operations (float)
 
 
 ------------------------------------------------------------------------
@@ -97,9 +103,9 @@ myFocusFollowsMouse = True
 myClickJustFocuses :: Bool
 myClickJustFocuses = False
 
-myBorderWidth = 2
-myGaps = 4
-myStatusbarHeight = 27
+myBorderWidth = 3
+myGaps = 5
+myStatusbarHeight = 27  -- for prompt theme
 
 -- NOTE: mod1Mask: left alt key, mod4Mask: windows key
 myModMask = mod1Mask
@@ -121,7 +127,8 @@ enableSystray :: Bool
 enableSystray = True
 
 trayerCommand :: String
-trayerCommand = "trayer --edge top --align right --padding 2 --distance 1 --widthtype request --SetDockType true --SetPartialStrut false --expand true --transparent true --alpha 0 --tint 0x171717 --height 22"
+-- trayerCommand = "trayer --edge top --align right --padding 2 --distance 1 --widthtype request --SetDockType true --SetPartialStrut false --expand true --transparent true --alpha 0 --tint 0x171717 --height 30"
+trayerCommand = "trayer --edge top --align right --padding 2 --distance 1 --widthtype request --SetDockType true --SetPartialStrut false --expand true --transparent true --alpha 0 --tint 0x171717 --height 29"
 
 xmobarToggleCommand :: String
 xmobarToggleCommand = "dbus-send --session --dest=org.Xmobar.Control --type=method_call '/org/Xmobar/Control' org.Xmobar.Control.SendSignal \"string:Toggle 0\""
@@ -216,10 +223,55 @@ toggleFloatCenter :: Window -> X ()
 toggleFloatCenter w = windows (\s -> if M.member w (W.floating s)
     then W.sink w s else (W.float w (W.RationalRect 0.25 0.1 0.5 0.8) s))
 
-toggleSticky :: X ()
-toggleSticky = do
-    copies <- wsContainingCopies
-    if null copies then windows copyToAll else killAllOtherCopies
+-- isOnScreen :: ScreenId -> WindowSpace -> Bool
+-- isOnScreen s ws = s == unmarshallS (W.tag ws)
+
+-- currentScreen :: X ScreenId
+-- currentScreen = gets (W.screen . W.current . windowset)
+
+-- -- | Get a list of all workspaces in the 'StackSet'.
+-- workspaces2 :: W.StackSet i l a s sd -> [W.Workspace i l a]
+-- workspaces2 s = W.workspace (W.current s) : map W.workspace (W.visible s)
+
+-- -- | Copy the focused window to all workspaces.
+-- copyToAll2 :: (Eq s, Eq i, Eq a) => W.StackSet i l a s sd -> W.StackSet i l a s sd
+-- copyToAll2 s = foldr (copy . W.tag) s (workspaces2 s)
+
+-- toggleSticky :: X ()
+-- toggleSticky = do
+--     copies <- wsContainingCopies
+--     if null copies then sequence_ $ [windows $ copy i | i <- (Just $ screenWorkspace 0)] else killAllOtherCopies
+
+-- toggleSticky :: X ()
+-- toggleSticky = do
+--     copies <- wsContainingCopies
+--     i <- screenWorkspace 0
+--     case i of
+--         Just j -> if null copies then sequence_ $ [windows $ copy j] else killAllOtherCopies
+
+-- toggleSticky :: X ()
+-- toggleSticky = do
+--     withFocused $ float
+
+-- toggleSticky :: WindowSet -> X ()
+-- toggleSticky cnf = do
+--     copies <- wsContainingCopies
+--     -- xs <- (workspaces' cnf)
+--     if null copies then sequence_ $ [windows $ onCurrentScreen copy i | x <- (workspaces' cnf), i <- x ] else killAllOtherCopies
+
+layoutName :: Query String
+layoutName = liftX $ gets (description . W.layout . W.workspace . W.current . windowset)
+
+isFullscreenQuery :: Query Bool
+isFullscreenQuery = layoutName =? "[Full]"
+
+toggleWidescreenGaps :: Window -> X ()
+toggleWidescreenGaps w = do
+    whenX (runQuery isFullscreenQuery w) $ sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL
+    whenX (runQuery (isFullscreenQuery =? False) w) $ XMonad.Layout.MySpacing.toggleAuto16x9SpacingEnabled -- check if current ratio is full
+
+
+
 
 myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
@@ -229,7 +281,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. shiftMask,       xK_d        ), spawn "sudo -A $HOME/.config/dmenu/scripts/dmenu_apps.sh" )
     , ((modm .|. shiftMask,       xK_period   ), spawn "$HOME/.config/dmenu/scripts/dmenu_edit.sh" )
     , ((modm .|. shiftMask,       xK_u        ), spawn "$HOME/.config/dmenu/scripts/dmenu_unicode.sh" )
-    , ((modm .|. shiftMask,       xK_v        ), spawn "$HOME/.config/dmenu/scripts/dmenu_virtualbox.sh" )
+    , ((modm .|. shiftMask,       xK_v        ), spawn "$HOME/.config/dmenu/scripts/dmenu_kvm.sh" )
     , ((modm .|. shiftMask,       xK_e        ), spawn "$HOME/.config/dmenu/scripts/dmenu_shutdown.sh" )
     , ((modm .|. shiftMask,       xK_o        ), spawn "$HOME/.config/dmenu/scripts/dmenu_scripts.sh" )
     , ((modm,                     xK_c        ), spawn "$HOME/.config/dmenu/scripts/dmenu_clipboard.sh" )
@@ -247,11 +299,14 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- , ((modm .|. shiftMask,       xK_b        ), spawn "$HOME/.local/bin/x11-wallpaper choice" )
     , ((modm .|. shiftMask,       xK_l        ), spawn "$HOME/.local/bin/x11-lock --fast" )
     , ((0,                        xK_Print    ), spawn "$HOME/.local/bin/screenshot" )
+    , ((modm             ,        xK_v        ), spawn "$HOME/.local/bin/vpn-firefox" )
     , ((shiftMask,                xK_Print    ), spawn "flameshot gui" )
+    , ((modm,                     xK_e        ), spawn (myTerminal ++ " -e tmux -f ${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf new-session lf") )
     , ((modm,                     xK_Tab      ), sendMessage NextLayout )
     , ((modm .|. shiftMask,       xK_space    ), withFocused $ windows . W.sink )
-    , ((modm,                     xK_f        ), ifFocusedWindowClass "mpv" (ifFocusedWindowFloating (sendKey noModMask xK_f) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL)) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL) )
-    , ((modm .|. shiftMask,       xK_f        ), withFocused toggleFloatCenter )
+    , ((modm,                     xK_f        ), ifFocusedWindowClass "mpv" (ifFocusedWindowFloating (sequence_[sendKey noModMask xK_f, windows W.shiftMaster]) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL)) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL) )
+    -- , ((modm .|. shiftMask,       xK_f        ), withFocused toggleFloatCenter )
+    , ((modm .|. shiftMask,       xK_f        ), toggleFloat )
     , ((modm .|. shiftMask,       xK_F5       ), setLayout $ XMonad.layoutHook conf )  -- reset to layout default setting
     , ((modm,                     xK_r        ), XMonad.Layout.MySpacing.triggerResizeEvent )
     , ((modm .|. controlMask,     xK_f        ), gotoMenuArgs ["-l", "20"] )
@@ -266,7 +321,10 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm,                     xK_l        ), sendMessage Expand )
     , ((modm .|. shiftMask,       xK_plus     ), sendMessage (IncMasterN 1) )
     , ((modm .|. shiftMask,       xK_minus    ), sendMessage (IncMasterN (-1)) )
+    -- , ((modm,                     xK_g        ), withFocused toggleWidescreenGaps )  -- toggle widscreen gaps
     , ((modm,                     xK_g        ), XMonad.Layout.MySpacing.toggleAuto16x9SpacingEnabled )  -- toggle widscreen gaps
+    -- , ((modm,                     xK_g        ), sendMessage $ Toggle SMARTGAPS )  -- toggle widscreen gaps
+    -- , ((modm,                     xK_g        ), sequence_[ sendMessage $ Toggle NOTHING, XMonad.Layout.MySpacing.toggleAuto16x9SpacingEnabled] )  -- toggle widscreen gaps
     , ((modm .|. shiftMask,       xK_s        ), toggleSticky )
     , ((modm,                     xK_t        ), namedScratchpadAction myScratchPads "todo-list" )
     , ((modm .|. shiftMask,       xK_m        ), namedScratchpadAction myScratchPads "ncmpcpp" )
@@ -319,7 +377,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((0, xK_MediaPrev                     ), spawn "$HOME/.local/bin/music-control prev" )
 
     -- xmonad control
-    -- , ((modm .|. shiftMask,     xK_e        ), confirmPrompt warningPromptTheme "Quit XMonad" $ io (exitWith ExitSuccess) )
+    -- , ((modm .|. shiftMask,     xK_e        ),xmonad independent screens copywindow confirmPrompt warningPromptTheme "Quit XMonad" $ io (exitWith ExitSuccess) )
 
     , ((modm,                   xK_q        ), XMonad.Actions.CopyWindow.kill1) --  Remove the focused window from this workspace. If it is last window copy, then kill it instead.
     , ((modm .|. shiftMask,     xK_q        ), confirmPrompt warningPromptTheme "kill all" $ XMonad.Actions.WithAll.killAll ) -- Kill all windows on current workspace
@@ -389,30 +447,21 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 -- Note: If you change layout be sure to use 'setLayout $ XMonad.layoutHook conf' from keybindings after restarting
 -- to reset your layout state to the new defaults, as xmonad preserves your old layout settings by default.
 
-data NoBordersOnSingleWindows = NoBordersOnSingleWindows deriving (Read, Show)
-
--- TODO fullsreen windows should not have borders if other windows exist on current workspace
-instance SetsAmbiguous NoBordersOnSingleWindows where
-    hiddens _ wset _ _ _ = catMaybes
-        $ map (\scr -> case W.integrate' $ W.stack $ W.workspace scr of
-            [a] -> if a `elem` (M.keys $ W.floating wset) then Nothing else Just a
-            [a,b] -> if not(a `elem` (M.keys $ W.floating wset)) && not(b `elem` (M.keys $ W.floating wset)) then Nothing else (
-                if a `elem` (M.keys $ W.floating wset) && b `elem` (M.keys $ W.floating wset) then Nothing else (
-                    if a `elem` (M.keys $ W.floating wset) then Just b else Just a
-                    )
-                )
-            _   -> Nothing
-        ) (W.current wset : W.visible wset)
 
 enableTabs x = renamed [(XMonad.Layout.Renamed.CutWordsLeft 1)] $ addTabs shrinkText myTabTheme $ subLayout [] Simplest x
 data ENABLETABS = ENABLETABS deriving (Read, Show, Eq, Typeable)
 instance Transformer ENABLETABS Window where
     transform ENABLETABS x k = k (enableTabs x) (const x)
 
--- on multi monitor setup smartBorders do not work for me
--- myLayout = lessBorders NoBordersOnSingleWindows $ boringAuto $ prefixed "[" $ suffixed "]" $ navigation $ avoidStruts $ fullScreenToggle $ enableTabs $ enableHiddenWindows $ layoutSelector1 wideLayouts (layoutSelector2 verticalLayouts standardLayouts)
+data SMARTGAPS = SMARTGAPS deriving (Read, Show, Eq, Typeable)
+instance Transformer SMARTGAPS Window where
+    transform SMARTGAPS x k = k ( XMonad.Layout.MySpacing.auto16x9Spacing True (Border myGaps myGaps myGaps myGaps) (Border myGaps myGaps myGaps myGaps) x) (\_ -> x)
 
-myLayout = smartBorders $ boringAuto $ prefixed "[" $ suffixed "]" $ navigation $ avoidStruts $ fullScreenToggle $ enableTabs $ enableHiddenWindows $ layoutSelector1 wideLayouts (layoutSelector2 verticalLayouts standardLayouts)
+data NOTHING = NOTHING deriving (Read, Show, Eq, Typeable)
+instance Transformer NOTHING Window where
+    transform NOTHING x k = k (x) (\_ -> x)
+
+myLayout = lessBorders Screen $ boringAuto $ prefixed "[" $ suffixed "]" $ navigation $ avoidStruts $ enableTabs $ enableHiddenWindows $ fullScreenToggle $ layoutSelector1 wideLayouts (layoutSelector2 verticalLayouts standardLayouts)
 
   where
     -- first layout is default
@@ -421,6 +470,7 @@ myLayout = smartBorders $ boringAuto $ prefixed "[" $ suffixed "]" $ navigation 
     verticalLayouts = vertical
 
     -- wide screen Layouts
+    -- wHL                   = named "HL"        $ mkToggle (NOTHING ?? FULL ?? EOT) $ widescreenGaps $ ColMasterLeft 2 (2/100) (2/3)
     wHL                   = named "HL"        $ widescreenGaps $ ColMasterLeft 2 (2/100) (2/3)
     wHR                   = named "HR"        $ widescreenGaps $ ColMasterRight 1 (2/100) (2/3)
     wThreeColMid          = named "3ColMid"   $ widescreenGaps $ ThreeColMid 1 (2/100) (2/5)
@@ -445,8 +495,8 @@ myLayout = smartBorders $ boringAuto $ prefixed "[" $ suffixed "]" $ navigation 
     widescreenGaps        = XMonad.Layout.MySpacing.auto16x9Spacing True (Border myGaps myGaps myGaps myGaps) (Border myGaps myGaps myGaps myGaps)
     standardGaps          = XMonad.Layout.Spacing.spacingRaw True (Border halfGaps halfGaps halfGaps halfGaps) True (Border myGaps myGaps myGaps myGaps) True
     halfGaps              = (div myGaps 2) + 1
-    layoutSelector1        = XMonad.Layout.MyPerScreen.ifWideScreen
-    layoutSelector2        = XMonad.Layout.MyPerScreen.ifVerticalScreen
+    layoutSelector1       = XMonad.Layout.MyPerScreen.ifWideScreen
+    layoutSelector2       = XMonad.Layout.MyPerScreen.ifVerticalScreen
     navigation x          = configurableNavigation noNavigateBorders $ boringWindows x
     fullScreenToggle x    = mkToggle (single FULL) x
 
@@ -491,13 +541,14 @@ myScratchPads = [ NS "todo-list" spawnTodo findTodo manageTodo
 -- Note: WM_NAME = title, second part of WM_CLASS = className, first part of WM_CLASS = resource
 
 myWindowRules = composeAll
-    [ isFullscreen                  --> doFullFloat
+    [ isFullscreen                  --> doFullFloat <+> doF W.shiftMaster
     , isDialog                      --> doCenterFloat
     , matchAny "floating"           --> doFloat <+> doF W.focusDown
-    , className =? "mpv"            --> doFloat
+    , className =? "mpv"            --> doFloat <+> hasBorder False
     , matchAny "no-focus"           --> doF W.focusDown
     , matchAny "pop-up"             --> doCenterFloat
     , matchAny "dialog"             --> doCenterFloat
+    , matchAny "Xdialog"            --> doCenterFloat
     , matchAny "menu"               --> doCenterFloat
     , matchAny "center"             --> doCenterFloat
     ]
@@ -526,17 +577,26 @@ xPropMatches = [ ([ (wM_CLASS, any ("firefox" ==)) ], pmX (addTag "browser")) ]
 -- STARTUP HOOK
 -- Description: my startup application for the xmonad environment
 
+
+
 myStartupHook = do
     setDefaultCursor xC_left_ptr  -- set mouse cursor
     if enableSystray then spawn ("pkill trayer; sleep 1 && " ++ trayerCommand) else spawn ("pkill trayer")  -- load trayer
     dynStatusBarStartup myxmobar xmobarCleanup
+    -- sendMessage $ SetTheme myTheme -- TODO
+
+    -- the next four lines assing the startup screens to my dual monitor setup
+    screenWorkspace 1 >>= flip whenJust (windows . W.view)
+    windows $ W.greedyView "1_1"
+    screenWorkspace 0 >>= flip whenJust (windows . W.view)
+    windows $ W.greedyView "0_1"
 
 myxmobar :: ScreenId -> IO Handle
 myxmobar s@(S i) = spawnPipe $
   unwords
     [ "xmobar",
       "-x", show i,
-      if i == 0 then "~/.config/xmobar/xmobarrc_main" else "~/.config/xmobar/xmobarrc_extra"
+      if i == 0 then "~/.config/xmonad/xmobarrc_main" else "~/.config/xmonad/xmobarrc_extra"
     ]
 
 xmobarCleanup :: MonadIO m => m ()
@@ -568,7 +628,7 @@ logHook' = multiPP currentScreenPP nonCurrentScreenPP
         composePP pp s = do
             names <- getWorkspaceNames (marshall s)
             pure
-                . namedScratchpadFilterOutWorkspacePP
+                . filterOutWsPP [scratchpadWorkspaceTag]
                 . marshallPP s
                 $ pp {
                     ppCurrent         = ppCurrent         pp . names,
@@ -584,6 +644,7 @@ logHook' = multiPP currentScreenPP nonCurrentScreenPP
                 ppCurrent = xmobarColor myForegroundColor myFocusedBorderColor . clickWorkspace " " " ",
                 ppHidden  = xmobarColor myForegroundColor "" . clickWorkspace " " " ",
                 ppTitle   = xmobarColor myForegroundColor "" . shorten 64,
+                ppUrgent  = xmobarColor myUrgentColor "" . clickWorkspace " " " ",
                 ppSep     = " : ",
                 ppWsSep   = "",
                 ppLayout  = xmobarColor myForegroundColor ""
@@ -620,90 +681,93 @@ instance UrgencyHook LibNotifyUrgencyHook where
 -- Description: automatically leave the fullscreen mode when a fullscreen app has been closed
 --              and automatically force fullscreen Layout for specified applications
 
-layoutName :: Query String
-layoutName = liftX $ gets (description . W.layout . W.workspace . W.current . windowset)
+-- layoutName :: Query String
+-- layoutName = liftX $ gets (description . W.layout . W.workspace . W.current . windowset)
 
-isFullscreenQuery :: Query Bool
-isFullscreenQuery = layoutName =? "[Full]"
+-- isFullscreenQuery :: Query Bool
+-- isFullscreenQuery = layoutName =? "[Full]"
 
-setFullscreenQuery :: Query Bool
-setFullscreenQuery = className =? "looking-glass-client"
+-- setFullscreenQuery :: Query Bool
+-- setFullscreenQuery = className =? "looking-glass-client"
 
-myFullscreenLayoutEventHook :: H.BasicHashTable Window String -> Event -> X All
+-- myFullscreenLayoutEventHook :: H.BasicHashTable Window String -> Event -> X All
 
-myFullscreenLayoutEventHook windowHashTable (MapNotifyEvent {ev_window = window}) = do
-    -- set layout to FULLSCREEN for specified applications
-    whenX (runQuery setFullscreenQuery window)
-        $ whenX (runQuery (isFullscreenQuery =? False) window)
-        $ sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL
-    return $ All True
+-- myFullscreenLayoutEventHook windowHashTable (MapNotifyEvent {ev_window = window}) = do
+--     -- set layout to FULLSCREEN for specified applications
+--     whenX (runQuery setFullscreenQuery window)
+--         $ whenX (runQuery (isFullscreenQuery =? False) window)
+--         $ sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL
+--     return $ All True
 
-myFullscreenLayoutEventHook windowHashTable (ConfigureEvent {ev_window = window, ev_above = above}) = do
-    -- get className of window
-    cname <- runQuery className window
+-- myFullscreenLayoutEventHook windowHashTable (ConfigureEvent {ev_window = window, ev_above = above}) = do
+--     -- get className of window
+--     cname <- runQuery className window
 
-    -- add window to windowHashTable if current Layout is FULLSCREEN and window is not a Dialog
-    whenX (runQuery isFullscreenQuery window)
-        $ whenX (runQuery (isDialog =? False) window)
-        $ when (cname /= "trayer")
-        $ (io $ H.insert windowHashTable window cname)
+--     -- add window to windowHashTable if current Layout is FULLSCREEN and window is not a Dialog
+--     whenX (runQuery isFullscreenQuery window)
+--         $ whenX (runQuery (isDialog =? False) window)
+--         $ when (cname /= "trayer")
+--         $ (io $ H.insert windowHashTable window cname)
 
-    -- remove entry if current Layout is not FULLSCREEN
-    whenX (runQuery (isFullscreenQuery =? False) window) $ do
-        entry <- io $ (H.lookup windowHashTable window)
-        case entry of
-            Just e -> do
-                io $ H.delete windowHashTable window
-                return ()
-            _ -> return ()
+--     -- remove entry if current Layout is not FULLSCREEN
+--     whenX (runQuery (isFullscreenQuery =? False) window) $ do
+--         entry <- io $ (H.lookup windowHashTable window)
+--         case entry of
+--             Just e -> do
+--                 io $ H.delete windowHashTable window
+--                 return ()
+--             _ -> return ()
 
-    return $ All True
+--     return $ All True
 
-myFullscreenLayoutEventHook windowHashTable (DestroyWindowEvent {ev_event = eventId, ev_window = window}) = do
-    -- query on properties of destroyed window is not possible, so we check the fullscreen windows in windowHashTable
-    -- first ceck that the event is actually about closing a window
-    when (eventId == window) $ do
-        entry <- io $ (H.lookup windowHashTable window)
-        case entry of
-            Just e -> do
-                whenX (runQuery isFullscreenQuery window) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL)
-                io $ H.delete windowHashTable window
-                return ()
-            _ -> return ()
+-- myFullscreenLayoutEventHook windowHashTable (DestroyWindowEvent {ev_event = eventId, ev_window = window}) = do
+--     -- query on properties of destroyed window is not possible, so we check the fullscreen windows in windowHashTable
+--     -- first ceck that the event is actually about closing a window
+--     when (eventId == window) $ do
+--         entry <- io $ (H.lookup windowHashTable window)
+--         case entry of
+--             Just e -> do
+--                 whenX (runQuery isFullscreenQuery window) (sendMessage $ XMonad.Layout.MultiToggle.Toggle FULL)
+--                 io $ H.delete windowHashTable window
+--                 return ()
+--             _ -> return ()
 
-    return $ All True
+--     return $ All True
 
-myFullscreenLayoutEventHook windowHashTable evt = refocusLastWhen refocusingIsActive evt
-
+-- myFullscreenLayoutEventHook windowHashTable evt = refocusLastWhen refocusingIsActive evt
 
 ------------------------------------------------------------------------
--- REMOVE BORDER
--- Description: remove the border from (floating) mpv
+-- BORDER COLORS
+-- Description: change border color for windows that using a network namespace
 
-removeBorderQuery :: Query Bool
-removeBorderQuery = className =? "mpv"
+setWindowBorderColor :: Window -> String -> X ()
+setWindowBorderColor w col = do
+    d <- asks display
+    px <- stringToPixel d col
+    setWindowBorderWithFallback d w col px
 
-removeBorder :: Window -> X ()
-removeBorder ws = withDisplay $ \d -> mapM_ (\w -> io $ setWindowBorderWidth d w 0) [ws]
+setBorder :: Window -> Dimension -> X ()
+setBorder ws val = withDisplay $ \d -> mapM_ (\w -> io $ setWindowBorderWidth d w val) [ws]
 
--- NOTE: Does not work if second window is floating!
-addSmartBorder :: Window -> X ()
-addSmartBorder ws = do
-    winCount <- length . W.index . windowset <$> get
-    if winCount > 1
-    then withDisplay $ \d -> mapM_ (\w -> io $ setWindowBorderWidth d w myBorderWidth) [ws]
-    else return()
+networkNamespaceBorder :: Window -> X ()
+networkNamespaceBorder window = do
+    pid <- getProp32s "_NET_WM_PID" window
+    case pid of
+        Just [p] -> do
+            let pidstring = show p
+            response <- runProcessWithInput "is-network-ns" [pidstring] ""
+            -- when (response == "yes") (setBorder window myBorderWidth) -- override smart borders for this window types
+            when (response == "yes") (setWindowBorderColor window "#00ff00")
+            return ()
 
-myBorderEventHook :: Event -> X All
+myBorderColorEventHook :: Event -> X All
+myBorderColorEventHook (AnyEvent {ev_event_type = et}) = do
+    when (et == focusOut) $
+        withFocused $ \windowId -> do
+            networkNamespaceBorder windowId
+    return (All True)
 
-myBorderEventHook (ConfigureEvent {ev_window = window, ev_above = above}) = do
-    --whenX (runQuery removeBorderQuery window) (ifFloating window (removeBorder window) (addSmartBorder window))
-    whenX (runQuery removeBorderQuery window) (ifFloating window (removeBorder window) (return()))
-    -- refresh required to get correct mpv position
-    whenX (runQuery removeBorderQuery window) (refresh)
-    return $ All True
-
-myBorderEventHook _ = return $ All True
+myBorderColorEventHook _ = return (All True)
 
 
 ------------------------------------------------------------------------
@@ -727,8 +791,8 @@ myRoundCornerEventHook _ = return $ All True
 
 main = do
     nScreens <- countScreens
-    fullscrenWindowHashTable <- H.new :: IO(H.BasicHashTable Window String)
-    xmonad $ docks $ withUrgencyHook LibNotifyUrgencyHook $ ewmh desktopConfig {
+    -- fullscrenWindowHashTable <- H.new :: IO(H.BasicHashTable Window String)
+    xmonad $ docks $ withUrgencyHook LibNotifyUrgencyHook $ ewmhFullscreen $ ewmh desktopConfig {
         manageHook         = myManageHook,
         workspaces         = withScreens nScreens myWorkspaces,
         logHook            = refocusLastLogHook <+> logHook',
@@ -744,10 +808,8 @@ main = do
         mouseBindings      = myMouseBindings,
         layoutHook         = myLayout,
         startupHook        = myStartupHook,
-        handleEventHook    = fullscreenEventHook  -- EwmhDesktops
-                                <+> refocusLastWhen (refocusingIsActive <||> isFloat)
-                                <+> myBorderEventHook
+        handleEventHook    = refocusLastWhen (refocusingIsActive <||> isFloat)
                                 <+> myRoundCornerEventHook
-                                <+> myFullscreenLayoutEventHook fullscrenWindowHashTable
+                                <+> myBorderColorEventHook
     }
 

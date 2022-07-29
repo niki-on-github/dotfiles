@@ -5,16 +5,18 @@
 
 [ -z "$SUDO_ASKPASS" ] && notify-send "Warning" "Environment variable \$SUDO_ASKPASS is not set!"
 command -v inotifywait >/dev/null || ( notify-send "Error" "Please install \"inotify-tools\"" && exit 1 )
-
+command -v parallel >/dev/null || ( notify-send "Error" "Please install \"parallel\"" && exit 1 )
 
 declare -A domains=()
 declare -A paths=()
+declare -A domain_paths=()
 declare -a files=()
 declare -r tmpDir=$(mktemp -d)
 declare -r tmpSSHKeyFile="${tmpDir}/ssh-get.$RANDOM"
 declare -r tmpSelectionFile="${tmpDir}/select.$RANDOM"
 declare -r fifo="${tmpDir}/ssh-get.fifo"
 
+PARALLEL=3
 
 print() {
     echo \"$1\"
@@ -24,6 +26,19 @@ print() {
 usage() {
     print 'usage: ssh-get <user@host1:/path/to/search> <user@host2:/path/to/search> ...'
     exit
+}
+
+function array_min {
+  ARR=("$@")
+  min_i=0
+  min_v=${ARR[$min_i]}
+
+  for i in "${!ARR[@]}"; do
+    v="${ARR[$i]}"
+    (( v < min_v )) && min_v=${v} && min_i=${i}
+  done
+
+  MIN_I="${min_i}"
 }
 
 cleanup() {
@@ -54,6 +69,7 @@ for a; do
     path="${a##*:}"
     domains+=( ["$a"]="$host" )
     paths+=( ["$a"]="$path" )
+    domain_paths+=( ["$a"]="$host:$path" )
     shift
 done
 
@@ -87,7 +103,7 @@ while read i; do if [ "$i" = "$(basename $tmpSelectionFile)" ]; then break; fi; 
    < <(inotifywait  -e close --format '%f' --quiet $tmpDir --monitor)
 
 mapfile -t files < $tmpSelectionFile
-[ -z "${files[@]}" ] && exit
+
 
 if (( ${#files[@]} )); then
     print 'rsync downloading ...'
@@ -96,17 +112,15 @@ if (( ${#files[@]} )); then
         | while read line; do
             lf -remote "send $lfid echo $line"
         done
-    [ ! -z "$lfid" ] && lf -remote "send $lfid reload" # show new files
-    notify-send "File Manager" "rsync download completed"
-    print 'rsync download completed'
-    # lf -remote "send $id echo \"rsync check ...\""
-    # sleep 1
-    # if ! rsync --protect-args -c -e "ssh -i ${tmpSSHKeyFile}" "${files[@]}" . ; then
-    #     print 'rsync download failed'
-    #     notify-send --urgency critical "File Manager" "rsync download failed"
-    # else
-    #     print 'rsync download completed'
-    #     notify-send "File Manager" "rsync download completed"
-    # fi
+    stat=$?
+    if [ "${PIPESTATUS[0]}" != "0" ] || [ $stat -ne 0 ]; then
+        notify-send --urgency critical "File Manager" "rsync download FAILED!!"
+        print 'rsync failed!!'
+    else
+        notify-send "File Manager" "rsync download completed"
+        print 'rsync download completed'
+    fi
 fi
+
+[ ! -z "$lfid" ] && lf -remote "send $lfid reload" # show new files
 

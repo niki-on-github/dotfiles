@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# NOTE: We need the amd gpu driver, because there is an bug where the second half of the scaled screen with opengl windows is very laggy (e.g. alacritty).
+
+# Install amd gpu driver
+
+# ```bash
+# sudo pacman -Sy xf86-video-amdgpu
+# ```
+
+# Create `/etc/X11/xorg.conf.d/20-amdgpu.conf` with:
+
+# ```
+# Section "Device"
+#      Identifier "AMD"
+#      Driver "amdgpu"
+#  EndSection
+# ```
+# NOTE: for intel gpu create a file with intel settings.
+# NOTE: the (free) amdgpu driver has display errors when open opengl apps
+
+if [ "$(xrandr | grep "5120x2160+\|3840x2160+\|2160x3840+" | wc -l)" -gt "1" ]; then
+#     if xrandr | grep -q "DisplayPort" ; then
+#         xrandr --dpi 145 --fb 7320x3840 \
+#             --output DisplayPort-1 --scale 1.5x1.5 --mode 3440x1440 --rotate normal --primary --panning 5160x2160+0+0 \
+#             --output DisplayPort-2 --scale 1x1 --mode 3840x2160 --rotate left --pos 5160x0
+#     else
+#         xrandr --dpi 145 --fb 7320x3840 \
+#             --output DP-2 --scale 1.5x1.5 --mode 3440x1440 --rotate normal --primary --panning 5160x2160+0+0 \
+#             --output DP-3 --scale 1x1 --mode 3840x2160 --rotate left --pos 5160x0
+#     fi
+
+
+    xrandr --output DP-2 --rotate normal --primary --output DP-3 --rotate right --right-of DP-2
+fi
+

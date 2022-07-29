@@ -1,0 +1,11 @@
+#!/bin/bash
+# Description: Make firefox respect my HDPI Screen
+
+GDK_DPI_SCALE=1.4 firefox >/dev/null 2>&1 & disown
+exit 0
+
+if [ "$(xdotool get_desktop)" -lt "9" ]; then
+    firefox >/dev/null 2>&1 & disown
+else
+    GDK_DPI_SCALE=1.5 firefox >/dev/null 2>&1 & disown
+fi

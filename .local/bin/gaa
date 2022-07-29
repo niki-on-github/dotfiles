@@ -10,9 +10,10 @@ confirm=false
 echo "$info" | grep -q "^warning:" && confirm=true
 if $confirm ; then
     echo -e "$info"
+    stty sane
     echo -en "execute process? [N/y] " && read choice
     if [ "$choice" != "Y" ] && [ "$choice" != "y" ] && [ "$choice" != "Yes" ] && [ "$choice" != "yes" ]; then
-        echo -e "\033[0;31m >> cancel \033[0m" && return
+        echo -e "\033[0;31m >> cancel \033[0m" && exit
     fi
 fi
 git add --all -v

@@ -1,0 +1,22 @@
+---
+  - hosts: all
+    become: yes
+    tasks:
+      - name: install packages
+        pacman:
+          name:
+          - curl
+          - fzf
+          - git
+          - htop
+          - nano
+          - net-tools
+          - vim
+          - wget
+          - xdg-user-dirs
+      - name: install gui packages
+        pacman:
+          name:
+           - firefox
+      - name: reboot to complete setup
+        reboot:

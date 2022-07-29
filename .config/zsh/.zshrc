@@ -2,14 +2,14 @@
 # NOTE: This file also works from the user home directory if ZDOTDIR environmentvariable is not set. You can copy this file into the user home directory and everything will work properly.
 
 #################################################################################################################
-# zsh plugin manager (Update with `zplug update`)
+# zsh plugin manager (Update with `zinit update`)
 #################################################################################################################
 
 zsh-plugins() {
     # auto install zinit
     if [ ! -f ~/.config/zinit/bin/zinit.zsh ]; then
         mkdir -p ~/.config/zinit
-        git clone https://github.com/zdharma/zinit.git ~/.config/zinit/bin
+        git clone https://github.com/zdharma-continuum/zinit.git ~/.config/zinit/bin
     fi
 
     ZSH_DISPLAY='graphical-environment'
@@ -82,7 +82,7 @@ zsh-plugins() {
     if [ "$ZSH_DISPLAY" = 'graphical-environment' ] || [ "$ZSH_DISPLAY" = 'x11-forwarding' ] || [ "$ZSH_DISPLAY" = 'ssh' ]; then
         # TODO: enable asynchronous loading once issue https://github.com/zdharma/fast-syntax-highlighting/issues/177 is resolved (uncomment line below)
         #zinit ice wait lucid atinit'zpcompinit; zpcdreplay'
-        zinit light zdharma/fast-syntax-highlighting
+        zinit light zdharma-continuum/fast-syntax-highlighting
     fi
 
     if [ "$ZSH_DISPLAY" = 'graphical-environment' ] ; then
@@ -131,3 +131,26 @@ zsh-plugins() {
 
 zmodload zsh/zprof  # use zprof to profiling zsh
 zsh-plugins
+
+# if [ "$TERM" = "alacritty" ]; then
+    # tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf
+    # exit $?
+# fi
+
+if [ -d $HOME/miniconda3 ]; then
+# NOTE: Disable the automatic base activation with: `conda config --set auto_activate_base false`
+# >>> conda initialize >>>
+__conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "$HOME/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="$HOME/miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+fi
+

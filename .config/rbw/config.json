@@ -1,8 +1,1 @@
-{
-  "email": "bitwarden@local",
-  "base_url": "https://bitwarden.local:8091",
-  "identity_url": null,
-  "lock_timeout": 3600,
-  "pinentry": "$HOME/.local/bin/pinentry-dmenu",
-  "root_certificate": "$HOME/Nextcloud/Documents/CA/self-signed-ca-cert.der"
-}
+{"email":"root@server01.lan","base_url":"https://vaultwarden.server01.lan","identity_url":null,"lock_timeout":3600,"pinentry":"/home/arch/.local/bin/pinentry-dmenu"}

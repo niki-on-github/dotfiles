@@ -1,13 +1,13 @@
 ---
 configs:
-  use: 'vpn1'
-  vpn1:
-    name: 'VPN-Vagrant'
+  use: 'minimal1'
+  minimal1:
+    name: 'Vagrant-Arch-Minimal'
     cpus: 4
     memory: 4096
     disksize: '40GB'
-  vpn2:
-    name: 'VPN-Vagrant'
+  minimal2:
+    name: 'Vagrant-Arch-Minimal'
     cpus: 4
     memory: 4096
     disksize: '30GB'

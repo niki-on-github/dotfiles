@@ -20,3 +20,6 @@ text/x-arduino=arduino-arduinoide.desktop
 
 [Added Associations]
 application/x-bibtex=org.kde.kwrite.desktop;
+text/x-lua=visual-studio-code.desktop;
+text/plain=visual-studio-code.desktop;
+application/json=visual-studio-code.desktop;

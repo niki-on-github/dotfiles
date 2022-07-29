@@ -43,6 +43,7 @@ install: all
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	sed "s/VERSION/${VERSION}/g" < dwm.1 > ${DESTDIR}${MANPREFIX}/man1/dwm.1
 	chmod 644 ${DESTDIR}${MANPREFIX}/man1/dwm.1
+	mkdir -p /usr/share/xsessions
 	echo -e "[Desktop Entry]\nName=dwm\nComment=suckless\nExec=dwm\nTryExec=dwm\nType=Application" > /usr/share/xsessions/dwm.desktop
 
 uninstall:

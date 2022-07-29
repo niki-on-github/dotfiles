@@ -16,10 +16,10 @@
 case "$1" in
 	*youtube.com/watch*|*youtube.com/playlist*|*youtu.be*|*hooktube.com*|*bitchute.com*|*webm)
         # notify-send "Play Video" "$1"
-		setsid mpv --x11-name="floating" --title="floating" --pause --profile=youtube --ytdl-format="bestvideo[height<=?480]+bestaudio/best" --speed=1.8 "$1" >/dev/null 2>&1 & ;;
+		setsid mpv --x11-name="no-focus" --title="no-focus" --pause --profile=youtube --ytdl-format="bestvideo[height<=?720]+bestaudio/best" --speed=1.8 "$1" >/dev/null 2>&1 & ;;
     *mkv|*mp4)
         notify-send "Play Video" "$1"
-        setsid mpv --x11-name="floating" --title="floating" --pause "$1" >/dev/null 2>&1 & ;;
+        setsid mpv --x11-name="mpv-no-focus" --title="no-focus" --pause "$1" >/dev/null 2>&1 & ;;
 	*png|*jpg|*jpeg|*gif)
         if grep -v "thumbs" <<< "$1" >/dev/null ; then
             notify-send "Preview Image" "$1"

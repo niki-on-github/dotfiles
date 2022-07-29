@@ -1,0 +1,13 @@
+---
+configs:
+  use: 'base2'
+  base1:
+    name: 'Arch-Headless'
+    cpus: 8
+    memory: 8192
+    disksize: 50
+  base2:
+    name: 'Arch-Headless'
+    cpus: 16
+    memory: 16384
+    disksize: 75

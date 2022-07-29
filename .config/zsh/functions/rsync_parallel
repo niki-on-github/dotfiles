@@ -1,0 +1,182 @@
+#!/bin/zsh
+# NOTE: This script is currently not fully functional
+#
+# Copyright (c) 2014, 2020 by Dr. András Korn. Implements the basic idea of a similar script by Robert Coup (2013).
+# License: GPLv3
+
+function usage() {
+	echo 'Usage:
+
+rsync_parallel [--parallel=N] <args to find(1) to generate list of stuff to transfer> -- <args to rsync>
+
+Options:
+	--parallel=N	Use N parallel processes for transfer. Defaults to $(nproc) if nproc is available; otherwise to 10.
+
+Notes:
+  * Should properly handle filenames with embedded newlines.
+  * Use with key based SSH authentication to avoid repeated password prompts.
+  * Unfortunately, the only way to handle funny filenames involves
+    resorting to find(1), so rsync_parallel is not a drop-in replacement
+    for rsync(1). It will call rsync(1) with -0 --files-from=-, and feed it
+    the list of files found by find based on the find(1) arguments you gave
+    on the command line. You need to make sure the paths output by find will
+    be valid relative to the source directory you pass to rsync.
+  * Depends on find -printf, so probably GNU find(1).
+  * Exit status is the highest of all child rsync exit statuses, or 111 if
+    invoked incorrectly, or 127 if at least one of the workers aborted with
+    an unkown exit status.
+
+Example:
+
+rsync_parallel --parallel=42 . -- -avHPSAX . user@remote:/some/path/.
+'
+}
+
+typeset -a RSYNCBYTES	# an array to count the number of bytes each rsync child has been requested to transfer
+typeset -a RSYNCFD	# an array whose members are file descriptors connected to workers' stdins
+typeset -a findargs	# we'll parse find(1) arguments into this array
+typeset -a rsyncargs	# and rsync(1) arguments into this one
+typeset -A STATUS_REPORTED	# a hash to keep track of which workers' status we already printed
+typeset -A inode_worker	# a hash that keeps track of which worker we assigned which inode to; needed to allow rsync -H to work
+typeset -a WORKER_STATUS
+nr_children=0
+GLOBAL_EXIT_STATUS=0
+hardlinks=0	# set to 1 if rsync args apparently include -H or --hardlinks
+
+TMPDIR=$(mktemp -d) || { echo "FATAL: unable to create temporary directory." >&2; exit 111 }
+trap "rm -rf $TMPDIR" EXIT
+
+# The only way to obtain the exit statuses from the rsync processes is to write them into tempfiles :(
+function worker() {
+	local ret
+	trap 'rm $TMPDIR/worker${i}.pid' EXIT
+	echo $$ >$TMPDIR/worker${i}.pid
+	rsync -0 --files-from=- $rsyncargs
+	ret=$?
+	echo $ret >$TMPDIR/worker${i}.status
+}
+
+# The file list we'll obtain below will be piped into this load-balancing
+# function that chooses which rsync child to pass the incoming filename to.
+# It chooses the one with the fewest bytes allocated to it so far.
+function balance() {
+	trap - EXIT
+	local min minworker
+	local IFS=""
+	while read -rd '' inum; do
+		read -rd '' size
+		read -rd '' name
+		min=${${(n)RSYNCBYTES}[1]}
+		minworker=${RSYNCBYTES[(I)$min]}
+		if ((hardlinks)); then
+			if [[ -n "$inode_worker[$inum]" ]]; then
+				minworker=$inode_worker[$inum]
+			else
+				inode_worker[$inum]=$minworker
+			fi
+		fi
+		print -rN -u $RSYNCFD[$minworker] "$name"
+		((RSYNCBYTES[$minworker]+=$size))
+	done
+}
+
+# Obtain file list ("length filename" tuples, one per line).
+# It would be tempting to use rsync itself for this, with --no-v --dry-run and
+# an out-format of "%l %n", but rsync will escape some characters in filenames
+# and not recognize the same escapes in --files-from; so we need to use
+# find(1). This has the drawback of also printing filenames that will be
+# excluded from the transfer using --exclude.
+function generate_file_list() {
+	trap - EXIT
+    # TODO: bolow hardcoded fix for ssh remote downloads
+	# ssh "arch@10.0.1.10" "find $findargs -printf \"%i\0%s\0%P\0\""
+	find $findargs -printf "%i\0%s\0%P\0"
+}
+
+function sigchld_handler() {
+	trap - EXIT
+	((nr_children--))
+	echo "INFO: a worker exited; $nr_children still running." >&2
+	local found=0
+	for i in {1..$PARALLEL}; do
+		((STATUS_REPORTED[$i])) && continue
+		if ! [[ -e $TMPDIR/worker${i}.pid ]]; then
+			found=1
+			if [[ -r $TMPDIR/worker{$i}.status ]]; then
+				WORKER_STATUS[$i]=$(<$TMPDIR/worker${i}.status)
+				((WORKER_STATUS[$i])) && echo "ERROR: worker $i exited with error $WORKER_STATUS[$i]." >&2
+			else
+				WORKER_STATUS[$i]=127
+				echo "ERROR: worker $i exited unexpectedly/abnormally; assuming exit status 127." >&2
+			fi
+			[[ $WORKER_STATUS[$i] -gt $GLOBAL_EXIT_STATUS ]] && GLOBAL_EXIT_STATUS=$WORKER_STATUS[$i]
+			STATUS_REPORTED[$i]=1
+			continue
+		fi
+	done
+	if ! ((found)); then
+		echo "WARNING: stray SIGCHLD; apparently a worker exited but I don't know which. Global exit status could be wrong. $(echo $TMPDIR/*)" >&2
+	fi
+}
+
+if [[ "$1" == --parallel=* ]]; then
+	PARALLEL="${1##*=}"; shift
+elif [[ -x /usr/bin/nproc ]]; then
+	PARALLEL=$(nproc)
+else
+	PARALLEL=10
+fi
+# get findargs
+while [[ -n $1 ]] && ! [[ $1 = -- ]]; do
+	findargs=($findargs $1)
+	shift
+done
+[[ $1 = -- ]] && shift
+# anything left over is args for rsync
+while [[ -n $1 ]]; do
+	{ [[ $1 == -H ]] || [[ $1 == -[^-]*H* ]] || [[ $1 == --hard-links ]] } && hardlinks=1
+	# This is imperfect because "-*H*" can occur in a path specification,
+	# but it fails safely. I don't want to reimplement much of the rsync
+	# option parser just to catch this corner case. False positive
+	# detection of --hard-links results in higher memory consumption for
+	# the script, and possibly reduced parallelism if the same
+	# inode number occurs on different files (on different filesystems)
+	# being transferred.
+	[[ $1 == --no-hard-links ]] && hardlinks=0
+	# Again, this is imperfect because if we're already specifying paths,
+	# a request to transfer a directory called --no-hard-links would
+	# cause the hardlink logic to be disabled. If you have such
+	# pathological filenames, change the script.
+	rsyncargs=($rsyncargs $1)
+	shift
+done
+# You didn't specify any args for rsync? Probably not what you meant.
+[[ -z $rsyncargs ]] && usage && exit 111
+
+echo "INFO: Using up to $PARALLEL processes for transfer." >&2
+
+# spawn rsync children, each reading the list of files it should transfer from stdin.
+for i in {1..$PARALLEL}; do
+	exec {myfd}>>(worker)
+	((nr_children++))
+	RSYNCFD[$i]=$myfd
+	RSYNCBYTES[$i]=0
+done
+
+generate_file_list | balance
+trap "sigchld_handler" CHLD
+
+for i in {1..$PARALLEL}; do
+	myfd=$RSYNCFD[$i]
+	exec {myfd}>&-
+done
+
+zmodload zsh/zselect
+
+echo "Waiting for workers to exit." >&2
+
+# TODO: properly test whether the main script can exit prematurely and leave workers running
+while ((nr_children)) && [[ -n "$(echo $TMPDIR/*.pid(N))" ]]; do
+	zselect -t 100
+done
+exit $GLOBAL_EXIT_STATUS

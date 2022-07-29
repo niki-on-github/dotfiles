@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+# git submodule foreach --recursive 'git rev-list origin/$(git rev-parse --abbrev-ref HEAD) | grep -q "$(git rev-parse HEAD)" && echo -e "\e[32m [\uf42e] git data on remote\e[0m" || echo -e "\e[31m [\u2718] git data not on remote\e[0m"'
+
+
+
+git submodule foreach --recursive | cut -d ' ' -f2- | tr -d "'" | while IFS=$'\n' read submodule_path; do
+    pushd "$submodule_path" >/dev/null
+    echo "$submodule_path:"
+
+    branch=$(git branch --show-current)
+
+    [ -n "$branch" ] \
+        && echo -e "\e[32m [\uf42e] branch: $branch\e[0m" \
+        || echo -e "\e[31m [\u2718] deatached header\e[0m"
+
+    [ -n "$(git status --porcelain)" ] \
+        && echo -e "\e[31m [\u2718] umuncommitted changes\e[0m" \
+        || echo -e "\e[32m [\uf42e] no umuncommitted changes\e[0m"
+
+    git rev-list origin/$(git rev-parse --abbrev-ref HEAD) \
+        | grep -q "$(git rev-parse HEAD)" \
+        && echo -e "\e[32m [\uf42e] git data on remote\e[0m" \
+        || echo -e "\e[31m [\u2718] git data not on remote\e[0m"
+
+    git fetch origin >/dev/null
+
+    [ -n "$branch" ] \
+        && [ -n "$(git diff --name-only HEAD origin/$branch)" ] \
+        && echo -e "\e[31m [\u2718] updates available on remote\e[0m" \
+        || echo -e "\e[32m [\uf42e] no updates available on remote\e[0m"
+
+    echo -e ""
+    popd >/dev/null
+done

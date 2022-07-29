@@ -55,24 +55,6 @@ network_settings() {
    systemctl enable NetworkManager.service
 }
 
-setup_yay(){
-    pacman -S --noconfirm --needed base-devel go git sudo
-
-    [ -d /home/vagrant/.gnupg ] || sudo -u vagrant mkdir -p /home/vagrant/.gnupg
-    if grep "^keyserver " /home/vagrant/.gnupg >/dev/null 2>&1 ; then
-        sudo -u vagrant sed -i 's/^keyserver .*$/keyserver '$(echo "$KEYSERVER" | sed 's/\//\\\//g')'/g' /home/vagrant/.gnupg/gpg.conf
-    else
-        echo "keyserver $KEYSERVER" | sudo -u vagrant tee -a /home/vagrant/.gnupg/gpg.conf
-    fi
-
-    if [ ! -d /opt/yay-git ]; then
-        git clone https://aur.archlinux.org/yay-git.git /opt/yay-git
-        chown -R vagrant:vagrant /opt/yay-git
-        fgrep "vagrant ALL=(ALL) NOPASSWD:ALL" /etc/sudoers >/dev/null || printf 'vagrant ALL=(ALL) NOPASSWD:ALL\n' | tee -a /etc/sudoers
-        cd /opt/yay-git && sudo -u vagrant makepkg --noconfirm -si && cd -
-    fi
-}
-
 setup_xfce() {
     pacman -S --noconfirm --needed xfce4 xfce4-clipman-plugin thunar-archive-plugin xfce4-pulseaudio-plugin xfce4-notifyd ristretto gvfs gvfs-smb sshfs pulseaudio pavucontrol xorg-server network-manager-applet networkmanager-openvpn xorg-xrandr engrampa cronie gnome-keyring
     systemctl enable cronie.service
@@ -81,10 +63,6 @@ setup_xfce() {
     localectl set-keymap $KEYMAP
     localectl set-x11-keymap $X11_KEYMAP
     localectl set-locale LANG=$LANG
-}
-
-install_jdownloader() {
-    yay -S --noconfirm --needed jdownloader2
 }
 
 virtualbox_guest_utils() {
@@ -109,8 +87,6 @@ setup_locale
 setup_pacman
 setup_linux
 network_settings
-setup_yay
 setup_xfce
-install_jdownloader
 virtualbox_guest_utils
 resize_disk_virtualbox

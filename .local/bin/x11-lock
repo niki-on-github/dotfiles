@@ -23,14 +23,14 @@ slow_lock() {
 
     pgrep i3lock || i3lock \
         -n -t -i "$image" \
-        --timepos='x+110:h-70' \
-        --datepos='x+30:h-45' \
-        --clock --date-align 1 --datestr "$locktext" \
-        --separatorcolor=$separatorcolor \
-        --timecolor="$timecolor" --datecolor="$datecolor" \
+        --time-pos='x+110:h-70' \
+        --date-pos='x+30:h-45' \
+        --clock --date-align 1 --date-str "$locktext" \
+        --separator-color=$separatorcolor \
+        --time-color="$timecolor" --date-color="$datecolor" \
         --time-font="$font" --date-font="$font" --layout-font="$font" \
         --ignore-empty-password --show-failed-attempts \
-        --noinputtext='' --force-clock --pass-media-keys
+        --noinput-text='' --force-clock --pass-media-keys
 
     rm $image
 }
@@ -38,15 +38,22 @@ slow_lock() {
 fast_lock() {
     pgrep i3lock || i3lock \
         -n -t -B 5 \
-        --timepos='x+110:h-70' \
-        --datepos='x+30:h-45' \
-        --clock --date-align 1 --datestr "$locktext" \
-        --separatorcolor=$separatorcolor \
-        --timecolor="$timecolor" --datecolor="$datecolor" \
+        --time-pos='x+110:h-70' \
+        --date-pos='x+30:h-45' \
+        --clock --date-align 1 --date-str "$locktext" \
+        --separator-color=$separatorcolor \
+        --time-color="$timecolor" --date-color="$datecolor" \
         --time-font="$font" --date-font="$font" --layout-font="$font" \
         --ignore-empty-password --show-failed-attempts \
-        --noinputtext='' --force-clock --pass-media-keys
+        --noinput-text='' --force-clock --pass-media-keys
 }
+
+black_lock() {
+    i3lock -c 000000
+}
+
+black_lock
+exit 0
 
 # Main
 if [ "$1" == "--fast" ]; then

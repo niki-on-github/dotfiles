@@ -1,0 +1,37 @@
+#!/bin/bash
+# Description: Start firefox in VPN network namespace
+# Dependencies: vopono-git (AUR)
+
+OPENVPN_CONFIG_DIR="/home/arch/Sync/VPN/AirVPN"
+OPENVPN_CONFIG="$OPENVPN_CONFIG_DIR/$(ls $OPENVPN_CONFIG_DIR | grep ".ovpn\|.conf" |sort -R |tail -1)"
+INTERFACE="enp5s0"
+
+[ -z "$SUDO_ASKPASS" ] && notify-send "Warning" "Environment variable \$SUDO_ASKPASS is not set!"
+
+profile_list=$(grep "^Name=" $HOME/.mozilla/firefox/profiles.ini | cut -c 6- | sort | uniq | grep -v "^default$")
+if echo "$profile_list" | grep -q "VPN"; then
+    cmd="firefox -no-remote -P VPN"
+else
+    cmd="firefox -no-remote - P"
+fi
+
+logfile=$(mktemp)
+
+# $HOME/.cargo/bin/vopono -v -A exec --disable-ipv6 --custom $OPENVPN_CONFIG --protocol openvpn "$cmd" >$logfile 2>&1 & disown
+
+echo "logfile: $logfile"
+$HOME/.cargo/bin/vopono \
+    -v \
+    -A \
+        exec \
+        --disable-ipv6 \
+        --interface $INTERFACE \
+        --custom $OPENVPN_CONFIG \
+        --protocol openvpn \
+        --hosts "10.0.1.10 jdownloader.server01.lan","10.0.1.10 vaultwarden.server01.lan","10.0.1.10 webdav.server01.lan","10.0.1.10 nzbget.server01.lan" \
+        --open-hosts 10.0.1.10  \
+        "$cmd" \
+    >$logfile 2>&1 & disown
+
+echo "Create vpn with $OPENVPN_CONFIG..."
+( tail -f -n0 $logfile & ) | grep -q "Application firefox -no-remote"

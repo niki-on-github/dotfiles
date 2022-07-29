@@ -4,11 +4,11 @@
 Config  {
 
     -- apperance
-    font = "xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"
-    , additionalFonts = ["xft:Noto Sans Mono:pixelsize=16:antialias=true:hinting=true"]  -- <fn=1>
+    font = "xft:Noto Sans Mono:pixelsize=22:antialias=true:hinting=true"
+    , additionalFonts = ["xft:Noto Sans Mono:pixelsize=22:antialias=true:hinting=true"]  -- <fn=1>
     , border = BottomB
     , borderColor = "#1d99f3"
-    , borderWidth = 3
+    , borderWidth = 4
     , fgColor = "#FFFFFF"
     , bgColor = "#171717"
     , alpha = 255  -- solid config
@@ -66,16 +66,16 @@ Config  {
         --                ]
 
         -- time and date indicator
-        , Run Date "%b %d, %Y  -  %H:%M:%S" "date" 10
+        , Run Date "%a, %d. %b -  %H:%M:%S" "date" 10
 
         -- pulse audio volume indicator
-        , Run Com "/bin/sh" [ "-c", "printf \"VOL%4s\" $(pamixer --get-volume-human | sed 's/muted/MUT/g') | sed 's/MUT/<fc=#FF0000>MUT<\\/fc>/g'" ] "vol" 3
+        , Run Com "/bin/sh" [ "-c", "printf \"VOL%4s\" $(pamixer --get-volume-human | sed 's/muted/MUT/g') | sed 's/MUT/<fc=#FF0000>MUT<\\/fc>/g'" ] "vol" 2
 
         -- weather monitor
         , Run Com "/bin/sh" [ "-c", "curl 'wttr.in/Waiblingen?format=%t' | sed 's/+//g' | xargs -I{} echo ' -  WTR {} ' | head -n 1 | grep -v 'Unknown location' | grep -v 'Sorry' || echo ''" ] "weather" 36000
 
         -- systray padding (trailing spaces for the systray)
-        , Run Com "/bin/sh" [ "-c", "$HOME/.config/xmobar/systray-padding.sh" ] "systray" 10
+        , Run Com "/bin/sh" [ "-c", "$HOME/.config/xmonad/systray-padding.sh" ] "systray" 10
 
         -- clickable workspaces
         , Run UnsafeStdinReader

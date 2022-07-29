@@ -30,12 +30,12 @@ st.borderpx: 5
 
 
 /* dmenu config */
-dmenu.font:          Hack-12
+dmenu.font:          Hack-16
 dmenu.background:    #000000
 dmenu.foreground:    #ffffff
 dmenu.selbackground: #1d99f3
 dmenu.selforeground: #ffffff
-dmenu.height:        25
+dmenu.height:        31
 
 
 /* dwm config */
@@ -54,4 +54,6 @@ Xft.autohint: false
 Xft.hintstyle: hintslight
 Xft.lcdfilter: lcddefault
 
-Xcursor.size: 16
+/* Xcursor.size: 16 */
+Xcursor.size: 32
+Xtf:dpi 140

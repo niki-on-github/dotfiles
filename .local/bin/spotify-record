@@ -2,9 +2,15 @@
 # Description: Script to record the audio of the Spotify client using Pulse Audio
 
 MUSIC_LIB=~/Musik/Spotify
+
+if pgrep pipewire >/dev/null; then
+    PIPEWIRE=true
+else
+    PIPEWIRE=false
+fi
+
 [ ! -d $MUSIC_LIB ] && echo "[ERROR] DirectoryNotFound: $MUSIC_LIB" && exit 1
 
-! command -v pacmd >/dev/null && echo "[ERROR] program pacmd is not installed" && exit 1
 ! command -v pactl >/dev/null && echo "[ERROR] program pactl is not installed" && exit 1
 ! command -v parec >/dev/null && echo "[ERROR] program parec is not installed" && exit 1
 ! command -v lame >/dev/null && echo "[ERROR] program lame is not installed" && exit 1
@@ -14,9 +20,13 @@ MUSIC_LIB=~/Musik/Spotify
 ! command -v mp3info >/dev/null && echo "[ERROR] program mp3info is not installed" && exit 1
 ! command -v spotify-info >/dev/null && echo "[ERROR] program spotify-info is not installed" && exit 1
 
+if [ ! $PIPEWIRE ]; then
+    ! command -v pacmd >/dev/null && echo "[ERROR] program pacmd is not installed" && exit 1
+fi
+
 usage() {
     cat <<EOF
-'`basename "$0"`' record the audio of the Spotify desktop client using lame, FFmpeg and PulseAudio
+'`basename "$0"`' record the audio of the Spotify desktop client using lame, FFmpeg and PulseAudio/Pipewire
 
 Usage:
   ~\$ $(basename "$0")
@@ -47,12 +57,21 @@ elif [ "$#" -ge "3" ]; then
     usage 1
 fi
 
-if [ -z "$(pacmd list-sinks | grep record)" ]; then
-    default_output=$(pacmd list-sinks | grep -A1 "* index" | grep -oP "<\K[^ >]+")
-    pactl load-module module-combine-sink \
-        sink_name=record-n-play \
-        slaves=$default_output \
-        sink_properties=device.description="Record-and-Play" >/dev/null
+if [ $PIPEWIRE ]; then
+    if [ -z "$(pactl list short sinks | grep record-n-play)" ]; then
+        echo "add record-n-play sink"
+        pactl load-module module-remap-sink sink_name=record-n-play >/dev/null
+    fi
+else
+    # pulseaudio
+    if [ -z "$(pacmd list-sinks | grep record)" ]; then
+        echo "add record-n-play sink"
+        default_output=$(pacmd list-sinks | grep -A1 "* index" | grep -oP "<\K[^ >]+")
+        pactl load-module module-combine-sink \
+            sink_name=record-n-play \
+            slaves=$default_output \
+            sink_properties=device.description="Record-and-Play" >/dev/null
+    fi
 fi
 
 record=true
@@ -108,7 +127,7 @@ done
 
 if $record ; then
     echo "spotify recorder attached (use Ctrl+c to stop recording or close spotify application)"
-    sink_index=$(pulsemixer -l | grep Spotify | grep -Eo "sink-input-[0-9]*" | cut -c 12-)
+    sink_index=$(pulsemixer -l | grep -i Spotify | grep -Eo "sink-input-[0-9]*" | cut -c 12-)
     pactl move-sink-input $sink_index record-n-play
 
     FILE_PATTERN=$(echo "$FILE_PATTERN" | sed 's/.mp3$//g')

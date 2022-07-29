@@ -32,6 +32,8 @@ KEY; DESCRIPTION
 \f(CWCtrl + n\fP; New Window
 \f(CWCtrl + d\fP; Bookmark current Page
 \f(CWCtrl + Shift + a\fP; Add-ons Settings
+\f(CWCtrl + b\fP; Bookmark Sidebar
+\f(CWCtrl + l\fP;  Jump to Locationbar
 .TE
 
 .NEWPAGE

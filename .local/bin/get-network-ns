@@ -1,0 +1,19 @@
+#!/bin/bash
+
+pid=$(xprop | grep "PID" | head -n 1)
+if [ -z "$pid" ]; then
+    echo "ERROR: selected windows has no PID assigned in xprop"
+    exit 1
+fi
+
+pid=$(echo "$pid" | cut -d '=' -f 2 | sed 's/ //g')
+
+for f in $(ls /run/netns) ; do
+    if [ "$(stat -L -c %d:%i /proc/$pid/ns/net)" = "$(stat -L -c %d:%i /run/netns/$f)" ]; then
+        echo "$pid use $f network namespace"
+        exit 0
+    fi
+done
+
+echo "$pid use global network namespace"
+exit 0

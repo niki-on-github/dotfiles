@@ -1,0 +1,21 @@
+#!/bin/bash
+# Description: Start spotify in VPN network namespace
+# Dependencies: vopono-git, spotify-adblock-git (AUR)
+
+OPENVPN_CONFIG_DIR="/home/arch/Sync/VPN/AirVPN"
+OPENVPN_CONFIG="$OPENVPN_CONFIG_DIR/de-adhara.ovpn"
+# OPENVPN_CONFIG="$OPENVPN_CONFIG_DIR/$(ls $OPENVPN_CONFIG_DIR | grep ".ovpn\|.conf" |sort -R |tail -1)"
+
+if [ ! -f $OPENVPN_CONFIG ]; then
+    echo "config $OPENVPN_CONFIG not found!"
+    exit 1
+fi
+
+cmd="LD_PRELOAD=/usr/lib/spotify-adblock.so spotify"
+
+logfile=$(mktemp)
+vopono -v -A exec --disable-ipv6 --custom $OPENVPN_CONFIG --protocol openvpn "$cmd" >$logfile 2>&1 & disown
+echo "create vpn with $OPENVPN_CONFIG..."
+# echo "log vpn output to $logfile"
+# notify-send "VPN" "vpn network namespace starting..."
+( tail -f -n0 $logfile & ) | grep -q "Application $cmd"

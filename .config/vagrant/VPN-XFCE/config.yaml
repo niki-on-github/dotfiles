@@ -1,0 +1,13 @@
+---
+configs:
+  use: 'vpn1'
+  vpn1:
+    name: 'Vagrant-VPN'
+    cpus: 4
+    memory: 4096
+    disksize: '40GB'
+  vpn2:
+    name: 'Vagrant-VPN'
+    cpus: 4
+    memory: 4096
+    disksize: '30GB'

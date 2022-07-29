@@ -7,12 +7,29 @@ FIREFOX_CACHE_DIRECTORY="$HOME/.cache/mozilla/firefox"
 GHACKS_USERJS_DIRECTORY="$HOME/.config/firefox/ghacks-user.js"
 OVERRIDE_FILES_NORMAL="$HOME/.config/firefox/my-overrides/normal"
 OVERRIDE_FILES_HARDENED="$HOME/.config/firefox/my-overrides/hardened"
-PROFILES=( "Banking" "Private" "WebEx" )
-ENGINES="(Google|DuckDuckGo)"
-DEFAULT_ENGINE="DuckDuckGo"
-ADDONS=( "bitwarden-password-manager" "canvasblocker" "darkreader" "decentraleyes" "floccus" "i-dont-care-about-cookies" "ublock-origin" )
-ADDONS_PRIVATE=( "clearurls" "cookie-autodelete"  "multi-account-containers" "temporary-containers" "umatrix" )
-ADDONS_OTHER=( "tabliss" )
+
+SETTINGS='{
+"profiles": [{
+        "name": "VPN",
+        "addons": [ "bitwarden-password-manager", "canvasblocker", "darkreader", "decentraleyes", "floccus", "i-dont-care-about-cookies", "ublock-origin", "umatrix", "clearurls", "cookie-autodelete",  "multi-account-containers", "temporary-containers", "awesome-rss" ],
+        "userJs": "hardened",
+        "allowedSearchEngines": "(DuckDuckGo)",
+        "defaultSearchEngine": "DuckDuckGo"
+    }, {
+        "name": "Banking",
+        "addons": [ "bitwarden-password-manager", "darkreader", "floccus", "i-dont-care-about-cookies", "ublock-origin" ],
+        "userJs": "normal",
+        "allowedSearchEngines": "(DuckDuckGo)",
+        "defaultSearchEngine": "DuckDuckGo"
+    }, {
+        "name": "Private",
+        "addons": [ "bitwarden-password-manager", "canvasblocker", "darkreader", "decentraleyes", "floccus", "i-dont-care-about-cookies", "ublock-origin", "umatrix", "clearurls", "cookie-autodelete",  "multi-account-containers", "temporary-containers", "awesome-rss"],
+        "userJs": "hardened",
+        "allowedSearchEngines": "(DuckDuckGo)",
+        "defaultSearchEngine": "DuckDuckGo"
+    }
+]}'
+
 
 TMP_ADDON_DIRECTORY=$(mktemp -d)
 _mozlz4=$HOME/.local/bin/mozlz4
@@ -63,7 +80,7 @@ function downloadAddon() {
         echo "Download $downloadID to $TMP_ADDON_DIRECTORY/$downloadID"
         mkdir -p "$TMP_ADDON_DIRECTORY/$downloadID"
         wget --quiet -O "$TMP_ADDON_DIRECTORY/$downloadID/addon.xpi" \
-            "https://addons.mozilla.org/firefox/downloads/latest/$downloadID/latest.xpi"
+            "https://addons.mozilla.org/firefox/downloads/latest/$downloadID/latest.xpi" 2>/dev/null
         unzip "$TMP_ADDON_DIRECTORY/$downloadID/addon.xpi" manifest.json -d "$TMP_ADDON_DIRECTORY/$downloadID" >/dev/null
     fi
 
@@ -86,7 +103,7 @@ function downloadAddon() {
     fi
 
     addonID=$(echo $addonID | sed 's/"//g')
-    [ -f "$firefoxProfilePath/extensions/$addonID.xpi" ] && echo "Addon $addonID is already installed" && return
+    [ -f "$firefoxProfilePath/extensions/$addonID.xpi" ] && echo "Addon $downloadID:$addonID is already installed" && return
     echo "Install $downloadID ($addonID)" && cp -f "$TMP_ADDON_DIRECTORY/$downloadID/addon.xpi" "$firefoxProfilePath/extensions/$addonID.xpi"
 
     ! grep -q "$addonID" $firefoxProfilePath/myaddon.list >/dev/null 2>&1 && \
@@ -128,6 +145,8 @@ function createProfile() {
 
 function setupSearchengine() {
     firefoxProfilePath=$1; shift
+    allowedSearchEngines=$1; shift
+    defaultSearchEngine=$1; shift
     [ -z "$firefoxProfilePath" ] && error "firefoxProfilePath in setupSearchengine() is empty"
     [ -f $_mozlz4 ] || error "File not Found: $_mozlz4"
     [ -f $firefoxProfilePath/search.json.mozlz4 ] || return
@@ -135,17 +154,17 @@ function setupSearchengine() {
     tmpSearchJsonFile=$(mktemp)
     $_mozlz4 -x $firefoxProfilePath/search.json.mozlz4 $tmpSearchJsonFile
     search_json=$(cat $tmpSearchJsonFile)
-    changeNumbers=$(jq '.engines | .[] | ._name' $tmpSearchJsonFile | grep -Env "$ENGINES" | cut -d ':' -f 1)
+    changeNumbers=$(jq '.engines | .[] | ._name' $tmpSearchJsonFile | grep -Env "$allowedSearchEngines" | cut -d ':' -f 1)
     for num in $changeNumbers ; do
         search_json=$(echo "$search_json" | jq '.engines['$(($num-1))']._metaData.hidden = "true"')
     done
 
     if [ "$(echo "$search_json" | jq '.metaData')" = "{}" ]; then
-        echo "Set default search engine to $DEFAULT_ENGINE"
-        echo "$search_json" | jq '. + {"metaData": {"current": "'$DEFAULT_ENGINE'"}}' > $tmpSearchJsonFile
+        echo "Set default search engine to $defaultSearchEngine"
+        echo "$search_json" | jq '. + {"metaData": {"current": "'$defaultSearchEngine'"}}' > $tmpSearchJsonFile
     else
-        echo "Override default search engine with $DEFAULT_ENGINE"
-        echo "$search_json" | jq '. + {"metaData": {"current": "'$DEFAULT_ENGINE'"}}' > $tmpSearchJsonFile
+        echo "Override default search engine with $defaultSearchEngine"
+        echo "$search_json" | jq '. + {"metaData": {"current": "'$defaultSearchEngine'"}}' > $tmpSearchJsonFile
     fi
     $_mozlz4 -z $tmpSearchJsonFile $firefoxProfilePath/search.json.mozlz4
 }
@@ -166,35 +185,41 @@ function updateHardenUserJs() {
 }
 
 
-# MAIN
-
 command -v jq >/dev/null || error "script require jq"
+
+if ! echo "$SETTINGS" | jq >/dev/null; then
+    error "Invalid config"
+fi
 
 read -p "Press the [Enter] key to continue. This will close all instances of Firefox"
 pidof $_firefox >/dev/null && kill $(pidof $_firefox) && echo -n "close Firefox ." && sleep 1 && echo -n "." && sleep 1 && echo ". OK"
 
-for profile in ${PROFILES[@]}; do
-    createProfile "$profile"
-done
+for profile in $(echo "${SETTINGS}" | jq '.profiles' | jq -r '.[] | @base64'); do
+    _get() {
+        echo ${profile} | base64 --decode | jq -r ${1}
+    }
+    profileName=$(_get '.name')
+    addons=$(_get '.addons')
+    userJs=$(_get '.userJs')
+    allowedSearchEngines=$(_get '.allowedSearchEngines')
+    defaultSearchEngine=$(_get '.defaultSearchEngine')
 
-profiles=$(cat $FIREFOX_PROFILES_DIRECOTRY/profiles.ini | tr '\n' ' ' | tr '[' '\n' | grep "Name" | \
-    grep -v "Name=default " | sed 's/.*Name=//g' | sed 's/ .*Path=/,/g' | sed 's/ .*$//g')
-
-for profile_data in $profiles ; do
-    profileName=$(echo $profile_data | cut -d ',' -f 1)
-    profilePath="$FIREFOX_PROFILES_DIRECOTRY/$(echo $profile_data| cut -d ',' -f 2)"
-    profileCachePath="$FIREFOX_CACHE_DIRECTORY/$(echo $profile_data| cut -d ',' -f 2)"
     echo -e "\nSetup Firefox profile $profileName"
+    createProfile "$profileName"
 
-    setupSearchengine "$profilePath"
+    profilePath="$FIREFOX_PROFILES_DIRECOTRY/$(ls $FIREFOX_PROFILES_DIRECOTRY | grep "\.$profileName$")"
+    echo "profilePath: $profilePath"
 
-    for addon in ${ADDONS[@]}; do downloadAddon "$profilePath" "$addon"; done
+    setupSearchengine "$profilePath" "$allowedSearchEngines" "$defaultSearchEngine"
 
-    if [ "$profileName" = "Private" ]; then
-        for addon in ${ADDONS_PRIVATE[@]}; do downloadAddon "$profilePath" "$addon"; done
-        updateHardenUserJs "$profilePath"
-    else
+    for addon in $(echo "$addons" | jq -r '.[]'); do
+        downloadAddon "$profilePath" "$addon"
+    done
+
+    if [ "$userJs" = "normal" ]; then
         updateNormalUserJs "$profilePath"
+    else
+        updateHardenUserJs "$profilePath"
     fi
 
     activateAddons "$profilePath" "$profileName"

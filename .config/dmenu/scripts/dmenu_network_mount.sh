@@ -29,13 +29,14 @@ smb_mount() {
     SMB_USR=$(echo $result | cut -d "/" -f1)
     SMB_PW=$(echo $result | cut -d "/" -f2)
 
+    echo "mount to $MOUNT_PATH"
     if ! sudo -A mount -t cifs -o uid=$(id -u),gid=$(id -g),user=$SMB_USR,password=$SMB_PW "$SMB_PATH" "$MOUNT_PATH" ; then
         notify-send "Network Mount" "Samba mount FAILED"
     else
         notify-send "Network Mount" "Samba mount to $MOUNT_PATH"
     fi
 
-    clear && exit
+    exit
 }
 
 
@@ -51,7 +52,7 @@ smb_umount() {
         notify-send "Network Mount" "Samba umount FAILED"
     fi
 
-    clear && exit
+    exit
 }
 
 
@@ -83,7 +84,7 @@ sftp_mount() {
         notify-send "Network Mount" "SFTP mount to $MOUNT_PATH"
     fi
 
-    clear && exit
+    exit
 }
 
 
@@ -98,7 +99,7 @@ sftp_umount() {
         notify-send "Network Mount" "SFTP umount failed"
     fi
 
-    clear && exit
+    exit
 }
 
 

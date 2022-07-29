@@ -1,8 +1,9 @@
 #!/bin/sh
 # Description: git helper script to use multiple ssh keys for diffrent accounts on same gitserver host
-# Require: ~/.ssh/config with 'host <user>.<host>' entries
+# Usage: `git-clone $SSH_URL_FROM_GITHUB`
+# Require: ~/.ssh/config with 'host <user>.<host>' entries. But there cannot be any `host github.com` in the config because then we always use this entry.
 #
-# Example:
+# Example Config:
 # ```
 # host user1.github.com
 #  HostName github.com

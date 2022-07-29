@@ -1,0 +1,15 @@
+---
+  - hosts: all
+    become: yes
+    tasks:
+      - name: install packages
+        pacman:
+          name:
+          - curl
+          - git
+          - htop
+          - vim
+          - wget
+          - xdg-user-dirs
+      - name: reboot to complete setup
+        reboot:

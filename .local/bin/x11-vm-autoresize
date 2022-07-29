@@ -1,0 +1,27 @@
+#!/bin/sh
+# Usage:
+#
+# Create the file `~/.xsession` with following content:
+#
+# ```bash
+# #!/bin/sh
+# if grep -q "^flags.* hypervisor" /proc/cpuinfo ; then
+#     $HOME/.local/bin/x11-vm-autoresize &
+# endif
+# ```
+
+if ! command -v xev; then
+    notify-send "ERROR" "Please install xorg-xev"
+    echo "ERROR: Please install xorg-xev"
+    exit 1
+fi
+
+sleep 3
+
+xrandr --output "$(xrandr | awk '/ connected/{print $1; exit; }')" --auto
+
+xev -root -event randr | \
+grep --line-buffered 'subtype XRROutputChangeNotifyEvent' | \
+while read foo ; do \
+    xrandr --output "$(xrandr | awk '/ connected/{print $1; exit; }')" --auto
+done

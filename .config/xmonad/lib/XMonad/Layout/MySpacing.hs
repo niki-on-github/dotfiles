@@ -38,6 +38,7 @@ module XMonad.Layout.MySpacing
       auto16x9Spacing
     , toggleAuto16x9SpacingEnabled
     , triggerResizeEvent
+    -- , setScreenSpacingEnabled
 --    , setInverseSpacing
 --    , setScreenSpacing, setScreenSpacingEnabled
 --    , setWindowSpacing, setWindowSpacingEnabled
@@ -126,7 +127,7 @@ instance Eq a => LayoutModifier Spacing a where
                                     in  (i,(w,wr'):ps)
             (c,wrs') = foldr ff (0::Integer,[]) wrs
 
-        -- if more than one window on worcspace: call my ugly fix to get inverse_outer gaps like in i3-gaps
+        -- if more than one window on workspace: call my ugly fix to get inverse_outer gaps like in i3-gaps
         if c > 1 && b then (modifyLayoutInverse (Spacing b (S.Border 0 0 0 0) False wb wbe) wsp lr) else return $ if b then (wrs,ml) else (wrs',ml)
 
       where

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+pid=$1
+
+if [ -z "$pid" ]; then
+    echo "ERROR: invalid input"
+    exit 1
+fi
+
+if [ ! -d /run/netns ]; then
+    echo -en "no"
+    exit 0
+fi
+
+if [ ! -e /proc/$pid/ns/net ]; then
+    echo -en "no"
+    exit 0
+fi
+
+for f in $(ls /run/netns) ; do
+    if [ "$(stat -L -c %d:%i /proc/$pid/ns/net)" = "$(stat -L -c %d:%i /run/netns/$f)" ]; then
+        echo -en "yes"
+        exit 0
+    fi
+done
+
+echo -en "no"
+exit 0

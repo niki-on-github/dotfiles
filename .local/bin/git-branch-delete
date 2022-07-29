@@ -1,0 +1,22 @@
+#!/bin/sh
+
+usage() {
+    cat <<EOF
+`basename $0` is a script to remove a git branch from local + remote.
+
+Usage: `basename $0` [BRANCH_NAME]
+
+EOF
+    exit $1
+}
+
+error() {
+    echo -e "\033[0;31mERROR:\033[0m $1\n"
+    usage 1
+}
+
+[ "$1" = "-h" ] && usage 0
+[ "$1" = "-help" ] && usage 0
+gitBranch="$@"
+git branch -d $gitBranch
+git push origin :$gitBranch

@@ -1,12 +1,12 @@
 #!/bin/sh
-# Description: Helper Script to set the Wallpaper
+# Description: Helper Script to set the Wallpaper for my setup
 
 [ -z "$WALLPAPER_PATH" ] && WALLPAPER_PATH="$HOME/.local/share/wallpaper"
 [ -d "$WALLPAPER_PATH" ] || WALLPAPER_PATH="$HOME/.local/share/wallpaper"
 
 usage () {
     cat <<EOF
-'`basename $0`' Helper Script to set the Wallpaper
+'`basename $0`' Helper Script to set the Wallpaper for my setup
 
 Dependecies: - feh
              - sxiv
@@ -26,8 +26,16 @@ EOF
 }
 
 random() {
-    bg=$(find $WALLPAPER_PATH -type f 2>/dev/null | grep -v " " | shuf -n1)
-    [ -n "$bg" ] && feh --bg-fill --no-fehbg $bg >/dev/null 2>&1
+    sleep 0.2  # wait for monitor init
+    if [ "$(xrandr -q | grep ' connected' | wc -l)" = "1" ]; then
+        # bg=$(find $WALLPAPER_PATH/21_9 -type f 2>/dev/null | grep -v " " | shuf -n1)
+        bg=$(find $WALLPAPER_PATH/16_9 -type f 2>/dev/null | grep -v " " | shuf -n1)
+        [ -n "$bg" ] && feh --bg-fill --no-fehbg $bg >/dev/null 2>&1
+    else
+        bg1=$(find $WALLPAPER_PATH/21_9 -type f 2>/dev/null | grep -v " " | shuf -n1)
+        bg2=$(find $WALLPAPER_PATH/vertical -type f 2>/dev/null | grep -v " " | shuf -n1)
+        [ -n "$bg1" ] && [ -n "$bg2" ] && feh --bg-fill --no-fehbg $bg1 $bg2 >/dev/null 2>&1
+    fi
 }
 
 choice() {

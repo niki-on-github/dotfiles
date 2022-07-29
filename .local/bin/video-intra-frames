@@ -1,0 +1,17 @@
+#!/bin/env bash
+# Description: re-encode to video with intra frames
+
+usage() {
+    cat <<EOF
+'`basename $0`' re-encode to video with intra frames
+
+Usage:
+    ~$ `basename $0` [VIDEO_FILE]
+
+EOF
+    exit 1
+}
+
+[ -z "$1" ] && usage
+
+ffmpeg -i "$1" -filter:v scale=1920:-1 -intra -qp 30 -acodec copy "${1::-4}_intra_frames.mp4"

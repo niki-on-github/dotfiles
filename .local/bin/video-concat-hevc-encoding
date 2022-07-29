@@ -15,10 +15,10 @@ filter="${filter}concat=n=${index}:v=1:a=1[outv][outa]"
 
 saveAs="${selection[0]%.*}" # first filename without file extension
 n=$((0))
-while [ -f "${saveAs}-concat-${n}.mkv" ]; do
+while [ -f "${saveAs}-concat-${n}.mp4" ]; do
    n=$((n+1))
 done
-saveAs="${saveAs}-concat-${n}.mkv"
+saveAs="${saveAs}-concat-${n}.mp4"
 
 echo "run: ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 15 \"$saveAs\""
 eval "ffmpeg$input -filter_complex \"$filter\" -map \"[outv]\" -map \"[outa]\" -c:v libx265 -crf 15 \"$saveAs\""

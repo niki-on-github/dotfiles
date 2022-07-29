@@ -4,10 +4,11 @@ alias zsh-vim="export ZSH_KEYMAP=\"vim\"; source ${ZDOTDIR:-$HOME}/.zshrc"
 alias zsh-emacs="export ZSH_KEYMAP=\"emacs\"; source ${ZDOTDIR:-$HOME}/.zshrc"
 alias vim="nvim" vimdiff="nvim -d" vi="nvim" v="nvim"
 alias dolphin="dolphin -stylesheet $HOME/.config/qt5ct/qss/dolphin.qss"
-alias tmux='tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf' t='tmux' fm='tmux new-session lf' lf='tmux new-session lf'
+alias tmux='tmux -f $XDG_CONFIG_HOME/tmux/tmux.conf' t='tmux' fm='tmux new-session lf' lf='[ "$TERM" = "alacritty" ] && tmux new-session lf || lf'
 alias mi="mediainfo"
 alias netstat="netstat --wide"
 alias yay="yay --sudoloop"
+alias paru="paru --sudoloop"
 alias calc="qalc"
 alias s="sxiv"
 alias yt-dl-audio="youtube-dl -x --audio-format mp3"
@@ -15,13 +16,12 @@ alias watch-dir="inotifywait -e modify,create -r \$PWD -m"
 alias nmap="grc nmap"  # colorize nmap output
 alias pacman-unlock="sudo rm /var/lib/pacman/db.lck"
 alias pacman-fzf="pacman -Slq | fzf --multi --preview 'pacman -Si {1}' | xargs -ro sudo pacman -S"
-alias grep="grep --color=auto -I" egrep="egrep --color=auto -I" fgrep="fgrep --color=auto -I"
+alias grep="grep --color=auto -I -n --exclude-dir=.git" egrep="egrep --color=auto -I -n" fgrep="fgrep --color=auto -I -n"
 alias df="df -h"
 alias free="free -m"
 alias grep-todo='grep --color=auto -r --exclude-dir="\.git" -i -n "TODO" .'
 alias gw-ping-tcp="sudo nping --tcp --dest-mac \$(arp | grep "gateway" | sed 's/ * / /g' | cut -d ' ' -f 3) " # [IP] -p [Port]
 alias gw-ping-icmp="sudo nping --icmp --dest-mac \$(arp | grep "gateway" | sed 's/ * / /g' | cut -d ' ' -f 3) " # [IP]
-alias mpv-vr="mpv --script=~/.config/mpv/src/vr-reversal/360plugin.lua"
 alias video-concat-all="ffmpeg -safe 0 -f concat -i <(find . -maxdepth 1 -type f -name '*' -printf \"file '\$PWD/%p'\n\" | sort) -c copy concat.mp4"
 alias MP4Box-concat-all="eval \"MP4Box \$(find . -maxdepth 1 -type f -name '*' -printf \" -cat '\$PWD/%p'\" | sort) concat.mp4\""
 alias :q="exit" :Q="exit"
@@ -35,7 +35,7 @@ alias mv='mv -v'
 alias py="python3"
 alias cal="cal -m -3 --color=always"
 alias cl="clear"  #NOTE: use [Ctrl+l]
-alias mf="$EDITOR"
+alias mf="$EDITOR" # make file
 alias journalctl-warn="journalctl -p 4"
 alias usage="ncdu --exclude /mnt --exclude /.snapshots"
 alias pip-save-requirements="pip freeze --local > requirements.txt"
@@ -48,9 +48,11 @@ alias aur-packages="pacman -Qm"
 alias sudo='sudo '
 alias keyboard-setup='setxkbmap de; xset r rate 300 40'
 alias afk='~/.local/bin/x11-lock --fast'
-
-# this use cache
-#alias write-speed="openssl enc -aes-256-ctr -pass pass:\"\$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)\" < /dev/zero 2>/dev/null | pv -s 4g -S -r > write_speed_test.bin && rm write_speed_test.bin"
+alias cls='clear'
+alias cla='clear'
+alias totpof='oathtool --totp -b'
+alias lasttotpof='oathtool --totp -b -N "$(date --date="@$(( $(date "+%s") - 60 ))" "+%Y-%m-%d %H:%M:%S")"'
+alias clear-nvim-swap='rm -rf ~/.local/share/nvim/swap/'
 
 # ls with icons
 if command -v lsd >/dev/null ; then
@@ -124,7 +126,7 @@ if [ -f $HOME/.dotfiles/config ]; then
             echo "commit message: $msg"
         fi
         [ -z "$msg" ] && msg="update dotfiles"
-        echo -en "execute process? [Y/n]" && read choice
+        echo -en "execute process? [Y/n] " && read choice
         if [ "$choice" = "N" ] || [ "$choice" = "n" ] || [ "$choice" = "no" ] || [ "$choice" = "no" ]; then
             echo "> cancel" && return
         fi
@@ -132,6 +134,21 @@ if [ -f $HOME/.dotfiles/config ]; then
         eval "$_dotfiles_command commit -m \"$msg\""
         eval "$_dotfiles_command push --all"
         eval "$_dotfiles_command lfs push origin master --all"
+    }
+
+    function dotfiles-submodule-remove() {
+        _dotfiles_command='git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
+        [ ! -d .dotfiles ] && echo "you are not in your home directory" && return
+        [ ! -f .gitmodules ] && echo ".gitmodules do not exist" && return
+        submodulPath="$@"
+        grep -q "/$" <<< "$submodulPath" && submodulPath=${submodulPath::-1}
+        [ -z "$submodulPath" ] && echo "submodul path not exist" && return
+        [ ! -d "$submodulPath" ] && echo "submodul path not exist" && return
+        grep -q "path = $submodulPath" .gitmodules || return
+        eval "$_dotfiles_command submodule deinit -f \"$submodulPath\""
+        rm -rf ".dotfiles/modules/${submodulPath}"
+        eval "$_dotfiles_command rm -f \"$submodulPath\""
+        echo -e ">> The submodule was successfully removed.\nNote: the changes still have to be committed."
     }
 fi
 
@@ -143,5 +160,4 @@ if [[ "$XDG_SESSION_TYPE" = "x11" ]]; then
     alias xclip-oneline="xclip -o -selection clipboard | tr '\n' ' ' | tr -dc '[:print:]' | xclip -i -selection clipboard"
     alias xclip-send='echo "Send clipboard via virtual keypress. Start in 4 sec (use Ctrl+C to abort)"; sleep 4; setxkbmap de; xdotool type --clearmodifiers "$(xsel -b)"'
 fi
-
 

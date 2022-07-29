@@ -16,10 +16,12 @@ case "$choice" in
                         [ -n "$session" ] && loginctl terminate-session $session
                     fi ;;
     '  shutdown ') if [ "$(printf ' cancel\n yes' |  eval "dmenu -i -p \" shutdown >\" $DMENU_STYLE")" == " yes" ]; then
-                        poweroff
+                        msg="$(poweroff 2>&1)"
+                        [ "$?" != "0" ] && notify-send "ERROR" "$msg"
                     fi ;;
     '  reboot ')   if [ "$(printf ' cancel\n yes' |  eval "dmenu -i -p \" reboot >\" $DMENU_STYLE")" == " yes" ]; then
-                        reboot
+                        msg="$(reboot 2>&1)"
+                        [ "$?" != "0" ] && notify-send "ERROR" "$msg"
                     fi ;;
 esac >/dev/null
 

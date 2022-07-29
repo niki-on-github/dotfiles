@@ -2,4 +2,4 @@
 # Description: update pacman mirrorlist with reflector
 
 sudo cp -f /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
-sudo reflector --verbose --protocol https --country "Germany" --latest 30 --sort rate --save /etc/pacman.d/mirrorlist
+sudo reflector --verbose --protocol https --country "Germany" --age 10 --sort rate --save /etc/pacman.d/mirrorlist

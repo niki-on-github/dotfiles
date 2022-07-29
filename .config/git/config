@@ -3,18 +3,17 @@
 [user]
 	email = arch@local
 	name = arch
-[filter "lfs"]
-	required = true
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
 [merge]
-    tool = vim_mergetool
-    conflictstyle = diff3
+    tool = meld
+    ; conflictstyle = diff3  # use this for vim_mergetool
 [mergetool "vim_mergetool"]
     cmd = nvim -f -c "MergetoolStart" "$MERGED" "$BASE" "$LOCAL" "$REMOTE"
     trustExitCode = true
+[mergetool "meld"]
+    cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
 [pull]
 	rebase = false
 [core]
 	pager = diff-so-fancy | less --tabs=4 -RFX
+[push]
+	followTags = true

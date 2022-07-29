@@ -1,0 +1,32 @@
+#!/bin/sh
+
+usage() {
+    cat <<EOF
+`basename $0` is a script to rename a git branch in local + remote.
+
+Usage: `basename $0` [OLD_BRANCH_NAME] [NEW_BRANCH_NAME]
+
+Warning: Co-workers need to run 'git pull --prune'
+EOF
+    exit $1
+}
+
+error() {
+    echo -e "\033[0;31mERROR:\033[0m $1\n"
+    usage 1
+}
+
+[ "$1" = "-h" ] && usage 0
+[ "$1" = "-help" ] && usage 0
+[ "$#" != "2" ] && usage 1
+
+oldBranch="$1"
+newBranch="$2"
+
+if ! git branch | grep -q "$oldBranch" ; then
+    error "branch $oldBranch does not exists"
+fi
+
+git branch -m $oldBranch $newBranch
+git branch -d $oldBranch
+git push origin $newBranch :$oldBranch

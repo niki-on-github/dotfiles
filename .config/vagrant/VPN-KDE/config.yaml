@@ -1,0 +1,15 @@
+---
+configs:
+  use: 'vpn1'
+  vpn1:
+    name: 'VPN-KDE'
+    cpus: 4
+    memory: 4096
+    disksize: 40
+    network_dev: 'enp6s0'
+  vpn2:
+    name: 'VPN-KDE'
+    cpus: 4
+    memory: 4096
+    disksize: 30
+    network_dev: 'enp6s0'

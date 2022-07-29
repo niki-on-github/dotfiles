@@ -1,0 +1,22 @@
+#!/bin/sh
+
+usage() {
+    cat <<EOF
+`basename $0` is a script to remove a git tag from local + remote.
+
+Usage: `basename $0` [TAG_NAME]
+
+EOF
+    exit $1
+}
+
+error() {
+    echo -e "\033[0;31mERROR:\033[0m $1\n"
+    usage 1
+}
+
+[ "$1" = "-h" ] && usage 0
+[ "$1" = "-help" ] && usage 0
+gitTag="$@"
+git tag -d $gitTag
+git push --delete origin $gitTag

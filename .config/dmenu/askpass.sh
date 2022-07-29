@@ -6,4 +6,12 @@
 [ -z "$DMENU_STYLE" ] && DMENU_STYLE=""
 
 # NOTE: We override the sb color from DMENU_STYLE
-eval "dmenu -p \"$1\" -P $DMENU_STYLE -sb \"#cc0000\""
+pw=$(eval "dmenu -p \"$1\" -P $DMENU_STYLE -sb \"#cc0000\"")
+
+if [ -z "$pw" ]; then
+    echo "no password was entered" >&2
+    exit 1
+else
+    echo "$pw"
+    echo "" >&2
+fi

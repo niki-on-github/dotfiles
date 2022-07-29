@@ -35,5 +35,7 @@ fi
 notify-send "KVM" "Host Key set to: R-CTRL"
 sleep 2
 
-# NOTE: press Host Key to enable mouse capture (in xmonad this only work without Fullscreen option -F)
-looking-glass-client -S -m 228
+spicePort=$(virsh --connect qemu:///system domdisplay $vm | cut -d ':' -f3)
+
+# NOTE: press Host Key to enable mouse capture (in xmonad this only work without Fullscreen option -F!)
+looking-glass-client -S -m 228 -p $spicePort

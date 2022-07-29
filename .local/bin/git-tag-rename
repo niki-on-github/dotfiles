@@ -1,0 +1,32 @@
+#!/bin/sh
+
+usage() {
+    cat <<EOF
+`basename $0` is a script to rename a git tag in local + remote.
+
+Usage: `basename $0` [OLD_TAG_NAME] [NEW_TAG_NAME]
+
+Warning: Co-workers need to run 'git pull --prune --tags'
+EOF
+    exit $1
+}
+
+error() {
+    echo -e "\033[0;31mERROR:\033[0m $1\n"
+    usage 1
+}
+
+[ "$1" = "-h" ] && usage 0
+[ "$1" = "-help" ] && usage 0
+[ "$#" != "2" ] && usage 1
+
+oldTag="$1"
+newTag="$2"
+
+if ! git tag | grep -q "$oldTag" ; then
+    error "tag $oldTag does not exists"
+fi
+
+git tag $newTag $oldTag
+git tag -d $oldTag
+git push origin $newTag :$oldTag

@@ -15,7 +15,7 @@ let maplocalleader="-"
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" VIM Plugin Managing (Install new Plugins with `:PlugInstall`, Update with `:PlugUpdate`)
+" VIM Plugin Managing (Install new Plugins with `:PlugInstall`, Update with `:PlugUpdate` + `:CocUpdate`)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " Install vim plugin manager "

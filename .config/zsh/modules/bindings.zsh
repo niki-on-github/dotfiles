@@ -134,7 +134,13 @@ else
     paste-clip() {
         killring=("$CUTBUFFER" "${(@)killring[1,-2]}")
         CUTBUFFER=$(xclip -selection clipboard -o 2>/dev/null)
-        [ "$?" -eq "0" ] || notify-send "Clipboard" "Error: target string not available"
+        if [ "$?" != "0" ]; then
+            if command -v notify-send >/dev/null ; then
+                notify-send "Clipboard" "Error: target string not available"
+            else
+                echo "Clipboard Error: Target string not available"
+            fi
+        fi
         zle yank
     }
 fi
@@ -149,6 +155,8 @@ function bindings {
   CTRL + E              Move to the end of the line
   CTRL + [Left Arrow]   Move one word backward
   CTRL + [Right Arrow]  Move one word forward
+  ESC  + B              Move one word backward
+  ESC  + F              Move one word forward
   CTRL + U              Clear the entire line
   CTRL + K              Clear the characters on the line after the current cursor position
   CTRL + W              Delete the word in front of the cursor
@@ -158,6 +166,8 @@ function bindings {
   CTRL + L              Clear screen
   CTRL + C              Terminate/kill current foreground process
   CTRL + Z              Suspend/stop current foreground process
+  CTRL + [Space]        Auto Complete command and execute
+  CTRL + M              Execute current command
   ESC  + [Backspace]    Delete the word in front of the cursor"
   # CTRL + S              Stop output to screen
   # CTRL + Q              Re-enable screen output
@@ -187,8 +197,9 @@ bindkey '^x' toggle-zsh-keymap                      # [Ctrl+x] - toggle vim, ema
 bindkey '^o' lf-cd                                  # [Ctrl+o] - use lf to switch directory
 bindkey -r '^V'; bindkey "^V" paste-clip            # [Ctrl+v] - paste from system clipboard (vi-quoted-insert conflict with Paste)
 bindkey -r '^Y'                                     # [Ctrl+y] - conflict with Copy (alacritty)
-bindkey '^P' fuzzy-search-and-edit                  # seletskiy/zsh-fuzzy-search-and-edit plugin
+# bindkey '^P' fuzzy-search-and-edit                  # seletskiy/zsh-fuzzy-search-and-edit plugin
 # bindkey "\e\e" sudo-command-line                    # [ESC][ESC] toggles "sudo/sudoedit" before the current/previous command
+bindkey '^M' accept-line
 
 # fix tmux pos1 and ende key
 bindkey "\E[1~" beginning-of-line
@@ -205,6 +216,7 @@ if [[ "${terminfo[kcuu1]}" != "" ]]; then
     autoload -U up-line-or-beginning-search
     zle -N up-line-or-beginning-search
     bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
+    bindkey '^p' up-line-or-beginning-search
 fi
 
 # start typing + [Down-Arrow] - fuzzy find history backward
@@ -212,4 +224,5 @@ if [[ "${terminfo[kcud1]}" != "" ]]; then
     autoload -U down-line-or-beginning-search
     zle -N down-line-or-beginning-search
     bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
+    bindkey '^n' down-line-or-beginning-search
 fi

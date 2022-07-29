@@ -1,5 +1,8 @@
 show-read-feeds yes
 auto-reload no
+confirm-mark-all-feeds-read yes
+confirm-mark-feed-read no
+reload-threads 25
 
 bind-key j down
 bind-key k up
@@ -39,3 +42,8 @@ browser ~/.config/newsboat/linkhandler.sh
 macro v set browser ~/.config/newsboat/linkhandler.sh ; open-in-browser
 macro w set browser "w3m" ; open-in-browser
 macro c set browser "xsel -b <<<" ; open-in-browser
+
+# styling
+highlight feedlist "[║│]" default default bold
+highlight feedlist "╠═.*" default default bold
+feedlist-format "%?T?║%4i %n %8u %t (%T) &╠═ %-t?"

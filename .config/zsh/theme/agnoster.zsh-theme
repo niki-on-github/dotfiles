@@ -24,9 +24,9 @@ if [ "$ZSH_KEYMAP" = "vim" ]; then
   )
 else
   typeset -aHg AGNOSTER_PROMPT_SEGMENTS=(
+      prompt_context
       prompt_exec_time
       prompt_status
-      prompt_context
       prompt_conda
       prompt_virtualenv
       prompt_dir
@@ -88,7 +88,7 @@ prompt_context() {
   local user=`whoami`
 
   if [[ -n "$SSH_CONNECTION" ]]; then
-    prompt_segment $PRIMARY_FG default " %(!.%{%F{yellow}%}.)$user@%m "
+    prompt_segment 'black' '#fcfcfc' " SSH "
   fi
 }
 
@@ -119,7 +119,7 @@ prompt_git() {
 
 # Dir: current working directory
 prompt_dir() {
-  # prompt_segment blue $PRIMARY_FG ' %3~ '
+  # prompt_segment blue $PRIMARY_FG ' %2~ '
   prompt_segment blue $PRIMARY_FG ' %1~ '
 }
 

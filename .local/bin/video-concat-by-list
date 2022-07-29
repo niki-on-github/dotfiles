@@ -13,7 +13,7 @@ File List Structure:
 Notes:
     - playtime = stoptime - starttime
     - starttime and playtime is optional
-    - times in int (sec) and xx:xx (min:sec) possible
+    - times in [sec], [min:sec], [sec.ms], [min:sec.ms] possible
 
 Dependecies: - ffmpeg
 

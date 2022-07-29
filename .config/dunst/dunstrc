@@ -1,33 +1,11 @@
 # dunst config
 
 [global]
-
-    ### Display ###
-
-    # Which monitor should the notifications be displayed on.
     monitor = 0
-
-    # Display notification on focused monitor.  Possible modes are:
-    #   mouse: follow mouse pointer
-    #   keyboard: follow window with keyboard focus
-    #   none: don't follow anything
     follow = none
-
-    # The geometry of the window:
-    #   [{width}]x{height}[+/-{x}+/-{y}]
-    # The geometry of the message window.
-    # The height is measured in number of notifications everything else
-    # in pixels.  If the width is omitted but the height is given
-    # ("-geometry x2"), the message window expands over the whole screen
-    # (dmenu-like).  If width is 0, the window expands to the longest
-    # message displayed.  A positive x is measured from the left, a
-    # negative from the right side of the screen.  Y is measured from
-    # the top and down respectively.
-    # The width can be negative.  In this case the actual width is the
-    # screen width minus the width defined in within the geometry option.
-    geometry = "435x8-5-5"
-
-    # Show how many messages are currently hidden (because of geometry).
+    origin = bottom-right
+    offset = 8x8
+    width = 652
     indicate_hidden = yes
 
     # Shrink window if it's smaller than the width.
@@ -37,7 +15,7 @@
     transparency = 2
 
     # The height of the entire notification.
-    notification_height = 50
+    height = 500
 
     # (Vertical) Padding between text and separator.
     padding = 30
@@ -46,13 +24,13 @@
     horizontal_padding = 30
 
     # Defines width in pixels of frame around the notification window.
-    frame_width = 2
+    frame_width = 3
 
     # Defines color of the frame around the notification window.
     frame_color = "#1793D1"
 
     # Draw a line of "separator_height" pixel height between two notifications.
-    separator_height = 2
+    separator_height = 3
 
     # Define a color for the separator.
     # possible values are:
@@ -71,10 +49,10 @@
 
     ### Text ###
 
-    font = Hack 12
+    font = Hack 18
 
     # The spacing between lines.
-    line_height = 1
+    line_height = 2
 
     # Markup:
     # - full: Allow a small subset of html markup in notifications: <b>bold</b>, <i>italic</i>, <u>underline</u>
@@ -125,10 +103,10 @@
     icon_position = left
 
     # Scale larger icons down to this size, set to 0 to disable
-    max_icon_size = 64
+    max_icon_size = 100
 
     # Paths to default icons.
-    icon_path = /usr/share/icons/breeze-dark/status/64/
+    icon_path = /home/arch/.config/dunst/icons/
     # NOTE: ~ or $HOME not work in this config, workaround start dunst with: `dunst -icon_path "$HOME/.config/dunst/icons/"`
 
 
@@ -158,18 +136,6 @@
     # Define the class of the windows spawned by dunst
     class = Dunst
 
-    # Print a notification on startup.
-    startup_notification = false
-
-    # Manage dunst's desire for talking
-    # Can be one of the following values:
-    #  crit: Critical features. Dunst aborts
-    #  warn: Only non-fatal warnings
-    #  mesg: Important Messages
-    #  info: all unimportant stuff
-    # debug: all less than unimportant stuff
-    verbosity = mesg
-
     # Define the corner radius of the notification window in pixel size.
     corner_radius = 0
 
@@ -195,21 +161,6 @@
 [experimental]
     # Calculate the dpi to use on a per-monitor basis.
     per_monitor_dpi = false
-
-
-[shortcuts]
-    # Shortcuts are specified as [modifier+][modifier+]...key
-    # Available modifiers are "ctrl", "mod1" (the alt-key), "mod2", "mod3" and "mod4" (windows-key).
-    # Xev might be helpful to find names for keys.
-
-    # Close notification.
-    close = ctrl+space
-
-    # Close all notifications.
-    close_all = ctrl+shift+space
-
-    # Context menu.
-    context = ctrl+shift+period
 
 
 [urgency_low]

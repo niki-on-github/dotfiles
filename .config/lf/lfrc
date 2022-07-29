@@ -187,11 +187,13 @@ cmd open ${{
     open-image() {
         base="$(basename "$f")"
         ls -a "$PWD" | awk -v BASE="$base" 'BEGIN { lines = ""; m = 0; } { if ($0 == BASE) { m = 1; } } { if (!m) { if (lines) { lines = lines"\n"; } lines = lines""$0; } else { print $0; } } END { print lines; }' | \
-        grep -i "\.\(png\|jpg\|jpeg\|tiff\|webp\|tif\)\(_large\)*$" | setsid sxiv -aio 2>/dev/null | lfSelect &
+        grep -i "\.\(png\|jpg\|jpeg\|bmp\|tiff\|webp\|tif\)\(_large\)*$" | setsid sxiv -aio 2>/dev/null | lfSelect &
     }
 
     open-audio() {
-        mpv --vo=null --speed=1.0 $f 2>/dev/null
+        #clear
+        #mpv --vo=null --speed=1.0 $f 2>/dev/null
+        ~/.local/bin/play-audio $f
     }
 
     open-video() {
@@ -293,12 +295,14 @@ cmd extract ${{
     echo "load archive structure ..."
     case $f in
         *.tar) extractTAR "xvf" ;;
+        *.tar.xz) extractTAR "xvf" ;;
         *.tar.bz|*.tar.bz2|*.tbz|*.tbz2) extractTAR "xjvf" ;;
         *.tar.gz|*.tgz) extractTAR "xzvf" ;;
         *.tar.xz|*.txz) extractTAR "xJvf" ;;
         *.zip) extractZIP ;;
         *.rar) extractRAR ;;
         *.7z) extract7z ;;
+        *.xz) xz --decompress $f ;;
         *) lf -remote "send $id echo \"ERROR: archive type not implemented\"" ;;
     esac
 }}
@@ -464,12 +468,14 @@ cmd ssh-upload ${{
     choice="$(fzf < ~/.local/share/lf/ssh)" || return
     [ -z "$choice" ] && return
     choice=$(echo "$choice" | tr '\n' ' '| sed -e 's/[[:space:]]*$//')
+    clear
     if ! rsync --protect-args -auv --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r --progress -e ssh $fx $choice ; then
         echo "ssh-push failed!"
         notify-send --urgency critical "ssh-push failed" "files upload to $choice failed"
         lf -remote "send $id echo \"ssh-push failed!\""
         read
     else
+        # sync
         notify-send "ssh-push" "files uploaded to $choice"
         lf -remote "send $id :unselect"
         lf -remote "send $id echo \"files uploaded to $choice\""
@@ -594,22 +600,23 @@ cmd pattern-select ${{
 # use rsync to copy files and display process in lf while coping files
 #NOTE: Information is shown at the bottom of the screen every second but it is overwritten for each action that also use this part of the screen.
 cmd rpaste &{{
-    load=$(lf -remote 'load')
-    mode=$(echo "$load" | sed -n '1p')
-    list=$(echo "$load" | sed '1d')
-    if [ $mode = 'copy' ]; then
-        rsync -a --ignore-existing --info=progress2 $list . \
-        | stdbuf -i0 -o0 -e0 tr '\r' '\n' \
-        | while read line; do
-            lf -remote "send $id echo $line"
-        done
-        # lf -remote "send $id echo \"rsync check ...\""
-        # rsync -c $list . || notify-send --urgency critical "lf copy" "rsync failed"
-    elif [ $mode = 'move' ]; then
-        mv -n $list .
-    fi
-    lf -remote 'send load'
-    lf -remote 'send clear'
+    set -- $(cat ~/.local/share/lf/files)
+    mode="$1"
+    shift
+    case "$mode" in
+        copy)
+            rsync -a --ignore-existing --info=progress2 -- "$@" . |
+            stdbuf -i0 -o0 -e0 tr '\r' '\n' |
+            while IFS= read -r line; do
+                lf -remote "send $id echo $line"
+            done
+            ;;
+        move) mv -n -- "$@" .;;
+    esac
+    rm ~/.local/share/lf/files
+    sync
+    lf -remote "send load"
+    lf -remote "send clear"
 }}
 
 # paste a file or directory from a clipbard absolute file link
@@ -751,6 +758,7 @@ map m       # mark-save
 map '"'     # mark-remove
 map "'"     # mark-load
 map p       # paste (we use rpaste)
+map t       # tag
 
 # Add custom functions (space at the end sometimes break bindings!)
 map Q :q
@@ -792,6 +800,7 @@ map o open-gui
 map O $mimeopen --ask $f
 map p rpaste
 map P paste
+map U reload
 map <c-t> new-tab
 map <c-a> :select-all
 map a :select-all
