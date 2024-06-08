@@ -1,5 +1,8 @@
 # .dotfiles
 
+> [!IMPORTANT]  
+> This repository was replaced by my various nixos repositories.
+
 A Repository to backup, restore and sync my configurations and scripts (which gives me my super powers). Feel free to look around. Be aware that I have configured my environment to fit my workflow.
 
 ## Getting Started
